@@ -225,6 +225,11 @@ export const grid4Contract = style({
   gap: vars.space.lg,
 })
 
+// Spec 118: linha do "Número do contrato", acima da Classificação (mesma grade, 1ª coluna).
+export const numberRow = style({
+  marginBottom: vars.space.lg,
+})
+
 export const input = style({
   height: '2.5rem',
   padding: `0 ${vars.space.sm}`,

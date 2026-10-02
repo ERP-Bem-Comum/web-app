@@ -39,7 +39,9 @@ export const SLUG_TO_ERROR: Partial<Record<string, ContractsError>> = {
   'invalid-period': 'invalid-period',
   'missing-contractor': 'missing-contractor',
   unauthorized: 'unauthorized',
-  'contract-sequential-number-duplicated': 'server',
+  // Spec 118 (core-api#1024): número informado já existe (409) ou fora do formato `NNN(N)/AAAA` (422).
+  'contract-sequential-number-duplicated': 'contract-number-duplicated',
+  ContractSequentialNumberInvalidFormat: 'invalid-code',
   // Cancelamento (§1.7, #32): 409 ao cancelar contrato não-Pendente. O core-api envia
   // `ContractNotPending` (PascalCase) e/ou `contract-not-pending` (kebab) — cobrimos ambos.
   ContractNotPending: 'contract-not-pending',
@@ -583,7 +585,9 @@ export const createCoreApiContractsClient = (baseUrl: string): CoreApiContractsC
     },
 
     create: async (input, token) => {
-      // #32: o backend GERA o sequentialNumber (não enviamos número — ADR-0013 / CTR-CONTRACT-SEQUENTIAL-NUMBER).
+      // Número do contrato (spec 118, core-api#1024): enviado SÓ quando a usuária o informou; ausente, o
+      // backend GERA o próximo número livre do ano (CTR-CONTRACT-SEQUENTIAL-NUMBER). Um número digitado não é
+      // "inventado no front": o core-api continua sendo quem valida, normaliza e grava (ADR-0013 + ADR da 118).
       // Body: mode + title/objective/valor/período + contractor:{type,id} + classification (CT/OS) + metadados.
       // mode='Pending' (D7 — cadastro+assinatura segue o fluxo de 2 passos: criar → anexar doc → ativar).
       // `contractor` derivado do tipo selecionado.
@@ -599,6 +603,7 @@ export const createCoreApiContractsClient = (baseUrl: string): CoreApiContractsC
                 : undefined
       const body = {
         mode: 'Pending' as const,
+        ...(input.sequentialNumber !== undefined ? { sequentialNumber: input.sequentialNumber } : {}),
         title: input.title,
         objective: input.objective,
         originalValueCents: input.originalValueCents,

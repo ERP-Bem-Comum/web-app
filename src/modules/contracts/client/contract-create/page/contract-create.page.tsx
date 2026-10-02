@@ -185,7 +185,7 @@ export function ContractCreatePage(): ReactNode {
   }, [])
 
   const handleConfirm = useCallback(() => {
-    if (form.isOvertopOS || form.checklist.done < form.checklist.total) {
+    if (form.isOvertopOS || form.contractNumberInvalid || form.checklist.done < form.checklist.total) {
       form.triggerValidation()
       closeModal()
       return
@@ -326,7 +326,7 @@ export function ContractCreatePage(): ReactNode {
         }}
         onCreateNewPartner={handleCreateNewPartner}
         documentUploaded={uploadedFile !== null}
-        currentYear={form.currentYear}
+        contractNumberInvalid={form.contractNumberInvalid}
         programOptions={programOptions}
         costCenterOptions={costCenterOptions}
         categoryOptions={categoryOptions}

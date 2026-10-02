@@ -166,7 +166,13 @@ export const ListContractsInputSchema = z.object({
 })
 export type ListContractsInput = z.infer<typeof ListContractsInputSchema>
 
+/** Número do contrato informado na criação (spec 118): `NNN/AAAA` ou `NNNN/AAAA`, sem prefixo. Espelha o
+ *  regex do domínio do core-api — validação de borda; a fonte da verdade é o backend. */
+export const CONTRACT_NUMBER_PATTERN = /^\d{3,4}\/\d{4}$/
+
 export const CreateContractInputSchema = z.object({
+  // Spec 118: opcional — ausente, o core-api gera o número.
+  sequentialNumber: z.string().trim().regex(CONTRACT_NUMBER_PATTERN).optional(),
   title: z.string().trim().min(1),
   objective: z.string().trim().min(1),
   originalValueCents: z.int().positive(),
