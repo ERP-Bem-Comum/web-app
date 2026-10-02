@@ -3,7 +3,13 @@
  * vivem em `../../adapters/supplier.io-schemas.ts` (a borda). Alinhado ao contrato REAL: query
  * page/limit/order/search/active/categories; create/update = PUT total; bankAccount/pixKey coesos (ou null).
  */
-import type { ActivationStatus, BankAccount, SupplierPixKey, ServiceRating } from './supplier.types.ts'
+import type {
+  ActivationStatus,
+  BankAccount,
+  PersonType,
+  SupplierPixKey,
+  ServiceRating,
+} from './supplier.types.ts'
 
 // ── Input (validado na server fn pelos schemas em adapters) ─────────────────────
 export interface ListSuppliersInput {
@@ -22,9 +28,11 @@ export interface GetSupplierInput {
 export interface CreateSupplierInput {
   name: string
   email: string
-  cnpj: string
-  corporateName: string
-  fantasyName: string
+  // CPF (PF) ou CNPJ (PJ), com ou sem máscara — o client do core-api normaliza (#1022).
+  document: string
+  // `null` na pessoa física: o campo não existe para PF (o core-api recusa preenchido com 422).
+  corporateName: string | null
+  fantasyName: string | null
   serviceCategory: string
   bankAccount: BankAccount | null
   pixKey: SupplierPixKey | null
@@ -48,9 +56,11 @@ export type SupplierListItem = Readonly<{
   id: string
   name: string
   email: string
-  cnpj: string
-  corporateName: string
-  fantasyName: string
+  // CPF (11) ou CNPJ (14), sem máscara. `personType` é a leitura do core-api, nunca deduzida do tipo de parceiro.
+  document: string
+  personType: PersonType
+  corporateName: string | null
+  fantasyName: string | null
   serviceCategory: string
   activation: ActivationStatus
   contractCount: number

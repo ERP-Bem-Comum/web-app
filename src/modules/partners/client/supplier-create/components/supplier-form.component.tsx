@@ -12,6 +12,7 @@ import {
   isServiceRating,
   type SupplierFormController,
 } from './supplier-form.controller.ts'
+import { PersonTypeSwitch } from './person-type-switch.component.tsx'
 import { BankSelect, isUnknownBank } from '#shared/ui/brand/bank-select.component.tsx'
 import { BANK_LABELS, BANK_UNKNOWN_HINT } from '#modules/partners/client/shared/bank-select-labels.ts'
 import { derivePixKey } from '#modules/partners/client/domain/derive-pix-key.ts'
@@ -50,8 +51,8 @@ export type SupplierFormProps = Readonly<{
   categories: readonly string[]
   /** Mostra as seções Banco/PIX (payment target). Na criação/edição = quem tem `supplier:write`. */
   canEditSensitive: boolean
-  /** Bloqueia o campo CNPJ (vital): true na edição sem `supplier:edit-sensitive`. */
-  cnpjDisabled?: boolean
+  /** Bloqueia o documento e o tipo de pessoa (vitais): true na edição sem `supplier:edit-sensitive`. */
+  documentLocked?: boolean
   running: boolean
   errorTag: string | null
   onCancel: () => void
@@ -100,6 +101,9 @@ export function SupplierForm(props: SupplierFormProps): ReactNode {
   const isInvalid = (key: string): boolean => c.errors[key] === true
   const invalidMsg = (key: string): string | null =>
     c.errors[key] === true ? t('partners.suppliers.form.invalid') : null
+  // #1022: o documento, a máscara e os nomes da empresa seguem a chave PJ | PF.
+  const isPF = c.state.personType === 'PF'
+  const docMask = isPF ? 'cpf' : 'cnpj'
 
   return (
     <form
@@ -135,10 +139,15 @@ export function SupplierForm(props: SupplierFormProps): ReactNode {
               <h2 className={sectionH2}>{t('partners.suppliers.form.section.basic')}</h2>
             </div>
             <div className={sectionBody}>
+              <PersonTypeSwitch
+                value={c.state.personType}
+                locked={props.documentLocked}
+                onChange={c.setPersonType}
+              />
               <div className={grid}>
                 <div className={field}>
                   <label htmlFor="sup-name" className={fieldLabel}>
-                    {t('partners.suppliers.form.name')}
+                    {isPF ? t('partners.suppliers.form.fullName') : t('partners.suppliers.form.name')}
                   </label>
                   <input
                     id="sup-name"
@@ -172,56 +181,63 @@ export function SupplierForm(props: SupplierFormProps): ReactNode {
                 </div>
 
                 <div className={field}>
-                  <label htmlFor="sup-cnpj" className={fieldLabel}>
-                    {t('partners.suppliers.form.cnpj')}
+                  <label htmlFor="sup-document" className={fieldLabel}>
+                    {isPF ? t('partners.suppliers.form.cpf') : t('partners.suppliers.form.cnpj')}
                   </label>
                   <input
-                    id="sup-cnpj"
-                    className={`${input} ${isInvalid('cnpj') ? controlError : ''}`}
-                    value={formatMask('cnpj', c.state.cnpj)}
-                    disabled={props.cnpjDisabled}
+                    id="sup-document"
+                    className={`${input} ${isInvalid('document') ? controlError : ''}`}
+                    value={formatMask(docMask, c.state.document)}
+                    disabled={props.documentLocked}
+                    inputMode={isPF ? 'numeric' : undefined}
                     onChange={(e) => {
-                      c.setField('cnpj', unmask(e.target.value, 'cnpj'))
+                      c.setField('document', unmask(e.target.value, docMask))
                     }}
                   />
-                  {invalidMsg('cnpj') !== null ? (
-                    <span className={fieldError}>{invalidMsg('cnpj')}</span>
+                  {invalidMsg('document') !== null ? (
+                    <span className={fieldError}>{invalidMsg('document')}</span>
                   ) : null}
                 </div>
 
-                <div className={field}>
-                  <label htmlFor="sup-corp" className={fieldLabel}>
-                    {t('partners.suppliers.form.corporateName')}
-                  </label>
-                  <input
-                    id="sup-corp"
-                    className={`${input} ${isInvalid('corporateName') ? controlError : ''}`}
-                    value={c.state.corporateName}
-                    onChange={(e) => {
-                      c.setField('corporateName', e.target.value)
-                    }}
-                  />
-                  {invalidMsg('corporateName') !== null ? (
-                    <span className={fieldError}>{invalidMsg('corporateName')}</span>
-                  ) : null}
-                </div>
+                {/* PF não tem Razão Social nem Nome Fantasia (#1022): os campos SOMEM (decisão da P.O.,
+                    02/10). O que foi digitado fica no estado e volta se a pessoa retornar a PJ. */}
+                {isPF ? null : (
+                  <>
+                    <div className={field}>
+                      <label htmlFor="sup-corp" className={fieldLabel}>
+                        {t('partners.suppliers.form.corporateName')}
+                      </label>
+                      <input
+                        id="sup-corp"
+                        className={`${input} ${isInvalid('corporateName') ? controlError : ''}`}
+                        value={c.state.corporateName}
+                        onChange={(e) => {
+                          c.setField('corporateName', e.target.value)
+                        }}
+                      />
+                      {invalidMsg('corporateName') !== null ? (
+                        <span className={fieldError}>{invalidMsg('corporateName')}</span>
+                      ) : null}
+                    </div>
 
-                <div className={field}>
-                  <label htmlFor="sup-fant" className={fieldLabel}>
-                    {t('partners.suppliers.form.fantasyName')}
-                  </label>
-                  <input
-                    id="sup-fant"
-                    className={`${input} ${isInvalid('fantasyName') ? controlError : ''}`}
-                    value={c.state.fantasyName}
-                    onChange={(e) => {
-                      c.setField('fantasyName', e.target.value)
-                    }}
-                  />
-                  {invalidMsg('fantasyName') !== null ? (
-                    <span className={fieldError}>{invalidMsg('fantasyName')}</span>
-                  ) : null}
-                </div>
+                    <div className={field}>
+                      <label htmlFor="sup-fant" className={fieldLabel}>
+                        {t('partners.suppliers.form.fantasyName')}
+                      </label>
+                      <input
+                        id="sup-fant"
+                        className={`${input} ${isInvalid('fantasyName') ? controlError : ''}`}
+                        value={c.state.fantasyName}
+                        onChange={(e) => {
+                          c.setField('fantasyName', e.target.value)
+                        }}
+                      />
+                      {invalidMsg('fantasyName') !== null ? (
+                        <span className={fieldError}>{invalidMsg('fantasyName')}</span>
+                      ) : null}
+                    </div>
+                  </>
+                )}
 
                 <div className={field}>
                   <label htmlFor="sup-cat" className={fieldLabel}>
@@ -385,7 +401,10 @@ export function SupplierForm(props: SupplierFormProps): ReactNode {
                           // Auto-preenche a chave com o dado correspondente do form (editável).
                           c.setField(
                             'pixKey',
-                            derivePixKey(e.target.value, { document: c.state.cnpj, email: c.state.email }),
+                            derivePixKey(e.target.value, {
+                              document: c.state.document,
+                              email: c.state.email,
+                            }),
                           )
                         }
                       }}
