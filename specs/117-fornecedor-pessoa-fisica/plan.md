@@ -69,11 +69,6 @@ documento (lista, detalhe, Contratos, Lançar Documento) passam a ler PF/PJ **pe
 - **Vitest/jsdom**: o formulário esconde Razão Social/Fantasia na PF e a chave aparece bloqueada sem
   permissão.
 
-## Fora deste plano
-
-- Contas a Pagar mascara o documento do favorecido só como CNPJ (`contas-a-pagar.view-model.ts:301`): um
-  fornecedor PF aparece com o CPF sem máscara. Não quebra nada e fica anotado para depois.
-
 ## Ajuste pós-merge (2026-10-02): o alias `cnpj` vai junto
 
 O front e o core-api deployam por **esteiras separadas**: a homologação do front sai da `develop` do
