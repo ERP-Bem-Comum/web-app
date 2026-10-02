@@ -12,6 +12,7 @@ import {
   type SupplierFormController,
   type SupplierFormState,
 } from '#modules/partners/client/supplier-create/components/supplier-form.controller.ts'
+import { PersonTypeSwitch } from '#modules/partners/client/supplier-create/components/person-type-switch.component.tsx'
 import { BankSelect, isUnknownBank } from '#shared/ui/brand/bank-select.component.tsx'
 import { BANK_LABELS, BANK_UNKNOWN_HINT } from '#modules/partners/client/shared/bank-select-labels.ts'
 import type { ActivationStatus } from '#modules/partners/client/domain/supplier.types.ts'
@@ -39,8 +40,8 @@ export type SupplierDetailContentProps = Readonly<{
   controller: SupplierFormController
   editing: boolean
   canViewSensitive: boolean
-  /** CNPJ é vital: só edita com `supplier:edit-sensitive`. */
-  cnpjDisabled: boolean
+  /** Documento e tipo de pessoa são vitais: só editam com `supplier:edit-sensitive`. */
+  documentLocked: boolean
   activation: ActivationStatus
   categories: readonly string[]
 }>
@@ -87,6 +88,7 @@ export function SupplierDetailContent(props: SupplierDetailContentProps): ReactN
   const isInvalid = (key: string): boolean => c.errors[key] === true
   const invalidMsg = (key: string): string | null =>
     c.errors[key] === true ? t('partners.suppliers.form.invalid') : null
+  const isPF = c.state.personType === 'PF'
 
   const txt = (
     key: keyof SupplierFormState,
@@ -132,15 +134,31 @@ export function SupplierDetailContent(props: SupplierDetailContentProps): ReactN
               {t(`partners.suppliers.status.${props.activation}`)}
             </Badge>
           </div>
+          <PersonTypeSwitch
+            value={c.state.personType}
+            disabled={!editing}
+            locked={props.documentLocked}
+            onChange={c.setPersonType}
+          />
           <div className={grid}>
-            {txt('name', t('partners.suppliers.form.name'), 'name')}
+            {txt(
+              'name',
+              isPF ? t('partners.suppliers.form.fullName') : t('partners.suppliers.form.name'),
+              'name',
+            )}
             {txt('email', t('partners.suppliers.form.email'), 'email', { type: 'email' })}
-            {txt('cnpj', t('partners.suppliers.form.cnpj'), 'cnpj', {
-              readOnly: props.cnpjDisabled,
-              mask: 'cnpj',
-            })}
-            {txt('corporateName', t('partners.suppliers.form.corporateName'), 'corporateName')}
-            {txt('fantasyName', t('partners.suppliers.form.fantasyName'), 'fantasyName')}
+            {txt(
+              'document',
+              isPF ? t('partners.suppliers.form.cpf') : t('partners.suppliers.form.cnpj'),
+              'document',
+              {
+                readOnly: props.documentLocked,
+                mask: isPF ? 'cpf' : 'cnpj',
+              },
+            )}
+            {/* PF não tem Razão Social nem Nome Fantasia (#1022): os campos somem (decisão da P.O., 02/10). */}
+            {isPF ? null : txt('corporateName', t('partners.suppliers.form.corporateName'), 'corporateName')}
+            {isPF ? null : txt('fantasyName', t('partners.suppliers.form.fantasyName'), 'fantasyName')}
             <div className={field}>
               <label htmlFor="sd-serviceCategory" className={fieldLabel}>
                 {t('partners.suppliers.form.category')}

@@ -47,19 +47,23 @@ type SearchedPartner = Readonly<{
 type SearchPartnersFn = (opts: {
   data: { query?: string; kind?: PartnerKind }
 }) => Promise<
-  | Readonly<{ ok: true; data: readonly SearchedPartner[] }>
-  | Readonly<{ ok: false; error: PartnersError }>
+  Readonly<{ ok: true; data: readonly SearchedPartner[] }> | Readonly<{ ok: false; error: PartnersError }>
 >
 
 export type PartnersRepository = Readonly<{
-  search: (query: string, kind?: PartnerKind) => Promise<Result<readonly PartnerSearchResult[], PartnersError>>
+  search: (
+    query: string,
+    kind?: PartnerKind,
+  ) => Promise<Result<readonly PartnerSearchResult[], PartnersError>>
 }>
 
 const toClientPartner = (p: SearchedPartner): PartnerSearchResult => {
   // ACT = Acordo de Cooperação Técnica (PJ/CNPJ) — selecionável como contratado (#32 aceita type='act').
   const kind = p.kind === 'ACT' ? 'Acordo' : p.kind
-  // Documento de PJ (Fornecedor/Financiador/Acordo) → cnpj; de PF (Colaborador) → cpf.
-  const isPF = p.kind === 'Colaborador'
+  // PF × PJ pelo DOCUMENTO, nunca pelo tipo de parceiro: o Fornecedor também pode ser PF (CPF, #1022).
+  // O agregador `/partners` não devolve `personType` — 11 dígitos = CPF; o resto (CNPJ, inclusive
+  // alfanumérico) = PJ.
+  const isPF = p.document !== undefined && /^\d{11}$/.test(p.document)
   return {
     id: p.id,
     name: p.name,
@@ -71,9 +75,11 @@ const toClientPartner = (p: SearchedPartner): PartnerSearchResult => {
   }
 }
 
-export const createPartnersRepository = (deps: Readonly<{
-  searchPartnersFn: SearchPartnersFn
-}>): PartnersRepository => ({
+export const createPartnersRepository = (
+  deps: Readonly<{
+    searchPartnersFn: SearchPartnersFn
+  }>,
+): PartnersRepository => ({
   search: async (query, kind) => {
     const res = await deps.searchPartnersFn({ data: { query: query || undefined, kind } })
     if (!res.ok) return err(res.error)

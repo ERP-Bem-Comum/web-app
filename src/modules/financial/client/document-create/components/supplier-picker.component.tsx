@@ -70,7 +70,7 @@ export function SupplierPicker(props: SupplierPickerProps): ReactNode {
           ) : null}
           {selected !== null ? (
             <span className={partnerBadge[selected.kind]}>
-              {isPartnerPF(selected.kind)
+              {isPartnerPF(selected.subtitle)
                 ? t('financial.create.partner.pf')
                 : t('financial.create.partner.pj')}
               {' · '}
@@ -84,7 +84,7 @@ export function SupplierPicker(props: SupplierPickerProps): ReactNode {
         {selected !== null ? (
           <span className={heroCnpj}>
             {`${
-              isPartnerPF(selected.kind)
+              isPartnerPF(selected.subtitle)
                 ? t('financial.create.partner.cpfLabel')
                 : t('financial.create.partner.cnpjLabel')
             } ${maskDocument(selected.subtitle)}`}

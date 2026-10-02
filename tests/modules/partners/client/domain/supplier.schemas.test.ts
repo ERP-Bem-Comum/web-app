@@ -38,18 +38,24 @@ describe('SupplierListFiltersSchema', () => {
 })
 
 const validForm = {
+  personType: 'PJ',
   name: 'Acme',
   corporateName: 'Acme LTDA',
   fantasyName: 'Acme',
   email: 'contato@acme.dev',
-  cnpj: '12.345.678/0001-90',
+  document: '12.345.678/0001-90',
   serviceCategory: 'Limpeza',
 }
+
+// CPF válido (DV correto) e o mesmo com o último DV trocado.
+const VALID_CPF = '529.982.247-25'
+const pfForm = { ...validForm, personType: 'PF', name: 'Maria da Silva', document: VALID_CPF }
 
 describe('SupplierFormSchema', () => {
   it('aceita dados básicos válidos e normaliza o CNPJ para 14 dígitos', () => {
     const r = SupplierFormSchema.parse(validForm)
-    assert.equal(r.cnpj, '12345678000190')
+    assert.equal(r.document, '12345678000190')
+    assert.equal(r.corporateName, 'Acme LTDA')
     assert.equal(r.bankAccount, null)
     assert.equal(r.pixKey, null)
   })
@@ -59,7 +65,48 @@ describe('SupplierFormSchema', () => {
   })
 
   it('rejeita CNPJ com menos de 14 dígitos', () => {
-    assert.equal(SupplierFormSchema.safeParse({ ...validForm, cnpj: '123' }).success, false)
+    assert.equal(SupplierFormSchema.safeParse({ ...validForm, document: '123' }).success, false)
+  })
+
+  it('PJ exige Razão Social e Nome Fantasia', () => {
+    const r = SupplierFormSchema.safeParse({ ...validForm, corporateName: '', fantasyName: ' ' })
+    assert.equal(r.success, false)
+    const paths = r.success ? [] : r.error.issues.map((i) => i.path.join('.'))
+    assert.deepEqual(paths.sort(), ['corporateName', 'fantasyName'])
+  })
+
+  it('PJ recusa um CPF no lugar do CNPJ', () => {
+    assert.equal(SupplierFormSchema.safeParse({ ...validForm, document: VALID_CPF }).success, false)
+  })
+})
+
+describe('SupplierFormSchema — pessoa física (#1022)', () => {
+  it('aceita CPF válido sem Razão Social/Nome Fantasia e normaliza para 11 dígitos', () => {
+    const r = SupplierFormSchema.parse({ ...pfForm, corporateName: '', fantasyName: '' })
+    assert.equal(r.document, '52998224725')
+    assert.equal(r.personType, 'PF')
+  })
+
+  it('zera Razão Social/Nome Fantasia que a tela guardou — PF nunca os envia', () => {
+    const r = SupplierFormSchema.parse(pfForm)
+    assert.equal(r.corporateName, null)
+    assert.equal(r.fantasyName, null)
+  })
+
+  it('recusa CPF com dígito verificador errado', () => {
+    const r = SupplierFormSchema.safeParse({ ...pfForm, document: '529.982.247-24' })
+    assert.equal(r.success, false)
+    assert.deepEqual(r.success ? [] : r.error.issues.map((i) => i.path.join('.')), ['document'])
+  })
+
+  it('recusa 12 e 13 caracteres e CPF com todos os dígitos iguais', () => {
+    for (const document of ['529982247251', '5299822472512', '111.111.111-11']) {
+      assert.equal(SupplierFormSchema.safeParse({ ...pfForm, document }).success, false, document)
+    }
+  })
+
+  it('recusa um CNPJ no lugar do CPF', () => {
+    assert.equal(SupplierFormSchema.safeParse({ ...pfForm, document: '12.345.678/0001-90' }).success, false)
   })
 
   it('rejeita campo obrigatório vazio (name)', () => {

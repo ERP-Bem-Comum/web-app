@@ -63,7 +63,7 @@ describe('useSupplierFormController — avaliação no submit', () => {
     r.setField('corporateName', 'Acme LTDA')
     r.setField('fantasyName', 'Acme')
     r.setField('email', 'c@acme.dev')
-    r.setField('cnpj', '12345678000190')
+    r.setField('document', '12345678000190')
     r.setField('serviceCategory', 'Limpeza')
   }
 

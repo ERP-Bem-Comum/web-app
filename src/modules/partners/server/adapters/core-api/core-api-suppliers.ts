@@ -2,7 +2,7 @@
  * Cliente HTTP do core-api para Suppliers — chama `/api/v1/suppliers/*`. NUNCA lança (tudo é Result).
  * Server-only (adapters). Anti-corruption layer: paginação legada, `active` boolean, create 201+Location,
  * deactivate/reactivate/PUT SEM body (200 vazio → refetch do detalhe). Shape confirmado contra
- * `supplier-schemas.ts`. CNPJ normalizado para 14 dígitos antes de enviar (o core-api exige `length(14)`).
+ * `supplier-schemas.ts`. Documento (CPF ou CNPJ, #1022) normalizado — sem máscara — antes de enviar.
  */
 import { ok, err, isErr, type Result } from '#shared/primitives/result.ts'
 import type { HttpError } from '#shared/http/http-error.types.ts'
@@ -20,6 +20,7 @@ import type {
 } from '#modules/partners/server/domain/supplier/supplier.io.ts'
 import type {
   ActivationStatus,
+  PersonType,
   ServiceRating,
 } from '#modules/partners/server/domain/supplier/supplier.types.ts'
 import {
@@ -29,10 +30,19 @@ import {
   type CoreApiSupplierItem,
 } from './supplier.schema.ts'
 
-const SLUG_TO_ERROR: Partial<Record<string, PartnersError>> = {
+// Exportado p/ teste (supplier-individual.test), no padrão do `core-api-acts`.
+export const SLUG_TO_ERROR: Partial<Record<string, PartnersError>> = {
   unauthorized: 'unauthorized',
   forbidden: 'forbidden',
   'invalid-service-category': 'invalid-service-category',
+  // Fornecedor PF (#1022): documento que não é CPF nem CNPJ válido (422) e documento já cadastrado (409).
+  'invalid-supplier-document': 'invalid-supplier-document',
+  'register-supplier-document-duplicate': 'supplier-document-duplicate',
+  'edit-supplier-document-duplicate': 'supplier-document-duplicate',
+  'supplier-document-duplicate': 'supplier-document-duplicate',
+  // PF com razão social/nome fantasia (422). A UI não envia esses campos na PF (defesa).
+  'supplier-corporate-name-not-allowed-for-pf': 'validation',
+  'supplier-fantasy-name-not-allowed-for-pf': 'validation',
   // Avaliação de serviço (§1.6): nível fora do enum → 422. A UI já restringe ao enum (defesa).
   'invalid-service-rating': 'validation',
 }
@@ -83,17 +93,26 @@ const mapResponseError = async (response: Response): Promise<PartnersError> => {
 
 const activationFromApi = (active: boolean): ActivationStatus => (active ? 'active' : 'inactive')
 
-const itemToModel = (s: CoreApiSupplierItem): SupplierListItem => ({
-  id: s.id,
-  name: s.name,
-  email: s.email,
-  cnpj: s.cnpj,
-  corporateName: s.corporateName,
-  fantasyName: s.fantasyName,
-  serviceCategory: s.serviceCategory,
-  activation: activationFromApi(s.active),
-  contractCount: s.contractCount,
-})
+// Sem `personType` (core-api anterior à #1022), o tipo sai do documento: 11 dígitos = CPF. Nunca do
+// tipo de parceiro.
+const personTypeOf = (document: string): PersonType => (/^\d{11}$/.test(document) ? 'PF' : 'PJ')
+
+const itemToModel = (s: CoreApiSupplierItem): SupplierListItem => {
+  const document = s.document ?? s.cnpj ?? ''
+  return {
+    id: s.id,
+    name: s.name,
+    email: s.email,
+    document,
+    personType: s.personType ?? personTypeOf(document),
+    // `""` também é ausência (o core-api trata branco como ausente).
+    corporateName: s.corporateName === '' ? null : s.corporateName,
+    fantasyName: s.fantasyName === '' ? null : s.fantasyName,
+    serviceCategory: s.serviceCategory,
+    activation: activationFromApi(s.active),
+    contractCount: s.contractCount,
+  }
+}
 
 // Exportado p/ teste (supplier-rating.test): leitura tolerante da avaliação (§1.6, D2).
 export const detailToModel = (raw: unknown): Result<SupplierDetail, PartnersError> => {
@@ -130,12 +149,13 @@ const buildListQuery = (input: ListSuppliersInput): string => {
   return p.toString()
 }
 
-// Normaliza o CNPJ (14 dígitos) no corpo de escrita; demais campos passam direto. Avaliação de
+// Normaliza o documento (CPF 11 / CNPJ 14, sem máscara) no corpo de escrita e o envia como `document` —
+// nunca pelo alias deprecated `cnpj` (#1022). Na PF, razão social/nome fantasia vão `null`. Avaliação de
 // serviço (§1.6): serviceRating/ratingComment vão como null quando sem avaliação. Exportado p/ teste.
 export const toWriteBody = (input: CreateSupplierInput): Record<string, unknown> => ({
   name: input.name,
   email: input.email,
-  cnpj: normalizeCnpj(input.cnpj),
+  document: normalizeCnpj(input.document),
   corporateName: input.corporateName,
   fantasyName: input.fantasyName,
   serviceCategory: input.serviceCategory,

@@ -151,11 +151,12 @@ function DetailReady(props: DetailReadyProps): ReactNode {
   const [confirming, setConfirming] = useState(false)
   const [pendingEdit, setPendingEdit] = useState<SupplierFormValues | null>(null)
   const initial: SupplierFormValues = {
+    personType: supplier.personType,
     name: supplier.name,
     corporateName: supplier.corporateName,
     fantasyName: supplier.fantasyName,
     email: supplier.email,
-    cnpj: supplier.cnpj,
+    document: supplier.document,
     serviceCategory: supplier.serviceCategory,
     bankAccount: supplier.bankAccount,
     pixKey: supplier.pixKey,
@@ -181,7 +182,12 @@ function DetailReady(props: DetailReadyProps): ReactNode {
       <div className={page}>
         <div className={scrollArea}>
           <div className={content}>
-            <DetailHead title={supplier.name} subtitle={supplier.fantasyName} onBack={props.onBack} />
+            <DetailHead
+              title={supplier.name}
+              // PF não tem nome fantasia (#1022): o subtítulo diz o tipo de pessoa.
+              subtitle={supplier.fantasyName ?? t('partners.suppliers.personType.PF')}
+              onBack={props.onBack}
+            />
 
             {errorTag !== null ? (
               <div className={errorBanner} role="alert">
@@ -193,7 +199,7 @@ function DetailReady(props: DetailReadyProps): ReactNode {
               controller={c}
               editing={editing}
               canViewSensitive={props.canWrite}
-              cnpjDisabled={!props.canViewSensitive}
+              documentLocked={!props.canViewSensitive}
               activation={supplier.activation}
               categories={props.categories}
             />

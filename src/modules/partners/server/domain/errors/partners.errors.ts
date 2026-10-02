@@ -21,6 +21,8 @@ export type PartnersError =
   | 'autocadastro-cpf-mismatch' // 400 collaborator-autocadastro-cpf-mismatch — token preservado
   // fornecedores
   | 'invalid-service-category' // categoria fora do catálogo (39)
+  | 'invalid-supplier-document' // 422 — não é CPF nem CNPJ válido (#1022)
+  | 'supplier-document-duplicate' // 409 — CPF/CNPJ já cadastrado em outro fornecedor (#1022)
   // acordos (ACT)
   | 'act-number-duplicate' // 409 register/edit/act-number-duplicate
   | 'invalid-cnpj' // 422 invalid-cnpj
