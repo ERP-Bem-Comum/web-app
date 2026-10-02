@@ -30,7 +30,7 @@ import { exportTrigger } from '../components/supplier-filters.css.ts'
 import { PartnersExportDropdown } from '#modules/partners/client/shared/partners-export-dropdown.component.tsx'
 import { PartnersPrintable } from '#modules/partners/client/shared/partners-printable.component.tsx'
 import { contentWrap, contentWrapPrintHidden } from '#modules/partners/client/shared/export-print.css.ts'
-import { cnpjCell } from './supplier-list.css.ts'
+import { cnpjCell, personTag } from './supplier-list.css.ts'
 
 const t = createTranslator(ptBR)
 const routeApi = getRouteApi('/_authenticated/parceiros/fornecedores/')
@@ -40,12 +40,6 @@ const AVATAR = {
   fg: vars.color.partnerType.supplier.text,
 }
 const GRID_TEMPLATE = 'minmax(220px,1.8fr) minmax(200px,1.6fr) 1.1fr .9fr 1fr'
-
-/** CNPJ (14 dígitos) → máscara; entrada inesperada volta crua. */
-function formatCnpj(digits: string): string {
-  if (digits.length !== 14) return digits
-  return `${digits.slice(0, 2)}.${digits.slice(2, 5)}.${digits.slice(5, 8)}/${digits.slice(8, 12)}-${digits.slice(12)}`
-}
 
 function statusFromActive(active: boolean | undefined): StatusFilter {
   if (active === undefined) return 'all'
@@ -84,7 +78,12 @@ export function SupplierListPage(): ReactNode {
     {
       key: 'cnpj',
       header: t('partners.suppliers.columns.cnpj'),
-      cell: (r) => <span className={cnpjCell}>{formatCnpj(r.cnpj)}</span>,
+      cell: (r) => (
+        <span className={cnpjCell}>
+          <span className={personTag}>{t(`partners.suppliers.personTypeShort.${r.personType}`)}</span>
+          {r.document}
+        </span>
+      ),
     },
     {
       key: 'contracts',
@@ -117,7 +116,7 @@ export function SupplierListPage(): ReactNode {
   const exportRows: readonly (readonly string[])[] = rows.map((r) => [
     r.name,
     r.email,
-    formatCnpj(r.cnpj),
+    r.document,
     t(`partners.suppliers.status.${r.activation}`),
   ])
 

@@ -6,6 +6,7 @@ import type {
   SupplierListResponse,
 } from '#modules/partners/client/data/model/supplier.model.ts'
 import type { SupplierRow } from '#modules/partners/client/domain/supplier.types.ts'
+import { maskCnpj, maskCpf } from '#shared/document/cnpj.ts'
 
 import { supplierListQueryOptions } from './supplier-list.query.ts'
 
@@ -15,11 +16,19 @@ export type SupplierListState =
   | Readonly<{ status: 'error'; errorTag: string }>
   | Readonly<{ status: 'ready'; rows: readonly SupplierRow[]; meta: SupplierListResponse['meta'] }>
 
+/** CPF (11 dígitos) ou CNPJ (14) mascarado pelo tamanho; formato inesperado volta cru (não inventa). */
+export function formatSupplierDocument(document: string): string {
+  if (/^\d{11}$/.test(document)) return maskCpf(document)
+  if (document.length === 14) return maskCnpj(document)
+  return document
+}
+
 export function mapItemToRow(item: SupplierListItem): SupplierRow {
   return {
     id: item.id,
     name: item.name,
-    cnpj: item.cnpj,
+    document: formatSupplierDocument(item.document),
+    personType: item.personType,
     email: item.email,
     serviceCategory: item.serviceCategory,
     activation: item.activation,

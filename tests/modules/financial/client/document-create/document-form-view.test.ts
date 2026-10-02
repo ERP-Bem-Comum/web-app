@@ -541,12 +541,13 @@ describe('partnerKindTag', () => {
   })
 })
 
-describe('isPartnerPF / maskDocument (favorecido PF=colaborador exibe CPF; PJ exibe CNPJ)', () => {
-  it('colaborador é PF; demais tipos são PJ', () => {
-    assert.equal(isPartnerPF('collaborator'), true)
-    assert.equal(isPartnerPF('supplier'), false)
-    assert.equal(isPartnerPF('financier'), false)
-    assert.equal(isPartnerPF('act'), false)
+describe('isPartnerPF / maskDocument (PF/PJ pelo DOCUMENTO — CPF exibe CPF; CNPJ exibe CNPJ)', () => {
+  it('CPF (11 dígitos) é PF — inclusive fornecedor PF (#1022); CNPJ é PJ', () => {
+    assert.equal(isPartnerPF('14396412002'), true)
+    assert.equal(isPartnerPF('143.964.120-02'), true)
+    assert.equal(isPartnerPF('37364305000192'), false)
+    assert.equal(isPartnerPF('12ABC34501DE35'), false) // CNPJ alfanumérico
+    assert.equal(isPartnerPF(''), false)
   })
   it('mascara CPF (11) e CNPJ (14) conforme o conteúdo', () => {
     assert.equal(maskDocument('14396412002'), '143.964.120-02')

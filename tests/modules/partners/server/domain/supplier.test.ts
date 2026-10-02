@@ -19,7 +19,7 @@ const makeInput = (): SupplierInput => {
   return {
     name: 'Fornecedor X',
     email: email.value,
-    cnpj: cnpj.value,
+    document: cnpj.value,
     corporateName: 'Fornecedor X LTDA',
     fantasyName: 'Fornecedor X',
     serviceCategory: 'LIMPEZA',

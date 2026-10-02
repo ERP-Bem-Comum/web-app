@@ -1,6 +1,6 @@
 /**
  * Zod dos responses do core-api `/api/v1/suppliers/*` (boundary §VI). Shape alinhado ao contrato REAL
- * (`supplier-schemas.ts`): list = detail completo; `active` boolean (derivado de status); bankAccount/pixKey
+ * (`supplier-schemas.ts`): list = detail completo; documento CPF ou CNPJ (#1022); `active` boolean (derivado de status); bankAccount/pixKey
  * objeto ou null; `pixKey.keyType` enum com `random-key`. `.strip()` descarta extras (legacyId/createdAt/updatedAt).
  */
 import * as z from 'zod'
@@ -21,9 +21,15 @@ export const CoreApiSupplierItemSchema = z.object({
   id: z.string().trim(),
   name: z.string().trim(),
   email: z.string().trim(),
-  cnpj: z.string().trim(),
-  corporateName: z.string().trim(),
-  fantasyName: z.string().trim(),
+  // Fornecedor PF (#1022): `document` (CPF ou CNPJ) + `personType` derivado pelo core-api. `cnpj` é o
+  // alias DEPRECATED que some em um ciclo — os três são lidos de forma TOLERANTE e resolvidos no mapper
+  // (`document ?? cnpj`; sem `personType`, deriva do tamanho), para não depender da ordem dos deploys.
+  document: z.string().trim().optional(),
+  personType: z.enum(['PF', 'PJ']).optional(),
+  cnpj: z.string().trim().optional(),
+  // `null` na PF: o campo não existe para pessoa física.
+  corporateName: z.string().trim().nullable(),
+  fantasyName: z.string().trim().nullable(),
   serviceCategory: z.string().trim(),
   bankAccount: BankAccountDtoSchema.nullable(),
   pixKey: PixKeyDtoSchema.nullable(),
