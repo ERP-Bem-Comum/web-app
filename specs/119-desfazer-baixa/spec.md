@@ -28,23 +28,22 @@ retroativa (`PaymentDateModal`). Depois disso **não existe volta**: um título 
    Um título que saiu pela remessa e voltasse para Aprovado ficaria elegível a uma **nova remessa**, com risco
    de pagamento em dobro.
 
-2. **Título conciliado não desfaz a baixa direto.** Primeiro se desfaz a conciliação (já existe), depois a
-   baixa. Vale para Conciliado e Parcialmente conciliado.
+2. **Só títulos com status Pago.** Conciliado e Parcialmente conciliado ficam **fora do escopo**: desfazer a
+   conciliação é um evento que já existe no módulo de Conciliação (decisão da P.O., 03/10).
 3. **Motivo obrigatório**, registrado na aba **Histórico** do documento (quem, quando, por quê).
 4. **Permissão:** a mesma da baixa manual (`payable:approve`).
 5. Ao desfazer, a **data de pagamento some** do título. A coluna Pagamento volta a "—".
 
 ## Escopo (front)
 
-| #   | Entrega                                                                                                                                            |
-| --- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1   | Item **"Desfazer baixa"** no "Mudar Status", habilitado com 1+ títulos **Pago** selecionados                                                       |
-| 2   | Títulos Conciliado/Parcialmente conciliado na seleção: o item aparece **visivelmente desativado**, com o motivo ("Desfaça a conciliação primeiro") |
-| 3   | Modal **"Desfazer baixa"**: lista os títulos, campo **Motivo** obrigatório, aviso de que o título volta ao status anterior                         |
-| 4   | Cadeia BFF: server fn → use-case → adapter `POST .../undo-manual-payment` com `{ version, reason }`, por título                                    |
-| 5   | Erros do backend mapeados para mensagens em PT (título não está pago, título conciliado, conflito de versão)                                       |
-| 6   | Aba **Histórico**: rótulo do evento novo ("Baixa desfeita", com o motivo)                                                                          |
-| 7   | Sucesso invalida a lista e os contadores, como a baixa faz hoje                                                                                    |
+| #   | Entrega                                                                                                                    |
+| --- | -------------------------------------------------------------------------------------------------------------------------- |
+| 1   | Item **"Desfazer baixa"** no "Mudar Status", habilitado com 1+ títulos **Pago** selecionados                               |
+| 2   | Modal **"Desfazer baixa"**: lista os títulos, campo **Motivo** obrigatório, aviso de que o título volta ao status anterior |
+| 3   | Cadeia BFF: server fn → use-case → adapter `POST .../undo-manual-payment` com `{ version, reason }`, por título            |
+| 4   | Erros do backend mapeados para mensagens em PT (título não está pago, conflito de versão)                                  |
+| 5   | Aba **Histórico**: rótulo do evento novo ("Baixa desfeita", com o motivo)                                                  |
+| 6   | Sucesso invalida a lista e os contadores, como a baixa faz hoje                                                            |
 
 ## Comportamento
 
@@ -57,8 +56,8 @@ retroativa (`PaymentDateModal`). Depois disso **não existe volta**: um título 
   Aprovar e no "Voltar para edição".
 - **Sem lembrete de refazer a baixa.** O modal não orienta a usar "Marcar como pago" depois: dar a nova baixa
   é responsabilidade de quem desfez (decisão da P.O., 02/10).
-- **Seleção misturada:** só os títulos Pagos entram. Os conciliados aparecem no modal como "não entram: desfaça
-  a conciliação primeiro". Os de outros status são ignorados.
+- **Seleção misturada:** só os títulos **Pago** entram; os de qualquer outro status, inclusive os conciliados,
+  são ignorados, sem aviso próprio. O item fica desativado quando a seleção não tem nenhum título Pago.
 
 ## Desenho da tela
 
@@ -87,7 +86,7 @@ retroativa (`PaymentDateModal`). Depois disso **não existe volta**: um título 
 - **Rota:** `POST /financial/documents/:id/payables/:payableId/undo-manual-payment`
 - **Body:** `{ version: number, reason: string }` (optimistic lock como na baixa).
 - **Efeito:** `Pago` → status anterior à baixa (`Approved` ou `Transmitted`); `paidAt` → `null`; evento na trilha.
-- **Erros esperados:** `payable-not-paid`, `payable-reconciled`, conflito de versão.
+- **Erros esperados:** `payable-not-paid` (inclui o título conciliado, que não está mais Pago) e conflito de versão.
 - **A confirmar quando a #61 sair:** nomes reais dos slugs, nome do evento na trilha e o status de retorno
   na resposta. A spec se ajusta ao código mergeado, não à proposta.
 
@@ -95,25 +94,25 @@ retroativa (`PaymentDateModal`). Depois disso **não existe volta**: um título 
 
 ## Onde mexe (front)
 
-| Camada     | Arquivo                                                                                                                                                                             |
-| ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| View-model | `contas-a-pagar-list/contas-a-pagar.view-model.ts`: alvo `undoPayment` no `deriveTitleActionTargets` (por título, sem dedup por documento) e contagem de bloqueados por conciliação |
-| View       | `components/status-actions.component.tsx` (item novo) e um modal novo de motivo, no molde do `payment-date-modal.component.tsx`                                                     |
-| Binding    | `bulk-status.binding.ts`: o comando novo, como `undoApproval`/`markPaid`                                                                                                            |
-| BFF        | server fn + use-case + `core-api-financial.ts` (rota e `SLUG_TO_ERROR`)                                                                                                             |
-| Histórico  | `document-timeline.view-model.ts`: rótulo do evento novo                                                                                                                            |
-| i18n       | `catalog.pt-BR.ts`                                                                                                                                                                  |
+| Camada     | Arquivo                                                                                                                                                     |
+| ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| View-model | `contas-a-pagar-list/contas-a-pagar.view-model.ts`: alvo `undoPayment` no `deriveTitleActionTargets` (por título, sem dedup por documento) (só status Pago) |
+| View       | `components/status-actions.component.tsx` (item novo) e um modal novo de motivo, no molde do `payment-date-modal.component.tsx`                             |
+| Binding    | `bulk-status.binding.ts`: o comando novo, como `undoApproval`/`markPaid`                                                                                    |
+| BFF        | server fn + use-case + `core-api-financial.ts` (rota e `SLUG_TO_ERROR`)                                                                                     |
+| Histórico  | `document-timeline.view-model.ts`: rótulo do evento novo                                                                                                    |
+| i18n       | `catalog.pt-BR.ts`                                                                                                                                          |
 
 ## Fora de escopo
 
 - **Corrigir a data sem desfazer** (alternativa B).
 - **Desfazer pagamento automático** (retorno do banco, #690): não existe ainda.
-- **Desfazer a conciliação junto** num passo só: a P.O. confirmou que a conciliação se desfaz antes, separada.
+- **Títulos Conciliado e Parcialmente conciliado:** desfazer a conciliação já existe no módulo de Conciliação.
 
 ## Testes (planejados)
 
-- **View-model:** `undoPayment` só com títulos Pago; Conciliado entra na contagem de bloqueados; mistura de
-  status na seleção.
+- **View-model:** `undoPayment` só com títulos Pago; Conciliado e demais status ficam de fora; seleção sem
+  nenhum título Pago desativa o item.
 - **Modal:** motivo obrigatório; botão desativado sem motivo; lista os títulos com a data de pagamento.
 - **BFF:** corpo com `version` e `reason`; mapeamento dos erros.
 - **Histórico:** rótulo do evento novo.
