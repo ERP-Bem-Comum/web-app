@@ -34,6 +34,21 @@ retroativa (`PaymentDateModal`). Depois disso **não existe volta**: um título 
 4. **Permissão:** a mesma da baixa manual (`payable:approve`).
 5. Ao desfazer, a **data de pagamento some** do título. A coluna Pagamento volta a "—".
 
+## Ciclo de desfazimento (P.O., 03/10)
+
+Cada etapa tem rotina e evento próprios de desfazimento, aplicados **em sequência**:
+
+```
+Aprovado / Transmitido ──baixa──▶ Pago ──conciliação──▶ Conciliado
+          ◀── desfazer a baixa ───      ◀── desfazer a conciliação ──
+          (esta spec, core-api#61)      (já existe, módulo de Conciliação)
+```
+
+- Um título só chega a **Conciliado** se estiver **Pago** antes: é assim que ele aparece na Conciliação.
+- **Desfazer a conciliação** (Conciliado → Pago) já existe no módulo de Conciliação.
+- **Desfazer a baixa** (Pago → status anterior) é a rotina nova desta spec, com evento próprio.
+- Para desfazer as duas, a ordem é: primeiro a conciliação, depois a baixa.
+
 ## Escopo (front)
 
 | #   | Entrega                                                                                                                    |
