@@ -22,15 +22,15 @@ banco e PIX **na criação**. O `PUT /collaborators/:id` os exclui (`updateColla
 
 ## Escopo (front)
 
-| #   | Entrega                                                                                                                                                                         |
-| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1   | No modo Editar, **Banco, Agência-DV, Conta, DV, Tipo de chave PIX e Chave PIX** deixam de ser somente leitura                                                                   |
-| 2   | **Banco pelo seletor de códigos** (`BankSelect`), o mesmo do cadastro do colaborador e do Fornecedor. A remessa precisa do código de 3 dígitos, e texto livre não serve ao CNAB |
-| 3   | Máscara da agência e chave PIX derivada do dado correspondente (CPF/e-mail/telefone), como no cadastro                                                                          |
-| 4   | Validação "tudo ou nada" do grupo bancário (banco parcial bloqueia o salvar), como no cadastro                                                                                  |
-| 5   | O salvar envia banco e PIX pela rota que a #1029 definir (no `PUT` cadastral ou numa rota própria)                                                                              |
-| 6   | Cancelar a edição devolve os dados bancários originais                                                                                                                          |
-| 7   | Erros do backend (dado bancário ou PIX inválido) em PT                                                                                                                          |
+| #   | Entrega                                                                                                                                                                                            |
+| --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | No modo Editar, **Banco, Agência-DV, Conta, DV, Tipo de chave PIX e Chave PIX** deixam de ser somente leitura                                                                                      |
+| 2   | **Banco pelo seletor de códigos** (`BankSelect`), o mesmo do cadastro do colaborador e do Fornecedor. A remessa precisa do código de 3 dígitos, e texto livre não serve ao CNAB                    |
+| 3   | Máscara da agência. **Ao escolher a chave PIX do tipo CPF, o campo da chave mostra o CPF do colaborador** (P.O., 05/10); e-mail e telefone também derivam do dado correspondente, como no cadastro |
+| 4   | Validação "tudo ou nada" do grupo bancário (banco parcial bloqueia o salvar), como no cadastro                                                                                                     |
+| 5   | O salvar envia banco e PIX pela rota que a #1029 definir (no `PUT` cadastral ou numa rota própria)                                                                                                 |
+| 6   | Cancelar a edição devolve os dados bancários originais                                                                                                                                             |
+| 7   | Erros do backend (dado bancário ou PIX inválido) em PT                                                                                                                                             |
 
 ## Comportamento
 
@@ -57,20 +57,19 @@ o dado bancário sem avisar, e a tela pareceria ter salvado.
 
 ## Fora de escopo
 
-- **CPF:** ver o achado abaixo.
+- **CPF:** travado no detalhe (web-app#418).
 - **Campos pessoais pós-cadastro:** core-api#438.
 - **Território (UF/município):** segue somente leitura.
 
-## Achado: o CPF hoje é editável no modo Editar
+## Achado resolvido: CPF travado
 
-O detalhe libera o campo **CPF** no modo Editar para quem tem `collaborator:write`
-(`collaborator-detail-content.component.tsx:207`). O backend só aceita a troca de quem também tem
-`collaborator:edit-sensitive`, e para os outros devolve erro ao salvar. A P.O. disse em 05/10 que o CPF
-**não deve ser editável**. **Decisão pendente:** travar o CPF no front para todos. É um ajuste independente
-desta spec, só front, que pode sair antes.
+O detalhe liberava o CPF no modo Editar para quem tem `collaborator:write`. A P.O. decidiu em 05/10 que o CPF
+**não se edita depois do cadastro**, para ninguém. Corrigido à parte, só no front, no **web-app#418**. Com
+isso, a chave PIX do tipo CPF sempre reflete o CPF do cadastro.
 
 ## Testes (planejados)
 
-- **Controller:** banco e PIX entram no submit; grupo bancário parcial bloqueia; cancelar restaura.
+- **Controller:** banco e PIX entram no submit; grupo bancário parcial bloqueia; cancelar restaura; escolher
+  a chave PIX do tipo CPF preenche a chave com o CPF do colaborador.
 - **View:** no modo Editar, os campos bancários habilitam; fora dele, ficam somente leitura.
 - **BFF:** o corpo de escrita leva `bankAccount`/`pixKey`.
