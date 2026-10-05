@@ -897,6 +897,7 @@ export const ptBR: Catalog = {
   'partners.collaborators.form.name': 'Nome Completo',
   'partners.collaborators.form.email': 'Email',
   'partners.collaborators.form.cpf': 'CPF',
+  'partners.collaborators.form.cpfLocked': 'O CPF não pode ser alterado depois do cadastro.',
   'partners.collaborators.form.occupationArea': 'Área de Atuação',
   'partners.collaborators.form.role': 'Função',
   'partners.collaborators.form.startOfContract': 'Início de Contrato',
