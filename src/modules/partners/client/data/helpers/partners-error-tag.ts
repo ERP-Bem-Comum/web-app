@@ -32,6 +32,10 @@ export const partnersErrorTag = (e: PartnersError): string => {
       return 'partners.error.autocadastro-cpf-mismatch'
     case 'invalid-service-category':
       return 'partners.error.invalid-service-category'
+    case 'invalid-supplier-document':
+      return 'partners.error.invalid-supplier-document'
+    case 'supplier-document-duplicate':
+      return 'partners.error.supplier-document-duplicate'
     case 'act-number-duplicate':
       return 'partners.error.act-number-duplicate'
     case 'invalid-cnpj':

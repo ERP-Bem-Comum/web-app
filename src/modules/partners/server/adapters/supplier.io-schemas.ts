@@ -33,9 +33,12 @@ export const GetSupplierInputSchema = z.object({ id: z.string().trim().min(1).ma
 export const CreateSupplierInputSchema = z.object({
   name: z.string().trim().min(1).max(200),
   email: z.email(),
-  cnpj: z.string().trim().min(14).max(18), // aceita máscara; o client normaliza p/ 14 dígitos
-  corporateName: z.string().trim().min(1).max(200),
-  fantasyName: z.string().trim().min(1).max(200),
+  // CPF (11) ou CNPJ (14), com ou sem máscara (até 18 = CNPJ mascarado); o client do core-api normaliza.
+  // A escolha CPF × CNPJ e o DV são do use-case (#1022).
+  document: z.string().trim().min(11).max(18),
+  // `null` na pessoa física; a coerência com o documento é do use-case.
+  corporateName: z.string().trim().min(1).max(200).nullable(),
+  fantasyName: z.string().trim().min(1).max(200).nullable(),
   serviceCategory: z.string().trim().min(1).max(80),
   bankAccount: BankAccountSchema.nullable().default(null),
   pixKey: PixKeySchema.nullable().default(null),
@@ -53,12 +56,12 @@ export const DeactivateSupplierInputSchema = z.object({ id: z.string().trim().mi
 export const ReactivateSupplierInputSchema = z.object({ id: z.string().trim().min(1).max(64) })
 
 type AssertEqual<A, B> = [A] extends [B] ? true : never
- 
+
 const _g_list: AssertEqual<z.infer<typeof ListSuppliersInputSchema>, D.ListSuppliersInput> = true
 const _g_get: AssertEqual<z.infer<typeof GetSupplierInputSchema>, D.GetSupplierInput> = true
 const _g_create: AssertEqual<z.infer<typeof CreateSupplierInputSchema>, D.CreateSupplierInput> = true
 const _g_update: AssertEqual<z.infer<typeof UpdateSupplierInputSchema>, D.UpdateSupplierInput> = true
 const _g_deact: AssertEqual<z.infer<typeof DeactivateSupplierInputSchema>, D.DeactivateSupplierInput> = true
 const _g_react: AssertEqual<z.infer<typeof ReactivateSupplierInputSchema>, D.ReactivateSupplierInput> = true
- 
+
 void [_g_list, _g_get, _g_create, _g_update, _g_deact, _g_react]

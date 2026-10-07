@@ -2,6 +2,7 @@ import { describe, it } from 'node:test'
 import assert from 'node:assert/strict'
 
 import {
+  formatSupplierDocument,
   mapItemToRow,
   mapResponseToRows,
   totalPages,
@@ -12,7 +13,8 @@ const item: SupplierListItem = {
   id: '1',
   name: 'Acme',
   email: 'c@acme.dev',
-  cnpj: '12345678000190',
+  document: '12345678000190',
+  personType: 'PJ',
   corporateName: 'Acme LTDA',
   fantasyName: 'Acme',
   serviceCategory: 'Limpeza',
@@ -20,13 +22,33 @@ const item: SupplierListItem = {
   contractCount: 0,
 }
 
+describe('supplier-list.view-model — pessoa física (#1022)', () => {
+  it('fornecedor PF: CPF mascarado como CPF (não como CNPJ) e etiqueta PF', () => {
+    const row = mapItemToRow({
+      ...item,
+      document: '52998224725',
+      personType: 'PF',
+      corporateName: null,
+      fantasyName: null,
+    })
+    assert.equal(row.document, '529.982.247-25')
+    assert.equal(row.personType, 'PF')
+  })
+
+  it('formatSupplierDocument: CNPJ alfanumérico mascarado; formato inesperado volta cru', () => {
+    assert.equal(formatSupplierDocument('12ABC34501DE35'), '12.ABC.345/01DE-35')
+    assert.equal(formatSupplierDocument('123'), '123')
+  })
+})
+
 describe('supplier-list.view-model', () => {
-  it('mapItemToRow projeta só os campos da linha', () => {
+  it('mapItemToRow projeta só os campos da linha (documento já mascarado)', () => {
     const row = mapItemToRow(item)
     assert.deepEqual(row, {
       id: '1',
       name: 'Acme',
-      cnpj: '12345678000190',
+      document: '12.345.678/0001-90',
+      personType: 'PJ',
       email: 'c@acme.dev',
       serviceCategory: 'Limpeza',
       activation: 'active',

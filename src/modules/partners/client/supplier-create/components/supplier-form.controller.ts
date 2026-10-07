@@ -9,6 +9,7 @@ import { toBankCode } from '#shared/banking/febraban-banks.ts'
 import {
   SupplierFormSchema,
   type SupplierFormValues,
+  type PersonType,
   type PixKeyType,
   type ServiceRating,
 } from '#modules/partners/client/data/model/supplier.model.ts'
@@ -18,10 +19,13 @@ import {
 // boundary não a deixa tocar data/.
 export type {
   SupplierFormValues,
+  PersonType,
   PixKeyType,
   ServiceRating,
 } from '#modules/partners/client/data/model/supplier.model.ts'
 export {
+  PERSON_TYPES,
+  isPersonType,
   PIX_KEY_TYPES,
   isPixKeyType,
   SERVICE_RATINGS,
@@ -29,11 +33,15 @@ export {
 } from '#modules/partners/client/data/model/supplier.model.ts'
 
 export type SupplierFormState = Readonly<{
+  // PJ | PF (#1022). Na edição, vem do `personType` do cadastro.
+  personType: PersonType
   name: string
+  // Guardados na TELA mesmo em PF (voltar para PJ os devolve); o schema os zera na PF ao enviar.
   corporateName: string
   fantasyName: string
   email: string
-  cnpj: string
+  // CPF ou CNPJ cru (sem máscara), conforme o `personType`.
+  document: string
   serviceCategory: string
   bank: string
   agency: string
@@ -49,11 +57,12 @@ export type SupplierFormState = Readonly<{
 export type SupplierFormErrors = Readonly<Record<string, boolean>>
 
 const EMPTY: SupplierFormState = {
+  personType: 'PJ',
   name: '',
   corporateName: '',
   fantasyName: '',
   email: '',
-  cnpj: '',
+  document: '',
   serviceCategory: '',
   bank: '',
   agency: '',
@@ -78,11 +87,12 @@ const normalizeBankCode = (raw: string): string => toBankCode(raw) ?? raw
 function stateFromValues(v: SupplierFormValues | undefined): SupplierFormState {
   if (v === undefined) return EMPTY
   return {
+    personType: v.personType,
     name: v.name,
-    corporateName: v.corporateName,
-    fantasyName: v.fantasyName,
+    corporateName: v.corporateName ?? '',
+    fantasyName: v.fantasyName ?? '',
     email: v.email,
-    cnpj: v.cnpj,
+    document: v.document,
     serviceCategory: v.serviceCategory,
     bank: normalizeBankCode(v.bankAccount?.bank ?? ''),
     agency: v.bankAccount?.agency ?? '',
@@ -95,10 +105,28 @@ function stateFromValues(v: SupplierFormValues | undefined): SupplierFormState {
   }
 }
 
+/**
+ * Troca PJ ↔ PF (#1022) — PURA. Um CNPJ não vira CPF: o documento é limpo. Razão Social/Nome Fantasia
+ * ficam no estado (voltar para PJ os devolve). Se a chave PIX era do documento (tipo CPF/CNPJ), o tipo
+ * acompanha a pessoa e a chave antiga — derivada do documento que sumiu — é limpa.
+ */
+export function switchPersonType(s: SupplierFormState, next: PersonType): SupplierFormState {
+  if (s.personType === next) return s
+  const pixFromDocument = s.pixKeyType === 'cpf' || s.pixKeyType === 'cnpj'
+  return {
+    ...s,
+    personType: next,
+    document: '',
+    pixKeyType: pixFromDocument ? (next === 'PF' ? 'cpf' : 'cnpj') : s.pixKeyType,
+    pixKey: pixFromDocument && s.pixKey === s.document ? '' : s.pixKey,
+  }
+}
+
 export type SupplierFormController = Readonly<{
   state: SupplierFormState
   errors: SupplierFormErrors
   setField: <K extends keyof SupplierFormState>(key: K, value: SupplierFormState[K]) => void
+  setPersonType: (next: PersonType) => void
   reset: (values?: SupplierFormValues) => void
   submit: () => void
 }>
@@ -111,6 +139,12 @@ export function useSupplierFormController(
 
   const setField = useCallback<SupplierFormController['setField']>((key, value) => {
     setState((s) => ({ ...s, [key]: value }))
+  }, [])
+
+  const setPersonType = useCallback((next: PersonType) => {
+    setState((s) => switchPersonType(s, next))
+    // Erros do documento/nomes eram da pessoa anterior.
+    setErrors({})
   }, [])
 
   const reset = useCallback((values?: SupplierFormValues) => {
@@ -126,11 +160,12 @@ export function useSupplierFormController(
     )
     const hasPix = state.pixKey.trim() !== ''
     const candidate = {
+      personType: state.personType,
       name: state.name,
       corporateName: state.corporateName,
       fantasyName: state.fantasyName,
       email: state.email,
-      cnpj: state.cnpj,
+      document: state.document,
       serviceCategory: state.serviceCategory,
       bankAccount: hasBank
         ? {
@@ -156,5 +191,5 @@ export function useSupplierFormController(
     opts.onSubmit(parsed.data)
   }, [state, opts])
 
-  return { state, errors, setField, reset, submit }
+  return { state, errors, setField, setPersonType, reset, submit }
 }

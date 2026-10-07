@@ -74,7 +74,7 @@ export function SupplierEditPage(): ReactNode {
         initial={state.initial}
         categories={categories}
         canEditSensitive={canWrite}
-        cnpjDisabled={!canEditSensitive}
+        documentLocked={!canEditSensitive}
         running={updateCommand.running}
         errorTag={updateCommand.errorTag}
         onSubmit={(values) => {

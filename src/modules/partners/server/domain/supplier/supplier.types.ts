@@ -1,12 +1,16 @@
 /**
- * Supplier (PJ) — tipos do agregado. Imutável (§IV). Status único (ativo/inativo). VOs branded para
- * CNPJ/Email. Dados bancários + PIX coesos (nomes EN alinhados ao core-api). O catálogo de categorias é
+ * Supplier — tipos do agregado. Imutável (§IV). Status único (ativo/inativo). VOs branded para
+ * documento (CPF ou CNPJ, #1022)/Email. Dados bancários + PIX coesos (nomes EN alinhados ao core-api). O catálogo de categorias é
  * uma união aberta na borda (string validada pelo core-api → `invalid-service-category`).
  */
 import type { CNPJ } from '../value-objects/cnpj.value-object.ts'
+import type { CPF } from '../value-objects/cpf.value-object.ts'
 import type { Email } from '../value-objects/email.value-object.ts'
 
 export type ActivationStatus = 'active' | 'inactive'
+
+// Tipo de pessoa (#1022) — LEITURA do documento (CPF → PF, CNPJ → PJ), nunca gravado à parte.
+export type PersonType = 'PF' | 'PJ'
 
 // Avaliação de serviço do fornecedor (§1.6, #32). Enum FIXO no front (D1) — não consumimos
 // GET /suppliers/service-ratings. `null` = sem avaliação (D2).
@@ -26,9 +30,10 @@ export type SupplierPixKey = Readonly<{ keyType: SupplierPixKeyType; key: string
 export type SupplierInput = Readonly<{
   name: string
   email: Email
-  cnpj: CNPJ
-  corporateName: string
-  fantasyName: string
+  document: CPF | CNPJ
+  // `null` na pessoa física (PF não tem razão social nem nome fantasia).
+  corporateName: string | null
+  fantasyName: string | null
   serviceCategory: string
   bankAccount: BankAccount | null
   pixKey: SupplierPixKey | null
