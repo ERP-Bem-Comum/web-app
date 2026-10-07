@@ -904,6 +904,10 @@ export const ptBR: Catalog = {
   'partners.collaborators.form.employmentRelationship': 'Vínculo Empregatício',
   'partners.collaborators.form.select': 'Selecione…',
   'partners.collaborators.form.invalid': 'Verifique este campo.',
+  'partners.collaborators.form.bankRemovalBlocked':
+    'Os dados bancários podem ser alterados, mas não apagados. Preencha banco, agência e conta.',
+  'partners.collaborators.form.pixRemovalBlocked':
+    'A chave PIX pode ser alterada, mas não apagada. Preencha a chave.',
   'partners.collaborators.form.save': 'Salvar',
   'partners.collaborators.form.cancel': 'Cancelar',
   'partners.collaborators.form.saving': 'Salvando…',
