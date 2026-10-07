@@ -94,11 +94,10 @@ export const CompleteCollaboratorRegistrationInputSchema = z.object({
   publicSectorExperienceDuration: z.string().trim().max(120).optional(),
 })
 
-// Edição dos dados cadastrais. PUT /collaborators/:id — OMITE território (#42) e banco/PIX (#40).
+// Edição dos dados cadastrais. PUT /collaborators/:id — OMITE território (#42). Banco/PIX seguem no
+// corpo (spec 120, core-api#1029): `null` MANTÉM o que está gravado; objeto valida e substitui.
 export const UpdateCollaboratorInputSchema = CreateCollaboratorInputSchema.omit({
   territory: true,
-  bankAccount: true,
-  pixKey: true,
 }).extend({
   id: z.string().trim().min(1).max(64),
 })

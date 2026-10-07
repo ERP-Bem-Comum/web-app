@@ -129,8 +129,8 @@ const detailToModel = (raw: unknown): Result<CollaboratorDetail, PartnersError> 
     leaveRenewalDuration: u(c.leaveRenewalDuration),
     publicSectorExperienceDuration: u(c.publicSectorExperienceDuration),
     territory: c.territory, // #42
-    bankAccount: c.bankAccount, // #40 — create-only; read-only no detalhe
-    pixKey: c.pixKey, // #40 — create-only; read-only no detalhe
+    bankAccount: c.bankAccount, // #40; editável no detalhe (spec 120)
+    pixKey: c.pixKey, // #40; editável no detalhe (spec 120)
   })
 }
 
