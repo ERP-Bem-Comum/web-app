@@ -40,6 +40,24 @@ banco e PIX **na criação**. O `PUT /collaborators/:id` os exclui (`updateColla
 - A troca fica registrada no histórico do colaborador (backend, #1029). O export do histórico já existente
   passa a mostrá-la.
 
+## Contrato com o backend (registrado na core-api#1029, 07/10)
+
+Mesmo `PUT /collaborators/:id`, com `bankAccount`/`pixKey` no body:
+
+| Valor no body     | Efeito                        |
+| ----------------- | ----------------------------- |
+| campo **ausente** | mantém o que está gravado     |
+| **`null`**        | **mantém** o que está gravado |
+| objeto            | valida e substitui            |
+
+⚠️ **`null` NÃO remove.** O front atual (`develop` e `main`) já envia `bankAccount: null` e `pixKey: null` em
+todo `PUT` (`collaborator-detail-form.controller.ts`, `buildPre`), e o BFF repassa o corpo como está. Com
+"`null` = remover", toda edição cadastral em produção apagaria os dados bancários. Remover pelo `PUT` fica fora
+do escopo.
+
+**No front:** o `buildPre` passa a enviar o objeto quando o grupo está preenchido e `null` quando está vazio,
+o que mantém o que está gravado.
+
 ## Ordem de entrega
 
 O front só vai para a `develop` depois da **core-api#1029** na `dev`. Antes disso, o backend descartaria
