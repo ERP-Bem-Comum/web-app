@@ -233,7 +233,8 @@ function DetailReady({
                   className={btnPrimary}
                   disabled={saveCommand.running}
                   onClick={() => {
-                    setConfirmingEdit(true)
+                    // Banco/PIX parcial ou inválido barra antes da confirmação (spec 120).
+                    if (c.validate(collaborator)) setConfirmingEdit(true)
                   }}
                 >
                   {saveCommand.running
