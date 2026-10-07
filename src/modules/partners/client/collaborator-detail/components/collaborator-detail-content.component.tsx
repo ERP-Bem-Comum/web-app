@@ -27,6 +27,7 @@ import {
   select,
   chevron,
   textarea,
+  hint,
 } from '#shared/ui/brand/brand-form.css.ts'
 
 import {
@@ -95,7 +96,14 @@ export function CollaboratorDetailContent({
   const txt = (
     key: keyof CollaboratorDetailFormState,
     label: string,
-    opts?: { type?: 'text' | 'email' | 'date'; mask?: InputMask; placeholder?: string; readOnly?: boolean },
+    opts?: {
+      type?: 'text' | 'email' | 'date'
+      mask?: InputMask
+      placeholder?: string
+      readOnly?: boolean
+      /** Explicação mostrada no modo Editar quando o campo fica travado (o porquê, não só o cinza). */
+      lockedHint?: string
+    },
   ): ReactNode => {
     const disabled = opts?.readOnly === true ? true : !editing
     const display = opts?.mask !== undefined ? formatMask(opts.mask, c.state[key]) : c.state[key]
@@ -116,6 +124,9 @@ export function CollaboratorDetailContent({
             c.setField(key, opts?.mask !== undefined ? unmask(e.target.value, opts.mask) : e.target.value)
           }}
         />
+        {editing && opts?.readOnly === true && opts.lockedHint !== undefined ? (
+          <span className={hint}>{opts.lockedHint}</span>
+        ) : null}
       </div>
     )
   }
@@ -204,7 +215,14 @@ export function CollaboratorDetailContent({
               t('partners.collaborators.form.employmentRelationship'),
               vinculoOptions,
             )}
-            {txt('cpf', t('partners.collaborators.form.cpf'), { mask: 'cpf' })}
+            {/* CPF travado no detalhe (decisão da P.O., 05/10): é a identidade do colaborador e não se edita
+                depois do cadastro — nem por quem tem `collaborator:edit-sensitive`. O save segue enviando o CPF
+                original, que o PUT total exige. */}
+            {txt('cpf', t('partners.collaborators.form.cpf'), {
+              mask: 'cpf',
+              readOnly: true,
+              lockedHint: t('partners.collaborators.form.cpfLocked'),
+            })}
           </div>
         </div>
       </section>
