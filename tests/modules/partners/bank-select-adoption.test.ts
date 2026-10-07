@@ -26,13 +26,14 @@ const P = 'src/modules/partners/client'
  * As telas em que o banco do favorecido é EDITÁVEL. `*-edit` não aparece porque ACT e Financiador
  * reusam o componente de criar — incluí-las asseriria o mesmo arquivo duas vezes.
  *
- * Colaborador tem só o CRIAR: `bankAccount` é create-only (#40) e a borda de update faz strip, então
- * o detalhe exibe read-only. Um seletor editável ali aceitaria a troca e a descartaria em silêncio.
+ * O detalhe do colaborador entrou na spec 120: o core-api passou a aceitar banco/PIX no PUT
+ * (core-api#1029, PR #1041). Até ali `bankAccount` era create-only (#40) e o detalhe ficava read-only.
  */
 const EDITABLE_BANK_SCREENS: readonly string[] = [
   `${P}/supplier-create/components/supplier-form.component.tsx`,
   `${P}/supplier-detail/components/supplier-detail-content.component.tsx`,
   `${P}/collaborator-create/components/collaborator-form.component.tsx`,
+  `${P}/collaborator-detail/components/collaborator-detail-content.component.tsx`,
   `${P}/financier-create/components/financier-form.component.tsx`,
   `${P}/financier-detail/components/financier-detail-content.component.tsx`,
   `${P}/act-create/components/act-form.component.tsx`,
@@ -79,13 +80,18 @@ describe('banco do favorecido — seleção FEBRABAN, não texto livre', () => {
     }
   })
 
-  it('o colaborador NÃO ganha seletor editável no detalhe (bankAccount é create-only, #40)', () => {
-    // Guarda de intenção: se o backend passar a aceitar update, este teste é o lugar de registrar a
-    // mudança — deliberadamente, e não por alguém "completar" a tela achando que faltou.
-    const detail = read(`${P}/collaborator-detail/components/collaborator-detail-content.component.tsx`)
+  it('o seletor do detalhe do colaborador não é decorativo: a borda do PUT leva banco/PIX (spec 120)', () => {
+    // Antes da spec 120 este teste barrava o seletor, porque a borda de update fazia `omit` e a troca
+    // seria descartada em silêncio. Agora o inverso: se alguém voltar a omitir banco/PIX no PUT, a tela
+    // passa a aceitar a troca e jogá-la fora.
+    const io = read('src/modules/partners/server/adapters/collaborator.io-schemas.ts')
+    const update = /UpdateCollaboratorInputSchema = CreateCollaboratorInputSchema\.omit\(\{([^}]*)\}\)/.exec(
+      io,
+    )
+    assert.ok(update !== null, 'UpdateCollaboratorInputSchema não encontrado')
     assert.ok(
-      !detail.includes('<BankSelect'),
-      'update de bankAccount do colaborador sofre strip na borda (#40)',
+      !/bankAccount|pixKey/.test(update[1] ?? ''),
+      'a borda do PUT do colaborador voltou a descartar banco/PIX (spec 120)',
     )
   })
 })

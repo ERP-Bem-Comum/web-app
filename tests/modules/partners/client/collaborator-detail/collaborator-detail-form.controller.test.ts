@@ -12,6 +12,8 @@ import {
   buildCompleteInput,
   computeHasCompleteData,
   stateFromDetail,
+  buildPaymentTarget,
+  validatePaymentTarget,
   type CollaboratorDetailFormState,
 } from '#modules/partners/client/collaborator-detail/components/collaborator-detail-form.controller.ts'
 import type { CollaboratorDetail } from '#modules/partners/client/data/model/collaborator.model.ts'
@@ -233,5 +235,105 @@ describe('stateFromDetail — hidratação a partir do detalhe', () => {
     assert.equal(out.hasChildren, true)
     assert.deepEqual(out.childrenAges, [3, 7])
     assert.equal(out.childrenCount, 2)
+  })
+})
+
+// ── Spec 120 — dados bancários e PIX editáveis no detalhe ─────────────────────────────────────────
+
+const detailBase: CollaboratorDetail = {
+  id: 'c-1',
+  name: 'Ana',
+  email: 'ana@x.org',
+  occupationArea: 'PARC',
+  role: 'Dev',
+  registration: 'pre-registration',
+  activation: 'active',
+  contractCount: 0,
+  cpf: '52998224725',
+  startOfContract: '2024-01-01T00:00:00.000Z',
+  employmentRelationship: 'CLT',
+  territory: null,
+  bankAccount: null,
+  pixKey: null,
+}
+const withBank: CollaboratorDetail = {
+  ...detailBase,
+  bankAccount: { bank: '237', agency: '1234', accountNumber: '5678', checkDigit: '9' },
+  pixKey: { keyType: 'email', key: 'ana@x.org' },
+}
+const filledBank = { bank: '001', agency: '4321', accountNumber: '98765', checkDigit: '1' }
+
+describe('stateFromDetail — banco legado (spec 120)', () => {
+  it('texto "237 - Bradesco" abre como o código 237', () => {
+    const s = stateFromDetail({
+      ...withBank,
+      bankAccount: { bank: '237 - Bradesco', agency: '1234', accountNumber: '5678', checkDigit: '9' },
+    })
+    assert.equal(s.bank, '237')
+  })
+  it('nome sem código fica como está (o seletor mostra "não reconhecido")', () => {
+    const s = stateFromDetail({
+      ...withBank,
+      bankAccount: { bank: 'Bradesco', agency: '1234', accountNumber: '5678', checkDigit: '9' },
+    })
+    assert.equal(s.bank, 'Bradesco')
+  })
+})
+
+describe('buildPaymentTarget — corpo do PUT (spec 120)', () => {
+  it('grupo vazio → null nos dois (o core-api mantém o gravado)', () => {
+    assert.deepEqual(buildPaymentTarget(emptyState), { bankAccount: null, pixKey: null })
+  })
+  it('grupo preenchido → objetos, com trim', () => {
+    const r = buildPaymentTarget({
+      ...emptyState,
+      ...filledBank,
+      accountNumber: ' 98765 ',
+      pixKeyType: 'cpf',
+      pixKey: '52998224725',
+    })
+    assert.deepEqual(r.bankAccount, { ...filledBank, accountNumber: '98765' })
+    assert.deepEqual(r.pixKey, { keyType: 'cpf', key: '52998224725' })
+  })
+  it('tipo de chave escolhido sem chave → pixKey null', () => {
+    assert.equal(buildPaymentTarget({ ...emptyState, pixKeyType: 'email' }).pixKey, null)
+  })
+})
+
+describe('validatePaymentTarget — antes do salvar (spec 120)', () => {
+  it('sem dado bancário e sem nada gravado → ok', () => {
+    assert.deepEqual(validatePaymentTarget(emptyState, detailBase), {})
+  })
+  it('grupo completo → ok', () => {
+    assert.deepEqual(
+      validatePaymentTarget(
+        { ...emptyState, ...filledBank, pixKey: 'ana@x.org', pixKeyType: 'email' },
+        detailBase,
+      ),
+      {},
+    )
+  })
+  it('banco parcial (só o banco) → marca agência e conta', () => {
+    const e = validatePaymentTarget({ ...emptyState, bank: '001' }, detailBase)
+    assert.equal(e['bankAccount.agency'], true)
+    assert.equal(e['bankAccount.accountNumber'], true)
+    assert.equal(e['bankAccount.bank'], undefined)
+  })
+  it('agência com 3 dígitos → inválida (core-api exige 4 + DV opcional)', () => {
+    const e = validatePaymentTarget({ ...emptyState, ...filledBank, agency: '123' }, detailBase)
+    assert.equal(e['bankAccount.agency'], true)
+  })
+  it('agência legada com hífen "1234-5" → ok', () => {
+    const e = validatePaymentTarget({ ...emptyState, ...filledBank, agency: '1234-5' }, detailBase)
+    assert.deepEqual(e, {})
+  })
+  it('esvaziar banco/PIX já gravados → bloqueia (null manteria o gravado e a tela mentiria)', () => {
+    const e = validatePaymentTarget(emptyState, withBank)
+    assert.equal(e['bankAccount.removal'], true)
+    assert.equal(e['pixKey.removal'], true)
+  })
+  it('trocar o banco já gravado → ok', () => {
+    const s = { ...stateFromDetail(withBank), bank: '001', accountNumber: '11111' }
+    assert.deepEqual(validatePaymentTarget(s, withBank), {})
   })
 })

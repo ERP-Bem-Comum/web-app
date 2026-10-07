@@ -40,8 +40,8 @@ export interface CreateCollaboratorInput {
   startOfContract: string // YYYY-MM-DD
   employmentRelationship: EmploymentRelationship
   territory: Territory | null // #42 — entra no create (PUT omite)
-  bankAccount: BankAccount | null // #40 — create-only (PUT omite)
-  pixKey: CollaboratorPixKey | null // #40 — create-only (PUT omite)
+  bankAccount: BankAccount | null // #40; editável no PUT desde a spec 120 (core-api#1029)
+  pixKey: CollaboratorPixKey | null // #40; editável no PUT desde a spec 120 (core-api#1029)
 }
 
 export interface CompleteCollaboratorRegistrationInput {
@@ -75,11 +75,9 @@ export interface CompleteCollaboratorRegistrationInput {
   publicSectorExperienceDuration?: string
 }
 
-// PUT omite território (#42) e banco/PIX (#40) — não enviar na edição.
-export type UpdateCollaboratorInput = Omit<
-  CreateCollaboratorInput,
-  'territory' | 'bankAccount' | 'pixKey'
-> & { id: string }
+// PUT omite território (#42). Banco/PIX entram (spec 120, core-api#1029): `null` MANTÉM o que está
+// gravado (não remove); objeto valida e substitui.
+export type UpdateCollaboratorInput = Omit<CreateCollaboratorInput, 'territory'> & { id: string }
 
 export interface DeactivateCollaboratorInput {
   id: string
@@ -147,8 +145,8 @@ export type CollaboratorDetail = CollaboratorListItem &
     leaveRenewalDuration?: string
     publicSectorExperienceDuration?: string
     territory: Territory | null
-    bankAccount: BankAccount | null // #40 — create-only; exibido read-only no detalhe
-    pixKey: CollaboratorPixKey | null // #40 — create-only; exibido read-only no detalhe
+    bankAccount: BankAccount | null // #40; editável no detalhe (spec 120)
+    pixKey: CollaboratorPixKey | null // #40; editável no detalhe (spec 120)
   }>
 
 export type CollaboratorListResponse = Readonly<{

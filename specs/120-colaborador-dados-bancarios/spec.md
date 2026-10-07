@@ -1,6 +1,6 @@
 # 120 — Editar dados bancários e PIX do colaborador
 
-**Tamanho:** M · **Status:** spec (aguardando backend) · **Data:** 2026-10-05
+**Tamanho:** M · **Status:** implementado (backend pronto: core-api#1041 na `dev`, 07/10) · **Data:** 2026-10-05
 **Depende de:** `core-api#1029` (editar `bankAccount`/`pixKey` depois do cadastro)
 **Origem:** pedido da P.O. Os colaboradores migrados do legado vieram **sem dados bancários**, porque o
 legado não tinha esses campos. Sem eles, o colaborador não pode ser pago pela rotina de pagamento e remessa.
@@ -58,6 +58,22 @@ do escopo.
 **No front:** o `buildPre` passa a enviar o objeto quando o grupo está preenchido e `null` quando está vazio,
 o que mantém o que está gravado.
 
+### Conferido no core-api (`dev`, 07/10, PR #1041)
+
+- Limites na borda (acima deles, 400): banco 50, agência 20, conta 30, DV 5, chave PIX 255. Os do front
+  são iguais ou menores (banco 20, chave 140).
+- Validação de domínio igual à criação: banco, agência e conta obrigatórios no grupo; agência
+  `^\d{4}(-?\d)?$`; chave PIX não vazia. Recusas: `invalid-bank-account`, `invalid-bank-agency`,
+  `invalid-pix-key` (422). O BFF as reduz a `validation`, então o front valida as três **antes** do salvar.
+- Histórico: banco com DV, PIX com o tipo, autor (id + nome) em cada linha; CSV ganha `alterado_por` no fim.
+  Sem mudança no front (o CSV vem pronto).
+- Inativo congelado é a core-api#1040 (aberta); hoje o `PUT` aceita editar inativo.
+
+## Decisão de implementação: esvaziar um grupo já gravado
+
+Como `null` **mantém** o gravado, apagar banco ou PIX na tela e salvar faria a tela mentir (o dado voltaria).
+O salvar é **barrado** com a explicação "pode ser alterado, mas não apagado". Remover segue fora do escopo.
+
 ## Ordem de entrega
 
 O front só vai para a `develop` depois da **core-api#1029** na `dev`. Antes disso, o backend descartaria
@@ -85,9 +101,11 @@ O detalhe liberava o CPF no modo Editar para quem tem `collaborator:write`. A P.
 **não se edita depois do cadastro**, para ninguém. Corrigido à parte, só no front, no **web-app#418**. Com
 isso, a chave PIX do tipo CPF sempre reflete o CPF do cadastro.
 
-## Testes (planejados)
+## Testes
 
-- **Controller:** banco e PIX entram no submit; grupo bancário parcial bloqueia; cancelar restaura; escolher
-  a chave PIX do tipo CPF preenche a chave com o CPF do colaborador.
-- **View:** no modo Editar, os campos bancários habilitam; fora dele, ficam somente leitura.
-- **BFF:** o corpo de escrita leva `bankAccount`/`pixKey`.
+- **Controller** (`collaborator-detail-form.controller.test.ts`): banco legado normalizado; objeto × `null` no
+  submit; grupo parcial, agência fora do formato e esvaziar o gravado bloqueiam.
+- **View** (`collaborator-bank-editable.spec.tsx`): no modo Editar os campos habilitam, fora dele não; banco é
+  o seletor; chave do tipo CPF mostra o CPF; cancelar restaura e limpa os erros.
+- **BFF** (`collaborator-update-payment-target.test.ts`): a borda não descarta mais banco/PIX; o corpo do `PUT`
+  os leva ao core-api; território segue fora.

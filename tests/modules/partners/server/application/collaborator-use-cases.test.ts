@@ -107,6 +107,8 @@ describe('Collaborator use-cases', () => {
         role: 'Coordenadora',
         startOfContract: '2024-01-01',
         employmentRelationship: 'PJ',
+        bankAccount: null,
+        pixKey: null,
       },
       'token',
     )
