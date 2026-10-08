@@ -2847,8 +2847,8 @@ export const ptBR: Catalog = {
   'reports.realizadoXPlanejado.monthTitle.nov': 'Nov',
   'reports.realizadoXPlanejado.monthTitle.dec': 'Dez',
 
-  // ── Relatório "Equipe ABC" (front-first; dados sintéticos/anonimizados — LGPD) ──
-  'reports.equipe.title': 'Relatório Equipe ABC',
+  // ── Relatório "Equipe Bem Comum" (front-first; dados sintéticos/anonimizados — LGPD) ──
+  'reports.equipe.title': 'Relatório Equipe Bem Comum',
   'reports.equipe.back': 'Voltar',
   'reports.equipe.empty': 'Nenhum colaborador para exibir.',
   // Estados da fonte real (#114, endpoint LGPD-safe): carregando + erro + gráficos demográficos indisponíveis.

@@ -1,5 +1,5 @@
 /**
- * Tabela do relatório "Equipe ABC" — lista "brand" enxuta (só-tokens §X). Espelha o cartão dos grids brand
+ * Tabela do relatório "Equipe Bem Comum" — lista "brand" enxuta (só-tokens §X). Espelha o cartão dos grids brand
  * (surface + line + radius lg + sombra) e o thead uppercase 11.5px ink500. 8 colunas de exibição; rola na
  * vertical quando a lista for longa (corpo com altura máxima + overflow). px/hex crus NÃO entram aqui.
  */
