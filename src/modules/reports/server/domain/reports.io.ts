@@ -9,7 +9,7 @@
  */
 
 /**
- * Membro da equipe (relatório Equipe ABC — LGPD-safe, sem demografia). `program`/`education` e
+ * Membro da equipe (relatório Equipe Bem Comum — LGPD-safe, sem demografia). `program`/`education` e
  * `experienceInPublicSector` são nullable; os demais campos são string livre do backend.
  */
 export type TeamMember = Readonly<{

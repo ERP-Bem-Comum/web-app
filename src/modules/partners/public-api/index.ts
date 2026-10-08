@@ -47,7 +47,7 @@ export type {
 } from '#modules/partners/server/domain/collaborator/collaborator.io.ts'
 
 // Enums CANÔNICOS do colaborador — a lista de verdade, reexportada para quem exibe esses campos fora
-// do módulo (hoje: o relatório "Equipe ABC", cujos dados saem daqui). Atravessa por aqui de propósito:
+// do módulo (hoje: o relatório "Equipe Bem Comum", cujos dados saem daqui). Atravessa por aqui de propósito:
 // duplicar a lista foi o que fez os gráficos do Equipe apagarem em silêncio pessoas trans e indígenas.
 // Rótulos PT-BR: `partners.collaborators.{gender,race,education,employment,area}.<CODIGO>` no catálogo.
 export {

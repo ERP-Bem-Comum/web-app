@@ -47,8 +47,8 @@ describe('rootViewModel.resolvePageTitle', () => {
       rootViewModel.resolvePageTitle('/relatorios/realizado-x-planejado'),
       'Realizado × Planejado',
     )
-    // Relatórios → Equipe ABC (feature 046)
-    assert.strictEqual(rootViewModel.resolvePageTitle('/relatorios/equipe'), 'Equipe ABC')
+    // Relatórios → Equipe Bem Comum (feature 046)
+    assert.strictEqual(rootViewModel.resolvePageTitle('/relatorios/equipe'), 'Equipe Bem Comum')
     // Relatórios → Posição de Pagamentos (feature 048)
     assert.strictEqual(
       rootViewModel.resolvePageTitle('/relatorios/posicao-pagamentos'),
@@ -416,7 +416,7 @@ describe('rootViewModel.visibleMenu (MENU real — Relatórios)', () => {
   const findRelatorios = (menu: readonly MenuSection[]): MenuSection | undefined =>
     menu.find((s) => s.label === 'Relatórios')
 
-  it('é accordion (sem `to` direto) com os 7 relatórios (Fornecedores sem Contrato + Realizado × Planejado + Equipe ABC + Posição de Pagamentos + Posição de Recebimentos + Análise de Pagamentos + Análise de Recebimentos)', () => {
+  it('é accordion (sem `to` direto) com os 7 relatórios (Fornecedores sem Contrato + Realizado × Planejado + Equipe Bem Comum + Posição de Pagamentos + Posição de Recebimentos + Análise de Pagamentos + Análise de Recebimentos)', () => {
     const rel = findRelatorios(MENU)
     assert.ok(rel, 'a seção "Relatórios" deve existir')
     assert.strictEqual(rel?.to, undefined, 'não é link direto')
@@ -425,7 +425,7 @@ describe('rootViewModel.visibleMenu (MENU real — Relatórios)', () => {
       [
         'Fornecedores sem Contrato',
         'Realizado × Planejado',
-        'Equipe ABC',
+        'Equipe Bem Comum',
         'Posição de Pagamentos',
         'Posição de Recebimentos',
         'Análise de Pagamentos',
@@ -444,7 +444,7 @@ describe('rootViewModel.visibleMenu (MENU real — Relatórios)', () => {
     // Os 2 novos relatórios (feature 053) — Fluxo de Caixa + Relatório Geral.
     assert.strictEqual(rel?.subItems?.[7]?.to, '/relatorios/fluxo-caixa')
     assert.strictEqual(rel?.subItems?.[8]?.to, '/relatorios/geral')
-    // Equipe ABC + Posição (Pag/Rec) + Análise (Pag/Rec) + Fluxo + Geral sem requiredPermission (RBAC pós-entrega).
+    // Equipe Bem Comum + Posição (Pag/Rec) + Análise (Pag/Rec) + Fluxo + Geral sem requiredPermission (RBAC pós-entrega).
     assert.strictEqual(rel?.subItems?.[2]?.requiredPermission, undefined)
     assert.strictEqual(rel?.subItems?.[3]?.requiredPermission, undefined)
     assert.strictEqual(rel?.subItems?.[4]?.requiredPermission, undefined)

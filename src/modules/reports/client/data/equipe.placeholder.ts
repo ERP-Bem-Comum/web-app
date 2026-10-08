@@ -1,5 +1,5 @@
 /**
- * Dados PLACEHOLDER do relatório "Equipe ABC" (front-first). NÃO é um mock de teste (ADR-0011: mocks/doubles
+ * Dados PLACEHOLDER do relatório "Equipe Bem Comum" (front-first). NÃO é um mock de teste (ADR-0011: mocks/doubles
  * só em `tests/`) — são CONSTANTES que a tela consome enquanto o endpoint do core-api (#114/#112) não existe.
  * Quando o backend nascer, a `data/` passa a montar estas linhas do DTO real (mesmo shape `TeamMemberRow`).
  *
