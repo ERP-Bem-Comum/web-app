@@ -48,7 +48,7 @@ export type {
   MonthBar,
 } from '#modules/reports/client/realizado-x-planejado.view-model.ts'
 
-// ── Relatório "Equipe ABC" (front-first; core-api#114/#112). Dados SINTÉTICOS/anonimizados (LGPD). ──
+// ── Relatório "Equipe Bem Comum" (front-first; core-api#114/#112). Dados SINTÉTICOS/anonimizados (LGPD). ──
 export { EquipePage } from '#modules/reports/client/page/equipe.page.tsx'
 
 export {

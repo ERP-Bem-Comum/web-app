@@ -1,5 +1,5 @@
 /**
- * EquipePage + EquipeTable + EquipeDetailModal (Vitest/jsdom) — tela do relatório "Equipe ABC" LIGADA À FONTE
+ * EquipePage + EquipeTable + EquipeDetailModal (Vitest/jsdom) — tela do relatório "Equipe Bem Comum" LIGADA À FONTE
  * REAL (#114, endpoint LGPD-safe, via `reportsRepository.getTeam` MOCKADO):
  *   0. troca placeholder→real: as linhas vêm do repository mockado (não das constantes placeholder).
  *   1. loading → ready; paginação (36 membros sintéticos → 4 páginas de 10).

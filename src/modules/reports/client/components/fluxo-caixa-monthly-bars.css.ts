@@ -1,7 +1,7 @@
 /**
  * Estilos do gráfico "Fluxo por vencimento" do "Fluxo de Caixa" — barras VERTICAIS AGRUPADAS (Entradas ×
  * Saídas por mês), identidade "brand", só-tokens (§X). Reaproveita a âncora relativa + o tooltip flutuante do
- * relatório "Equipe ABC" (que por sua vez reusa o Realizado × Planejado) para manter a identidade EXATA, ZERO
+ * relatório "Equipe Bem Comum" (que por sua vez reusa o Realizado × Planejado) para manter a identidade EXATA, ZERO
  * duplicação. O específico daqui (as 2 cores Entrada/Saída + o layout de PAR de barras por mês + a legenda) fica
  * neste arquivo — a view aplica por CLASSE (não importa tokens; boundary client-ui ↛ ds-tokens).
  */
@@ -9,7 +9,7 @@ import { style, styleVariants } from '@vanilla-extract/css'
 
 import { brand } from '#shared/ui/brand/grid-brand.values.ts'
 
-// Reusa a base (âncora relativa, tooltip, empty-state) do relatório "Equipe ABC".
+// Reusa a base (âncora relativa, tooltip, empty-state) do relatório "Equipe Bem Comum".
 export {
   chartRel,
   tooltip,

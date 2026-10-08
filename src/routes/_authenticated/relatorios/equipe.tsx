@@ -1,5 +1,5 @@
 /**
- * Rota /relatorios/equipe — relatório "Equipe ABC" (Relatórios), protegida. Front-first: a page usa dados
+ * Rota /relatorios/equipe — relatório "Equipe Bem Comum" (Relatórios), protegida. Front-first: a page usa dados
  * placeholder SINTÉTICOS/anonimizados (LGPD) até o endpoint do core-api (#114/#112) existir. Sem RBAC (o
  * relatório não tem `requiredPermission` — o RBAC é modelado pelo cliente pós-entrega). O módulo expõe a page
  * pela public-api (ADR-0004).

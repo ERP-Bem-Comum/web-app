@@ -1,5 +1,5 @@
 /**
- * Estilos dos gráficos do relatório "Equipe ABC" — donut "por Gênero", barras VERTICAIS "por Raça/Cor" (novo),
+ * Estilos dos gráficos do relatório "Equipe Bem Comum" — donut "por Gênero", barras VERTICAIS "por Raça/Cor" (novo),
  * barras horizontais "por Idade/Função" e linha "por Ano". Identidade "brand", só-tokens (§X). As cores vêm de
  * `brand.color.equipe.*` (hex cru só no `*.values.ts`) e são aplicadas por CLASSE (styleVariants) — as views
  * não importam tokens (§boundaries client-ui ↛ ds-tokens).

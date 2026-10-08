@@ -1,5 +1,5 @@
 /**
- * teamReportQueryOptions — data AGNÓSTICA do relatório "Equipe ABC" (#114; sem React). A queryFn devolve o
+ * teamReportQueryOptions — data AGNÓSTICA do relatório "Equipe Bem Comum" (#114; sem React). A queryFn devolve o
  * `Result` MAPEADO (`{ data, error }`) p/ o binding ramificar loading/error/ready. Sem input (endpoint
  * LGPD-safe, o BFF compõe a resposta completa). Espelha `posicao.query.ts`.
  */
