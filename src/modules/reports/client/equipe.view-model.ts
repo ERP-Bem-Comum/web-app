@@ -1,5 +1,5 @@
 /**
- * ViewModel PURA do relatório "Equipe ABC" (ADR-0009, §XI): agrega as linhas ENXUTAS de colaboradores nos
+ * ViewModel PURA do relatório "Equipe Bem Comum" (ADR-0009, §XI): agrega as linhas ENXUTAS de colaboradores nos
  * datasets dos gráficos NÃO-demográficos (ano de contrato / função), monta o CSV enxuto e formata percentuais.
  *
  * ── Gênero / raça-cor / faixa etária saíram daqui (core-api#477) ──
@@ -62,7 +62,7 @@ export function toTeamRows(
   /**
    * `id do colaborador → área de atuação` (PARC/DDI/DCE/EPV), vindo da LISTAGEM de Colaboradores. O
    * `/reports/team` não carrega a área: a projeção do core-api grava `program: null` de propósito
-   * ("`program` não existe no modelo Collaborator"). Como todo dado do Equipe ABC sai de Colaboradores,
+   * ("`program` não existe no modelo Collaborator"). Como todo dado do Equipe Bem Comum sai de Colaboradores,
    * o front cruza pelo `id`. Sem o mapa (ainda carregando / falhou) → sentinela, nunca linha perdida.
    */
   areaById: ReadonlyMap<string, string> = new Map(),
@@ -125,7 +125,7 @@ export function byFuncao(rows: readonly TeamMemberRow[] = EQUIPE_PLACEHOLDER): r
 // ── Opções dos filtros (derivadas dos VALORES DISTINTOS dos próprios dados — não há endpoint de opções) ──
 
 /**
- * Opções dos filtros do Equipe ABC. Os valores são sempre **CÓDIGOS**; a View traduz (i18n).
+ * Opções dos filtros do Equipe Bem Comum. Os valores são sempre **CÓDIGOS**; a View traduz (i18n).
  *
  * Duas naturezas, e a distinção é o ponto desta função:
  *
@@ -254,7 +254,7 @@ export function teamFilterOptions(rows: readonly TeamMemberRow[] = EQUIPE_PLACEH
 // ── Aplicação dos filtros (CLIENT-SIDE — todos os colaboradores já estão no front; sem backend) ──
 
 /**
- * Filtros APLICÁVEIS do Equipe ABC (client-side). Cada campo `''` = "Todos" (sem recorte). `anoContrato` é o
+ * Filtros APLICÁVEIS do Equipe Bem Comum (client-side). Cada campo `''` = "Todos" (sem recorte). `anoContrato` é o
  * ANO como string (o value do select); `search` casa por `nome` (case/acento-insensível). Raça/Idade/Gênero
  * NÃO entram (LGPD-safe → sem dado real; filtrar por eles zeraria tudo).
  */

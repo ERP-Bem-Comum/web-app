@@ -1,5 +1,5 @@
 /**
- * EquipeTable — lista "brand" enxuta do relatório "Equipe ABC" (8 colunas de exibição). View BURRA: recebe as
+ * EquipeTable — lista "brand" enxuta do relatório "Equipe Bem Comum" (8 colunas de exibição). View BURRA: recebe as
  * linhas já prontas + os rótulos das colunas (i18n) e apenas apresenta. Os VALORES (nome, programa, função,
  * gênero, raça/cor, escolaridade) são DADO (strings simples do placeholder), não i18n. Idade null vira o
  * rótulo "N/A" (recebido por prop). Rola na vertical quando a lista é longa; thead sticky.

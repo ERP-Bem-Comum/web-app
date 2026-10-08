@@ -130,7 +130,7 @@ export const tokenValues = {
     },
     // Séries de gráfico (Dashboard "Visão Geral", feature 043). Papel dedicado: cor de SÉRIE/eixo/grid de
     // gráfico SVG nativo, não reaproveita os papéis de badge/status. Retonado para tons sóbrios da família
-    // "brand" (harmonizado com o Equipe ABC): `forecast` (Previsto) = azul institucional #396496; `realized`
+    // "brand" (harmonizado com o Equipe Bem Comum): `forecast` (Previsto) = azul institucional #396496; `realized`
     // (Realizado) = verde-azulado #2f8f6a — troca o ciano neon/verde saturado do v1 por um par mais elegante
     // e legível. `grid`/`axis` reusam border.subtle / text.muted.
     chart: {

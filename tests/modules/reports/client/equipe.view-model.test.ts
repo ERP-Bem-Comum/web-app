@@ -1,5 +1,5 @@
 /**
- * ViewModel do relatório "Equipe ABC" — unidades PURAS (node:test, sem DOM). Cobre as 5 agregações dos
+ * ViewModel do relatório "Equipe Bem Comum" — unidades PURAS (node:test, sem DOM). Cobre as 5 agregações dos
  * gráficos (gênero / raça-cor / faixa etária incl. N/A / ano de contrato / função), o build do CSV enxuto
  * (cabeçalho + linha), o tamanho do placeholder e a GARANTIA LGPD: o tipo `TeamMemberRow` não carrega campos
  * sensíveis (cpf/email/telefone/endereço/remuneração/alergias/biografia).

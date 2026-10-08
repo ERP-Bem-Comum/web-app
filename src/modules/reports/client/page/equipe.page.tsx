@@ -1,5 +1,5 @@
 /**
- * EquipePage — tela do relatório "Equipe ABC" (identidade "brand", full-bleed 28px), no MESMO padrão do
+ * EquipePage — tela do relatório "Equipe Bem Comum" (identidade "brand", full-bleed 28px), no MESMO padrão do
  * relatório "Realizado × Planejado" (filtros recolhíveis → gráficos → tabela). Os dados são REAIS
  * (`/reports/team` + `/reports/team/demographics`); `equipe.placeholder.ts` sobrou só como fixture do
  * núcleo puro. A ViewModel PURA faz TODA a agregação; a page compõe as views burras e guarda o UI-state
