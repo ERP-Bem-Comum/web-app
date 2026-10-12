@@ -780,7 +780,7 @@ export const ptBR: Catalog = {
   'partners.collaborators.detail.field.telephone': 'Celular',
   'partners.collaborators.detail.field.emergencyContactName': 'Nome contato de emergência',
   'partners.collaborators.detail.field.emergencyContactTelephone': 'Número contato de emergência',
-  'partners.collaborators.detail.field.genderIdentity': 'Identidade de gênero',
+  'partners.collaborators.detail.field.genderIdentity': 'Identidade de Gênero',
   'partners.collaborators.detail.field.race': 'Raça/Cor',
   'partners.collaborators.detail.field.allergies': 'Alergias',
   'partners.collaborators.detail.field.foodCategory': 'Categoria alimentar',

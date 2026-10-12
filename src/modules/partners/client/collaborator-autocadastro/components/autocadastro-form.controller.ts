@@ -13,6 +13,7 @@ import {
   type CollaboratorCompleteFieldsState,
 } from '#modules/partners/client/collaborator-detail/components/collaborator-complete-fields.ts'
 import {
+  GENDER_IDENTITY_OPTIONS,
   RACES,
   EDUCATION_LEVELS,
   FOOD_CATEGORIES,
@@ -23,7 +24,7 @@ import type { AutocadastroSubmitInput } from '#modules/partners/public-api/index
 
 // Re-export dos enums dos selects p/ a view burra consumir SEM importar `data/` direto (boundary §XI:
 // client-ui não depende de client-data; o controller — client-controller — pode, e é sameFeature).
-export { RACES, EDUCATION_LEVELS, FOOD_CATEGORIES, SEXES, MARITAL_STATUSES }
+export { GENDER_IDENTITY_OPTIONS, RACES, EDUCATION_LEVELS, FOOD_CATEGORIES, SEXES, MARITAL_STATUSES }
 
 // Normalização local (só-dígitos) do cpfPrefix — puro, inline p/ não acoplar o controller ao view-model
 // (boundary: client-controller não depende de client-view-model). Mesma regra do view-model/onlyDigits.
