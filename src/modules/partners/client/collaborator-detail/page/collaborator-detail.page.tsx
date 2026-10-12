@@ -210,6 +210,7 @@ function DetailReady({
               editing={editing}
               showComplete={showComplete}
               preTitle={preTitle}
+              registrationComplete={collaborator.registration === 'complete'}
             />
           </div>
         </div>

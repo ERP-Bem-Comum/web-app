@@ -55,6 +55,12 @@ export type CollaboratorDetailContentProps = Readonly<{
   editing: boolean
   showComplete: boolean
   preTitle: string
+  /**
+   * Colaborador já CADASTRADO (spec 124): data de nascimento, RG e raça/cor travam no modo Editar — dado que
+   * não muda depois do cadastro (P.O., 12/10), como o CPF. No pré-cadastro seguem editáveis: é ali que o
+   * operador completa o cadastro. Opcional (default `false`) para não exigir o flag de quem só exibe.
+   */
+  registrationComplete?: boolean
 }>
 
 // Wrapper de <select> "brand": appearance:none + chevron desenhado (o mock remove a seta nativa).
@@ -97,6 +103,7 @@ export function CollaboratorDetailContent({
   editing,
   showComplete,
   preTitle,
+  registrationComplete = false,
 }: CollaboratorDetailContentProps): ReactNode {
   const isInvalid = (key: string): boolean => c.errors[key] === true
   const invalidMsg = (key: string): string | null =>
@@ -150,7 +157,7 @@ export function CollaboratorDetailContent({
     key: keyof CollaboratorDetailFormState,
     label: string,
     options: readonly Readonly<{ value: string; label: string }>[],
-    opts?: { readOnly?: boolean },
+    opts?: { readOnly?: boolean; lockedHint?: string },
   ): ReactNode => {
     const disabled = opts?.readOnly === true ? true : !editing
     return (
@@ -174,9 +181,17 @@ export function CollaboratorDetailContent({
             </option>
           ))}
         </SelectControl>
+        {editing && opts?.readOnly === true && opts.lockedHint !== undefined ? (
+          <span className={hint}>{opts.lockedHint}</span>
+        ) : null}
       </div>
     )
   }
+
+  // Imutáveis depois do cadastro (spec 124): mesmo tratamento do CPF — desativado e dizendo o porquê.
+  const immutable = registrationComplete
+    ? { readOnly: true, lockedHint: t('partners.collaborators.form.personalLocked') }
+    : undefined
 
   const areaOptions = OCCUPATION_AREAS.map((a) => ({
     value: a,
@@ -360,11 +375,14 @@ export function CollaboratorDetailContent({
             <div className={sectionBody}>
               <div className={grid}>
                 {sel('sex', t('partners.collaborators.detail.field.sex'), sexOptions)}
-                {sel('race', t('partners.collaborators.detail.field.race'), raceOptions)}
+                {sel('race', t('partners.collaborators.detail.field.race'), raceOptions, immutable)}
                 {sel('maritalStatus', t('partners.collaborators.detail.field.maritalStatus'), maritalOptions)}
-                {txt('rg', t('partners.collaborators.detail.field.rg'))}
+                {txt('rg', t('partners.collaborators.detail.field.rg'), immutable)}
                 {txt('completeAddress', t('partners.collaborators.detail.field.completeAddress'))}
-                {txt('dateOfBirth', t('partners.collaborators.detail.field.dateOfBirth'), { type: 'date' })}
+                {txt('dateOfBirth', t('partners.collaborators.detail.field.dateOfBirth'), {
+                  type: 'date',
+                  ...immutable,
+                })}
                 {txt('telephone', t('partners.collaborators.detail.field.telephone'), { mask: 'phone' })}
                 {sel('education', t('partners.collaborators.detail.field.education'), educationOptions)}
                 {sel(
