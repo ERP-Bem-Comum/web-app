@@ -72,6 +72,7 @@ export function toTeamRows(
     // Os 3 campos abaixo vinham cravados em sentinela porque o schema de borda não declarava as chaves —
     // o core-api mandava e o Zod descartava calado. Agora são o CÓDIGO canônico; a View traduz.
     idade: m.age,
+    geracao: m.generation,
     programa: areaById.get(m.id) ?? NA_SENTINEL,
     funcao: m.role,
     vinculo: m.employmentRelationship,
@@ -149,6 +150,7 @@ export type TeamFilterOptions = Readonly<{
   racaCor: readonly string[]
   status: readonly string[]
   situacaoCadastral: readonly string[]
+  geracao: readonly string[]
 }>
 
 /**
@@ -173,6 +175,23 @@ export const TEAM_REGISTRATION_STATUSES = ['Complete', 'PreRegistration'] as con
  * Se o core-api mudar os cortes, gráfico e filtro divergem — é o que o teste `faixaEtariaIdOf` protege.
  */
 export const AGE_RANGE_NA = 'NA'
+
+/**
+ * Gerações (core-api#1055) — recortes da P.O. (convenção Pew, por ANO de nascimento): Boomer 1946–1964 ·
+ * X 1965–1980 · Millennial 1981–1996 · Z 1997–2012. O CÓDIGO vem pronto por pessoa: o front NÃO deriva da
+ * idade, porque a idade cobre dois anos de nascimento e erraria justo nas fronteiras (29, 45, 61 anos).
+ * `NA` = sem nascimento cadastrado (sempre por último). Código fora daqui (ex.: `OUTROS`, nascidos fora dos
+ * recortes) entra nas opções só quando alguém o tem — ninguém fica sem como ser filtrado.
+ */
+export const GENERATIONS = ['BOOMER', 'GEN_X', 'MILLENNIAL', 'GEN_Z'] as const
+export const GENERATION_NA = 'NA'
+
+/** Opções do filtro Geração: canônicas + códigos extras presentes no dado + `NA` no fim. Sem `throw`. */
+function generationOptions(rows: readonly TeamMemberRow[]): readonly string[] {
+  const known = new Set<string>([...GENERATIONS, GENERATION_NA])
+  const extras = [...new Set(rows.map((r) => r.geracao).filter((g) => !known.has(g)))]
+  return [...GENERATIONS, ...extras, GENERATION_NA]
+}
 
 /**
  * Distribuição de `rows` sobre um TEMPLATE de categorias (id + rótulo já resolvidos pela View).
@@ -245,6 +264,8 @@ export function teamFilterOptions(rows: readonly TeamMemberRow[] = EQUIPE_PLACEH
     racaCor: RACES,
     status: TEAM_STATUSES,
     situacaoCadastral: TEAM_REGISTRATION_STATUSES,
+    // Fechada (as 4 gerações + N/A), mais o código que o backend mandar e o front não conhecer.
+    geracao: generationOptions(rows),
     // Derivadas: sem enum no domínio.
     anoContrato,
     funcao: distinctSorted(rows.map((r) => r.funcao)),
@@ -270,6 +291,8 @@ export type TeamFilters = Readonly<{
   situacaoCadastral: string
   /** Id da faixa etária do gráfico ('ATE_29', 'MAIS_60', 'NA'); '' = todas. */
   faixaEtaria: string
+  /** Código da geração ('GEN_Z', 'NA'…); '' = todas. */
+  geracao: string
   search: string
 }>
 
@@ -284,6 +307,7 @@ export const EMPTY_TEAM_FILTERS: TeamFilters = {
   status: '',
   situacaoCadastral: '',
   faixaEtaria: '',
+  geracao: '',
   search: '',
 }
 
@@ -314,6 +338,7 @@ export function applyTeamFilters(rows: readonly TeamMemberRow[], f: TeamFilters)
       (f.status === '' || r.status === f.status) &&
       (f.situacaoCadastral === '' || r.situacaoCadastral === f.situacaoCadastral) &&
       (f.faixaEtaria === '' || faixaEtariaIdOf(r.idade) === f.faixaEtaria) &&
+      (f.geracao === '' || r.geracao === f.geracao) &&
       (q === '' || normalizeText(r.nome).includes(q)),
   )
 }

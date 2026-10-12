@@ -93,6 +93,24 @@ describe('teamReportToModel', () => {
       assert.equal(r.value[1]?.experienceInPublicSector, null)
     }
   })
+  // core-api#1055: a geração vem como CÓDIGO por pessoa. Core-api anterior (sem a chave) não pode derrubar o
+  // relatório inteiro — cai em 'NA' e a pessoa continua na tabela.
+  it('geração: código do core-api passa; ausente ou vazia → NA', () => {
+    const [first, second] = validTeam.team
+    const r = teamReportToModel({
+      team: [
+        { ...first, generation: 'GEN_Z' },
+        { ...second, generation: '' },
+      ],
+    })
+    assert.equal(isOk(r), true)
+    if (isOk(r)) {
+      assert.equal(r.value[0]?.generation, 'GEN_Z')
+      assert.equal(r.value[1]?.generation, 'NA')
+    }
+    const semChave = teamReportToModel(validTeam)
+    if (isOk(semChave)) assert.equal(semChave.value[0]?.generation, 'NA')
+  })
   it('drift (shape inválido) → err(server)', () => {
     assert.equal(isErr(teamReportToModel({ team: [{ id: 'x' }] })), true)
     assert.equal(isErr(teamReportToModel({ members: [] })), true)
