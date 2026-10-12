@@ -17,7 +17,7 @@ estado do form), mas **não havia seletor em tela**.
   cliente: Mulher cisgênero · Homem cisgênero · Mulher transgênero · Homem transgênero · Pessoa não
   binária · Outra identidade de gênero · Prefiro não responder.
 - **Travesti fora do seletor.** A P.O. informou que o legado não oferecia a opção, logo não há registro.
-- **"Outra identidade de gênero: **\_\_**"**: o texto livre depende do backend (`core-api#1054`, molde
+- **"Outra identidade de gênero"** com campo `______`: o texto livre depende do backend (`core-api#1054`, molde
   `foodCategory` + `foodCategoryDescription`). Até lá, "Outra" vai sem complemento.
 
 ## Escopo (front)
