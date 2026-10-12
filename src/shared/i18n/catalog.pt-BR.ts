@@ -908,6 +908,8 @@ export const ptBR: Catalog = {
     'Os dados bancários podem ser alterados, mas não apagados. Preencha banco, agência e conta.',
   'partners.collaborators.form.pixRemovalBlocked':
     'A chave PIX pode ser alterada, mas não apagada. Preencha a chave.',
+  'partners.collaborators.form.territoryRemovalBlocked':
+    'O território pode ser alterado, mas não apagado. Preencha a UF ou o município.',
   'partners.collaborators.form.save': 'Salvar',
   'partners.collaborators.form.cancel': 'Cancelar',
   'partners.collaborators.form.saving': 'Salvando…',
