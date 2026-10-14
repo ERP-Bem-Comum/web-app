@@ -1,7 +1,7 @@
 # 125 — Editar título Aprovado: forma de pagamento, categorização e descrição
 
 **Tamanho:** M (front) + handoff ao core-api · **Status:** Draft (decisões da P.O. fechadas em 14/10; aguarda o core-api) · **Data:** 2026-10-14
-**Depende de:** issue no core-api (a abrir), que libera forma de pagamento e categorização num documento
+**Depende de:** core-api#1057, que libera forma de pagamento e categorização num documento
 Aprovado e grava o autor na trilha.
 **Origem:** demanda do usuário trazida pela P.O. Depois que o registro chega em Contas a Pagar como
 **Aprovado**, ele precisa poder corrigir a **forma de pagamento**, a **categorização** e a **descrição**,
