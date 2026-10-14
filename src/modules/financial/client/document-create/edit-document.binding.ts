@@ -23,6 +23,8 @@ import {
   hydrateFieldsFromDetail,
   editLocksFor,
   isEditableStatus,
+  isApprovedEditableStatus,
+  type ApprovedEditContext,
   type DocumentFormFields,
   type FieldLocks,
 } from './document-form.view.ts'
@@ -39,6 +41,8 @@ export type DocumentEditBinding = Readonly<{
   locks: FieldLocks | null
   /** Status permite ajuste (Aberto) → mostra "Salvar alterações"; senão é só consulta. */
   editable: boolean
+  /** spec 125: documento Aprovado → contexto do modo "editar aprovado" (as travas dependem da forma atual). */
+  approvedContext: ApprovedEditContext | null
   running: boolean
   errorTag: string | null
   execute: (input: AdjustDocumentInput) => void
@@ -89,6 +93,15 @@ export function useDocumentEditing(id: string | undefined): DocumentEditBinding 
     initialFields,
     locks: detail !== null ? editLocksFor(detail.status) : null,
     editable: detail !== null && isEditableStatus(detail.status),
+    approvedContext:
+      detail !== null && isApprovedEditableStatus(detail.status)
+        ? {
+            originalMethod: detail.paymentMethod,
+            originalDetail: detail.paymentDetail,
+            // core-api#1057 vai expor se a forma já foi trocada depois da aprovação; até lá, nunca trocou.
+            methodAlreadyChanged: false,
+          }
+        : null,
     running: mutation.isPending,
     errorTag,
     execute: (input) => {

@@ -40,7 +40,8 @@ requisito.
   - Em **Boleto** e **Guia de recolhimento** (a "fatura", paga por código de barras), o **código de barras
     fica como está**, somente leitura.
   - A **forma** pode ser trocada para **Pix, TED, Transferência** ou outra opção. Ao trocar, o usuário
-    informa o complemento da nova forma (chave Pix, dados bancários etc.).
+    informa o complemento da nova forma quando ela tem um (cartão, câmbio, texto livre). Pix e
+    TED/Transferência não têm complemento no documento: usam a chave/conta do **cadastro do favorecido**.
   - O código de barras anterior não se perde: fica no **Histórico** como valor "antes".
   - As formas sem código de barras (Pix, TED etc.) têm o complemento editável.
 - **Remessa:** depois de **Transmitido**, forma e complemento ficam travados, como hoje. Desfazer a
@@ -54,7 +55,7 @@ requisito.
 | --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 1   | **Fluxo (P.O., 14/10):** no drawer de um documento **Aprovado**, o usuário clica em **"Editar documento"** e, ao abrir a tela, os campos **descrição**, **forma de pagamento + complemento** e **categorização** (Plano → Centro → Categoria → Subcategoria, mais programa) já vêm **habilitados**; todo o resto fica travado. Hoje o botão (`document-detail-drawer.component.tsx:380-384`, rótulo "Editar pagamento") abre o Aprovado em modo somente leitura |
 | 2   | A categorização abre **preenchida** com a atual. Hoje o modo edição a carrega vazia (`hydrateFieldsFromDetail`, `document-form.view.ts:666-712`) e a trava junto com o fornecedor (`catDisabled = locks.supplier`)                                                                                                                                                                                                                                              |
-| 3   | Forma de pagamento editável. **Código de barras (Boleto/Guia) somente leitura**, com o motivo visível. Trocar a forma limpa o complemento e pede o da nova forma (Pix → chave, TED/Transferência → dados bancários), com a mesma validação do lançamento                                                                                                                                                                                                        |
+| 3   | Forma de pagamento editável. **Código de barras (Boleto/Guia) somente leitura**, com o motivo visível. Trocar a forma limpa o complemento e pede o da nova forma, quando houver; Pix e TED/Transferência usam a chave/conta do cadastro do favorecido, como no lançamento                                                                                                                                                                                       |
 | 4   | O salvar envia só o que mudou, pela rota que a issue do core-api definir, com a `version` (concorrência)                                                                                                                                                                                                                                                                                                                                                        |
 | 5   | Depois de salvar, o status continua **Aprovado** e a tela confirma a alteração                                                                                                                                                                                                                                                                                                                                                                                  |
 | 6   | Título de imposto (filho) não tem edição própria: a categorização dele muda junto com a do pai e a forma dele não muda                                                                                                                                                                                                                                                                                                                                          |
@@ -71,8 +72,7 @@ requisito.
   preciso mudar de novo, o pagamento será feito por fora, com baixa manual, e não há razão para alterar a
   alteração. Depois da troca, a forma fica travada. Por isso **voltar para Boleto/Guia é bloqueado**.
   - A tela mostra o motivo: "Forma de pagamento já alterada após a aprovação".
-  - O complemento da nova forma (chave Pix, dados bancários) continua corrigível enquanto o título não for
-    transmitido. _Premissa, a confirmar com a P.O._
+  - A chave Pix e a conta não ficam no documento: vêm do cadastro do favorecido, corrigido lá.
 - **Guia de recolhimento lançada sem código de barras** (opcional no lançamento): o código pode ser
   preenchido depois de Aprovado **só no título pai**. Num imposto filho, não.
 - **Vencimento** não entra aqui: já tem a ação própria "Alterar vencimento" na barra da lista.
@@ -121,3 +121,24 @@ requisito.
   Trocar de novo (inclusive voltar para Boleto) é recusado.
 - **CA10:** Uma Guia pai sem código de barras recebe o código depois de Aprovada. Num imposto filho, não.
 - **CA6:** A remessa gerada depois da correção usa a forma e o complemento novos.
+
+## Rascunho do front (14/10) — o que já entrega
+
+Branch `feat/125-editar-titulo-aprovado`. O que dá para fazer sem o core-api#1057:
+
+- **Modo "editar aprovado"** no Lançar Documento (`mode === 'approved'`):
+  - abre descrição, forma de pagamento e categorização; o resto fica travado;
+  - travas e motivos em `approvedEditLocksFor` / `approvedLockReasonTag` (`document-form.view.ts`);
+  - o modal de forma desabilita a volta para Boleto/Guia (`approvedBlockedMethods`).
+- **Categorização abre preenchida** em edição e consulta. O Rascunho segue vazio, para não brigar com a herança do contrato.
+- **Salvar:**
+  - a **descrição** já salva: o PATCH aceita Aprovado e mantém o status;
+  - forma, complemento e categorização mostram o aviso "ainda não disponível" e não salvam. O PATCH descartaria esses campos em silêncio.
+- **Histórico:** passa a mostrar categorização (por nome), complemento e forma de pagamento traduzida. A reclassificação feita na conciliação já grava esses campos, e eles eram descartados.
+- O botão do drawer passa a se chamar **"Editar documento"**.
+
+**Falta, quando o #1057 sair:**
+
+- ligar a rota nova no salvar (`buildApprovedAdjustInput`);
+- ler do detalhe a marca "forma já trocada" (`methodAlreadyChanged`, hoje fixa em `false`);
+- mapear os slugs novos (segunda troca, código de barras, título transmitido) para mensagens em PT.
