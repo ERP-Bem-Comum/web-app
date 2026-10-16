@@ -386,10 +386,11 @@ export function formatSharePercent(count: number, totalCount: number): string {
 
 // ── Export CSV (client-side; colunas ENXUTAS de exibição — SEM PII sensível) ──
 
-/** Cabeçalho pt-BR das 8 colunas enxutas. */
+/** Cabeçalho pt-BR das 9 colunas enxutas. */
 export const CSV_HEADER = csvHeaderLine([
   'Nome',
   'Idade',
+  'Geração',
   'Área de atuação',
   'Função',
   'Vínculo',
@@ -399,10 +400,16 @@ export const CSV_HEADER = csvHeaderLine([
 ])
 
 /**
- * Monta o CSV: uma linha por colaborador, só as 8 colunas de exibição (LGPD — sem cpf/email/telefone/
+ * Monta o CSV: uma linha por colaborador, só as 9 colunas de exibição (LGPD — sem cpf/email/telefone/
  * endereço/remuneração/alergias/biografia). Escape e convenções vêm do `csv.view-model.ts`.
+ *
+ * Geração (spec 123): só o CÓDIGO vem do core-api; o rótulo PT é do i18n, que a page injeta em
+ * `generationLabel` (o view-model não importa o catálogo). Sem injeção, sai o código cru — nunca vazio.
  */
-export function buildCsv(rows: readonly TeamMemberRow[] = EQUIPE_PLACEHOLDER): string {
+export function buildCsv(
+  rows: readonly TeamMemberRow[] = EQUIPE_PLACEHOLDER,
+  generationLabel: (code: string) => string = (code) => code,
+): string {
   const lines: string[] = []
   for (const r of rows) {
     lines.push(
@@ -411,6 +418,7 @@ export function buildCsv(rows: readonly TeamMemberRow[] = EQUIPE_PLACEHOLDER): s
         // Idade é coluna NUMÉRICA: sem idade → VAZIO. O antigo 'N/A' punha letra na coluna e forçava a
         // coluna inteira a texto na planilha (convenção única do módulo — ver `csv.view-model.ts`).
         csvInteger(r.idade),
+        generationLabel(r.geracao),
         r.programa,
         r.funcao,
         r.vinculo,

@@ -183,10 +183,10 @@ describe('buildCsv — colunas enxutas (LGPD)', () => {
   const csv = buildCsv(FIX)
   const lines = csv.split('\r\n')
 
-  it('cabeçalho exato das 8 colunas de exibição', () => {
+  it('cabeçalho exato das 9 colunas de exibição (Geração logo depois de Idade)', () => {
     assert.strictEqual(
       lines[0],
-      '"Nome";"Idade";"Área de atuação";"Função";"Vínculo";"Identidade de gênero";"Raça/cor";"Escolaridade"',
+      '"Nome";"Idade";"Geração";"Área de atuação";"Função";"Vínculo";"Identidade de gênero";"Raça/cor";"Escolaridade"',
     )
   })
 
@@ -195,7 +195,19 @@ describe('buildCsv — colunas enxutas (LGPD)', () => {
   })
 
   it('primeira linha = colaborador A com os campos enxutos', () => {
-    assert.strictEqual(lines[1], '"A";"22";"DDI";"Analista";"CLT";"Mulher Cis";"Branco";"Superior Completo"')
+    assert.strictEqual(
+      lines[1],
+      '"A";"22";"MILLENNIAL";"DDI";"Analista";"CLT";"Mulher Cis";"Branco";"Superior Completo"',
+    )
+  })
+
+  it('Geração sai com o rótulo injetado pela page; sem rótulo conhecido, o código cru (nunca vazio)', () => {
+    const labels: Readonly<Record<string, string>> = { MILLENNIAL: 'Millennial (Geração Y)', NA: 'N/A' }
+    const out = buildCsv(FIX, (code) => labels[code] ?? code).split('\r\n')
+    assert.ok(out[1]?.startsWith('"A";"22";"Millennial (Geração Y)";'))
+    // F não tem nascimento → geração NA → rótulo "N/A" na coluna 3.
+    assert.strictEqual(out[6]?.split(';')[2], '"N/A"')
+    assert.strictEqual(buildCsv(FIX, () => 'X').split('\r\n').length, 1 + FIX.length)
   })
 
   it('idade null vira "N/A" no CSV', () => {
