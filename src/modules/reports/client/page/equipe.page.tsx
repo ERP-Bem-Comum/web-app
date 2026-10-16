@@ -377,7 +377,10 @@ export function EquipePage(): ReactNode {
             type="button"
             className={exportButton}
             onClick={() => {
-              downloadCsv('equipe-abc.csv', buildCsv(filteredRows))
+              downloadCsv(
+                'equipe-abc.csv',
+                buildCsv(filteredRows, (code) => generationOption(code).label),
+              )
             }}
           >
             <DownloadIcon size={16} />

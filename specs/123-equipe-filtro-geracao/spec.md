@@ -32,7 +32,9 @@ Calcular a geração no front a partir da idade classificaria errado parte de qu
 | `GEN_Z`      | Geração Z              | 1997–2012              |
 | `NA`         | N/A                    | sem data de nascimento |
 
-- **Só o filtro:** sem gráfico e sem coluna nova (tabela, modal e CSV ficam como estão).
+- **Filtro + CSV:** sem gráfico e sem coluna nova na tabela/modal. **O CSV exportado ganha a coluna
+  `Geração`** (logo depois de Idade, com o rótulo PT; sem nascimento → `N/A`) — correção da P.O. em 16/10,
+  depois do merge da #427.
 - **Fora dos recortes** (até 1945 / a partir de 2013): proposto `OUTROS` na #1055 ("Outras gerações"). O
   front não fixa a lista: código desconhecido entra nas opções (antes do N/A) quando alguém o tem.
 
