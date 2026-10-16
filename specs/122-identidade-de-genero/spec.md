@@ -23,6 +23,10 @@ estado do form), mas **não havia seletor em tela**.
   o core-api **recusa com 422** (`gender-identity-description-requires-other`) a descrição com outra
   identidade — regra confirmada pela P.O. em 16/10. Trocar de "Outra" para outra opção esconde o campo e
   descarta o texto no envio.
+- **Layout (P.O., 16/10, após validar no local):** Identidade de Gênero é o **último** campo de Dados Pessoais
+  (detalhe e Autocadastro), para que o texto de "Outra" entre na vaga ao lado **sem empurrar** nenhum campo.
+  Ao aparecer, o campo ganha um **halo tintado que some sozinho em ~3s** (`fieldHighlight`, só cor, sem
+  movimento; encurta com `prefers-reduced-motion`).
 
 ## Escopo (front)
 

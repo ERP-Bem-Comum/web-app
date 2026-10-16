@@ -24,6 +24,7 @@ import {
   grid,
   colSpanFull,
   field,
+  fieldHighlight,
   fieldLabel,
   control,
   input,
@@ -121,12 +122,14 @@ export function CollaboratorDetailContent({
       /** Explicação mostrada no modo Editar quando o campo fica travado (o porquê, não só o cinza). */
       lockedHint?: string
       errorKey?: string
+      /** Campo que acabou de aparecer: halo que some sozinho em ~3s (só no Editar, quando o usuário o abriu). */
+      highlight?: boolean
     },
   ): ReactNode => {
     const disabled = opts?.readOnly === true ? true : !editing
     const display = opts?.mask !== undefined ? formatMask(opts.mask, c.state[key]) : c.state[key]
     return (
-      <div className={field}>
+      <div className={opts?.highlight === true && editing ? `${field} ${fieldHighlight}` : field}>
         <label htmlFor={`cd-${key}`} className={fieldLabel}>
           {label}
         </label>
@@ -380,18 +383,6 @@ export function CollaboratorDetailContent({
             </div>
             <div className={sectionBody}>
               <div className={grid}>
-                {sel(
-                  'genderIdentity',
-                  t('partners.collaborators.detail.field.genderIdentity'),
-                  genderOptions,
-                )}
-                {/* "Outra identidade de gênero: ______" (core-api#1054) — só existe com "Outra". */}
-                {c.state.genderIdentity === GENDER_IDENTITY_OTHER
-                  ? txt(
-                      'genderIdentityDescription',
-                      t('partners.collaborators.detail.field.genderIdentityDescription'),
-                    )
-                  : null}
                 {sel('race', t('partners.collaborators.detail.field.race'), raceOptions)}
                 {sel('maritalStatus', t('partners.collaborators.detail.field.maritalStatus'), maritalOptions)}
                 {txt('rg', t('partners.collaborators.detail.field.rg'))}
@@ -408,6 +399,20 @@ export function CollaboratorDetailContent({
                   'publicSectorExperienceDuration',
                   t('partners.collaborators.detail.field.experienceDuration'),
                 )}
+                {/* Identidade de Gênero fica por ÚLTIMO (P.O., 16/10): o texto de "Outra" (core-api#1054)
+                    entra na vaga ao lado sem empurrar nenhum campo da seção, e chega com um destaque. */}
+                {sel(
+                  'genderIdentity',
+                  t('partners.collaborators.detail.field.genderIdentity'),
+                  genderOptions,
+                )}
+                {c.state.genderIdentity === GENDER_IDENTITY_OTHER
+                  ? txt(
+                      'genderIdentityDescription',
+                      t('partners.collaborators.detail.field.genderIdentityDescription'),
+                      { highlight: true },
+                    )
+                  : null}
               </div>
             </div>
           </section>

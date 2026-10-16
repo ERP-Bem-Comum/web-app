@@ -39,6 +39,12 @@ const CLIENT_OPTIONS = [
   'Prefiro não responder',
 ]
 
+// Falha o teste (em vez de seguir com `null`) quando a estrutura do DOM não é a esperada.
+const present = <T,>(v: T | null | undefined): T => {
+  if (v === null || v === undefined) throw new Error('elemento esperado não encontrado no DOM')
+  return v
+}
+
 const optionLabels = (select: HTMLSelectElement): string[] =>
   Array.from(select.options)
     .filter((o) => o.value !== '')
@@ -114,6 +120,29 @@ describe('Cadastro completo (detalhe) — Identidade de Gênero (spec 122)', () 
     expect(sink.current?.buildComplete('c-1').genderIdentityDescription).toBeUndefined()
   })
 
+  it('Identidade de Gênero é o ÚLTIMO campo da seção e "Outra" entra logo depois, sem empurrar ninguém', () => {
+    render(<DetailHarness />)
+    const select = screen.getByLabelText('Identidade de Gênero', { selector: 'select' })
+    const grid = present(select.closest('div[class]')?.parentElement?.parentElement)
+    const before = Array.from(grid.children)
+    expect(before.at(-1)?.contains(select)).toBe(true)
+    fireEvent.change(select, { target: { value: 'OUTRO' } })
+    const after = Array.from(grid.children)
+    // Os campos de antes continuam na MESMA posição; o novo só é acrescentado no fim.
+    expect(after.slice(0, before.length)).toEqual(before)
+    expect(after).toHaveLength(before.length + 1)
+    expect(after.at(-1)?.contains(screen.getByLabelText('Qual identidade de gênero?'))).toBe(true)
+  })
+
+  it('o campo de "Outra" chega com o destaque (classe de animação) no Editar', () => {
+    render(<DetailHarness />)
+    fireEvent.change(screen.getByLabelText('Identidade de Gênero', { selector: 'select' }), {
+      target: { value: 'OUTRO' },
+    })
+    const wrapper = present(screen.getByLabelText('Qual identidade de gênero?').parentElement)
+    expect(wrapper.className.split(' ').length).toBeGreaterThan(1)
+  })
+
   it('detalhe com descrição gravada mostra o texto preenchido', () => {
     function Saved(): ReactNode {
       const controller = useCollaboratorDetailFormController({
@@ -174,5 +203,15 @@ describe('Autocadastro — Identidade de Gênero (spec 122)', () => {
     expect(input).not.toBeNull()
     fireEvent.change(input, { target: { value: 'Agênero' } })
     expect(controller.setField).toHaveBeenCalledWith('genderIdentityDescription', 'Agênero')
+  })
+
+  it('Identidade de Gênero é o último da seção e o texto de "Outra" vem logo depois', () => {
+    const controller = fakeController({ ...emptyCompleteFieldsState, genderIdentity: 'OUTRO' })
+    render(<AutocadastroForm {...formProps(controller)} />)
+    const select = document.getElementById('ac-genderIdentity') as HTMLSelectElement
+    const desc = document.getElementById('ac-genderIdentityDescription') as HTMLInputElement
+    const section = present(select.closest('section'))
+    const controls = Array.from(section.querySelectorAll('input, select, textarea'))
+    expect(controls.slice(-2)).toEqual([select, desc])
   })
 })

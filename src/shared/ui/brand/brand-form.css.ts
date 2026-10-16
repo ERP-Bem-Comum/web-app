@@ -7,7 +7,7 @@
  *
  * px/hex CRUS ficam no `grid-brand.values.ts` (isento); aqui só consumimos `brand.*` e `vars.*`.
  */
-import { style } from '@vanilla-extract/css'
+import { keyframes, style } from '@vanilla-extract/css'
 
 import { vars } from '#shared/ui/tokens/index.ts'
 
@@ -200,6 +200,24 @@ export const field = style({
   flexDirection: 'column',
   gap: brand.space.xs,
   minInlineSize: 0,
+})
+
+// Destaque de um campo que ACABOU de aparecer (ex.: o texto de "Outra identidade de gênero"): halo
+// tintado que segura ~2s e some sozinho no 3º — sem JS nem timer, a animação roda 1x ao montar o campo.
+// O halo é `box-shadow` (não mexe no layout: os vizinhos da grade não andam).
+const fieldAppear = keyframes({
+  '0%': { background: brand.color.panelBg, boxShadow: brand.shadow.highlight },
+  '65%': { background: brand.color.panelBg, boxShadow: brand.shadow.highlight },
+  '100%': { background: 'transparent', boxShadow: brand.shadow.highlightOff },
+})
+
+export const fieldHighlight = style({
+  borderRadius: brand.radius.xs,
+  animation: `${fieldAppear} 3s ease-out 1`,
+  '@media': {
+    // Sem movimento algum (é só cor), mas encurta para quem pediu menos animação.
+    '(prefers-reduced-motion: reduce)': { animationDuration: '1.2s' },
+  },
 })
 
 export const fieldLabel = style({

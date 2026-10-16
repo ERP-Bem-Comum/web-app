@@ -11,6 +11,7 @@ import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
 import { Button, Field, Input } from '#shared/ui/index.ts'
 import { UsersIcon, FileTextIcon, HeartHandshakeIcon, HeartPulseIcon } from '#shared/ui/icons/index.ts'
+import { fieldHighlight } from '#shared/ui/brand/brand-form.css.ts'
 // Enums dos selects vêm RE-EXPORTADOS pelo controller (boundary §XI: a view burra não importa `data/`).
 import {
   GENDER_IDENTITY_OPTIONS,
@@ -173,14 +174,6 @@ export function AutocadastroForm({
             {t('partners.collaborators.detail.section.personal')}
           </h2>
           <div className={grid}>
-            {sel('genderIdentity', t('partners.collaborators.detail.field.genderIdentity'), genderOptions)}
-            {/* "Outra identidade de gênero: ______" (core-api#1054) — só existe com "Outra". */}
-            {c.state.genderIdentity === GENDER_IDENTITY_OTHER
-              ? txt(
-                  'genderIdentityDescription',
-                  t('partners.collaborators.detail.field.genderIdentityDescription'),
-                )
-              : null}
             {sel('race', t('partners.collaborators.detail.field.race'), raceOptions)}
             {sel('maritalStatus', t('partners.collaborators.detail.field.maritalStatus'), maritalOptions)}
             {txt('rg', t('partners.collaborators.detail.field.rg'))}
@@ -193,6 +186,17 @@ export function AutocadastroForm({
               'publicSectorExperienceDuration',
               t('partners.collaborators.detail.field.experienceDuration'),
             )}
+            {/* Identidade de Gênero fica por ÚLTIMO (P.O., 16/10): o texto de "Outra" (core-api#1054) entra
+                na vaga ao lado sem empurrar nenhum campo da seção, e chega com um destaque que some sozinho. */}
+            {sel('genderIdentity', t('partners.collaborators.detail.field.genderIdentity'), genderOptions)}
+            {c.state.genderIdentity === GENDER_IDENTITY_OTHER ? (
+              <div className={fieldHighlight}>
+                {txt(
+                  'genderIdentityDescription',
+                  t('partners.collaborators.detail.field.genderIdentityDescription'),
+                )}
+              </div>
+            ) : null}
           </div>
         </section>
 
