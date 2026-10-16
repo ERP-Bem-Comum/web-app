@@ -1,6 +1,6 @@
 # 121 — Editar o território do colaborador
 
-**Tamanho:** M · **Status:** front implementado, aguardando backend · **Data:** 2026-10-12
+**Tamanho:** M · **Status:** validado pela P.O. no local (16/10) contra core-api#1053 (PR #1065, na `dev`) · **Data:** 2026-10-12
 **Depende de:** `core-api#1053` (o `PUT /collaborators/:id` aceitar `territory`)
 **Origem:** pedido da P.O. — habilitar a edição do **Território** depois de cadastrado o colaborador, nos
 status **pré-cadastrado** e **cadastrado**.
