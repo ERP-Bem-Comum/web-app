@@ -378,7 +378,7 @@ export function DocumentDetailDrawer({
         )}
 
         <footer className={drawerFooter}>
-          {/* "Editar pagamento" → abre o documento na tela de Lançar (edição se Aberto; consulta se não). */}
+          {/* "Editar documento" → abre na tela de Lançar (ajuste se Aberto; spec 125: editar Aprovado; consulta se não). */}
           <Link to="/financeiro/contas-a-pagar/lancar" search={{ id: view.id }} className={drawerEditBtn}>
             {t('financial.detail.edit')}
           </Link>

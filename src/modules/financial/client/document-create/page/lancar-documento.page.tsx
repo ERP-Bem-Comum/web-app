@@ -34,6 +34,12 @@ import {
   buildCreateInput,
   buildDraftInput,
   buildAdjustInput,
+  buildApprovedAdjustInput,
+  approvedEditChanges,
+  approvedEditAwaitsBackend,
+  approvedEditLocksFor,
+  approvedBlockedMethods,
+  approvedLockReasonTag,
   canSubmit,
   canSaveDraft,
   canSaveEdit,
@@ -51,6 +57,7 @@ import {
   body,
   crumb,
   errorBanner,
+  noticeBanner,
   formCol,
   resizeHandle,
   resizeHandleActive,
@@ -143,21 +150,43 @@ export function LancarDocumentoPage({ documentId }: LancarDocumentoPageProps = {
   //  · create  — novo documento
   //  · edit    — Aberto: ajuste (PATCH) do subconjunto editável; demais campos travados
   //  · draft   — Rascunho: reabre com TUDO preenchido e EDITÁVEL p/ concluir e salvar (via create)
+  //  · approved — Aprovado (spec 125): descrição, forma (+ complemento) e categorização; continua Aprovado
   //  · view    — demais status: somente consulta (tudo travado)
+  const approvedCtx = edit.approvedContext
   const mode = !edit.isEdit
     ? 'create'
     : edit.status === 'Aberto'
       ? 'edit'
       : edit.status === 'Rascunho'
         ? 'draft'
-        : 'view'
-  // Rascunho/criação salvam pelo command (create); edição usa o binding de ajuste.
-  const errorTag = mode === 'edit' ? edit.errorTag : command.errorTag
-  const running = mode === 'edit' ? edit.running : command.running
-  // Travas: edição/consulta usam as travas por status; criação/rascunho ficam 100% abertos.
-  const formLocks = mode === 'edit' || mode === 'view' ? (edit.locks ?? undefined) : undefined
+        : approvedCtx !== null
+          ? 'approved'
+          : 'view'
+  const isAdjusting = mode === 'edit' || mode === 'approved'
+  // Rascunho/criação salvam pelo command (create); edição (Aberto/Aprovado) usa o binding de ajuste.
+  const errorTag = isAdjusting ? edit.errorTag : command.errorTag
+  const running = isAdjusting ? edit.running : command.running
+  // Travas: edição/consulta usam as travas por status; o Aprovado depende da forma ATUAL (trava do
+  // complemento muda com a troca); criação/rascunho ficam 100% abertos.
+  const formLocks =
+    approvedCtx !== null && mode === 'approved'
+      ? approvedEditLocksFor(approvedCtx, controller.fields.paymentMethod)
+      : mode === 'edit' || mode === 'view'
+        ? (edit.locks ?? undefined)
+        : undefined
+  const lockReasons =
+    approvedCtx !== null && mode === 'approved'
+      ? approvedLockReasonTag(approvedCtx, controller.fields.paymentMethod)
+      : undefined
+  const blockedMethods =
+    approvedCtx !== null && mode === 'approved' ? approvedBlockedMethods(approvedCtx) : undefined
+  // Aprovado: forma/complemento/categorização alterados ainda não salvam (core-api#1057) — avisa o porquê.
+  const approvedAwaitsBackend =
+    mode === 'approved' &&
+    edit.detail !== null &&
+    approvedEditAwaitsBackend(approvedEditChanges(controller.fields, edit.detail))
   // Bottombar: rascunho reaproveita as ações de criação (Salvar Documento / Salvar rascunho).
-  const bottombarMode = mode === 'draft' ? 'create' : mode
+  const bottombarMode = mode === 'draft' ? 'create' : isAdjusting ? 'edit' : mode
 
   // #502/S3 — HERANÇA da categorização do contrato: quando o fornecedor tem contrato ATIVO vinculado, a cascata
   // (Programa → Plano → Centro → Categoria → Subcategoria) é PRÉ-PREENCHIDA a partir dos refs do contrato — igual
@@ -224,6 +253,13 @@ export function LancarDocumentoPage({ documentId }: LancarDocumentoPageProps = {
     if (input !== null) edit.execute(input)
   }
 
+  // Aprovado (spec 125): só o que o backend já aceita — hoje, a descrição (core-api#1057 libera o resto).
+  const submitApprovedEdit = (): void => {
+    if (edit.detail === null) return
+    const input = buildApprovedAdjustInput(controller.fields, edit.detail)
+    if (input !== null) edit.execute(input)
+  }
+
   return (
     <div className={screen}>
       <header className={topbar}>
@@ -235,7 +271,9 @@ export function LancarDocumentoPage({ documentId }: LancarDocumentoPageProps = {
           {t('financial.create.back')}
         </Link>
         <h1 className={topTitle}>
-          {mode === 'edit' || mode === 'view' ? t('financial.edit.title') : t('financial.create.title')}
+          {mode === 'edit' || mode === 'approved' || mode === 'view'
+            ? t('financial.edit.title')
+            : t('financial.create.title')}
         </h1>
         <span className={crumb}>{t('financial.create.crumb')}</span>
         <Link
@@ -250,6 +288,11 @@ export function LancarDocumentoPage({ documentId }: LancarDocumentoPageProps = {
       {errorTag !== null ? (
         <div className={errorBanner} role="alert">
           {t(errorTag)}
+        </div>
+      ) : null}
+      {approvedAwaitsBackend ? (
+        <div className={noticeBanner} role="status">
+          {t('financial.edit.approved.awaitingBackend')}
         </div>
       ) : null}
 
@@ -288,7 +331,7 @@ export function LancarDocumentoPage({ documentId }: LancarDocumentoPageProps = {
             ocrRead={ocrFields.has('supplier')}
             open={picker.open}
             query={picker.query}
-            disabled={mode === 'edit' || mode === 'view'}
+            disabled={mode === 'edit' || mode === 'approved' || mode === 'view'}
             onToggle={picker.toggle}
             onClose={picker.close}
             onQueryChange={picker.setQuery}
@@ -303,6 +346,8 @@ export function LancarDocumentoPage({ documentId }: LancarDocumentoPageProps = {
             hydration={hydration}
             ocrFields={ocrFields}
             locks={formLocks}
+            lockReasons={lockReasons}
+            blockedPaymentMethods={blockedMethods}
             onType={controller.setType}
             onPaymentMethod={controller.setPaymentMethod}
             onText={controller.setText}
@@ -377,17 +422,21 @@ export function LancarDocumentoPage({ documentId }: LancarDocumentoPageProps = {
           submit(buildDraftInput(controller.fields))
         }}
         onSubmit={
-          mode === 'edit'
-            ? submitEdit
-            : () => {
-                submit(buildCreateInput(controller.fields))
-              }
+          mode === 'approved'
+            ? submitApprovedEdit
+            : mode === 'edit'
+              ? submitEdit
+              : () => {
+                  submit(buildCreateInput(controller.fields))
+                }
         }
         canSaveDraft={canSaveDraft(controller.fields)}
         canSubmit={
-          mode === 'edit'
-            ? edit.detail !== null && canSaveEdit(controller.fields, edit.detail)
-            : canSubmit(controller.fields)
+          mode === 'approved'
+            ? edit.detail !== null && buildApprovedAdjustInput(controller.fields, edit.detail) !== null
+            : mode === 'edit'
+              ? edit.detail !== null && canSaveEdit(controller.fields, edit.detail)
+              : canSubmit(controller.fields)
         }
         running={running}
       />
