@@ -1,6 +1,6 @@
 # 123 — Filtro de Geração no relatório Equipe Bem Comum
 
-**Tamanho:** M · **Status:** front implementado, aguardando backend · **Data:** 2026-10-12
+**Tamanho:** M · **Status:** backend entregue (core-api#1055 via PR #1066, na `dev` em 16/10); validação da P.O. na homologação · **Data:** 2026-10-12
 **Depende de:** `core-api#1055` (o `GET /reports/team` expor `generation` por pessoa)
 **Origem:** pedido da P.O. — filtrar o relatório **Equipe Bem Comum** por geração (Boomer, X, Millennial, Z),
 derivada da data de nascimento, no mesmo padrão dos filtros de hoje.
