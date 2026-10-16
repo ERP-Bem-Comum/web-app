@@ -6,6 +6,7 @@ import type {
   DocumentTimelineEntry,
   TimelineEventType,
 } from '#modules/financial/client/data/model/document.model.ts'
+import type { CategorizationResolvers } from './contas-a-pagar.view-model.ts'
 
 // Tom do nó = COR DO STATUS que o evento representa (paridade com os pills de status do grid):
 // paid=verde (active) · approved=azul · reconciled=roxo · open=âmbar (pending) · draft=cinza (cancelled).
@@ -61,15 +62,59 @@ export const resolveTimelineTitle = (
 
 // Só os campos ÚTEIS ao humano aparecem no diff; os técnicos (supplierRef/documentNumber/type/netValue…)
 // são descartados. Cada campo tem rótulo i18n + como formatar o valor (data/dinheiro/status/texto).
-type ChangeKind = 'date' | 'money' | 'status' | 'text'
+// `resolved` (spec 125) = o valor cru é um código (forma de pagamento) ou um id (categorização) que só o
+// binding sabe traduzir em nome → passa pelo `TimelineValueResolver`.
+type ChangeKind = 'date' | 'money' | 'status' | 'text' | 'resolved'
 const FIELD_CONFIG: Readonly<Record<string, { labelTag: string; kind: ChangeKind }>> = {
   dueDate: { labelTag: 'financial.timeline.field.dueDate', kind: 'date' },
   grossValue: { labelTag: 'financial.timeline.field.grossValue', kind: 'money' },
   value: { labelTag: 'financial.timeline.field.grossValue', kind: 'money' },
   status: { labelTag: 'financial.timeline.field.status', kind: 'status' },
   description: { labelTag: 'financial.timeline.field.description', kind: 'text' },
-  paymentMethod: { labelTag: 'financial.timeline.field.paymentMethod', kind: 'text' },
+  paymentMethod: { labelTag: 'financial.timeline.field.paymentMethod', kind: 'resolved' },
+  // spec 125: complemento e categorização (a reclassificação da conciliação já os grava; eram descartados).
+  paymentDetail: { labelTag: 'financial.timeline.field.paymentDetail', kind: 'text' },
+  programRef: { labelTag: 'financial.timeline.field.programRef', kind: 'resolved' },
+  budgetPlanRef: { labelTag: 'financial.timeline.field.budgetPlanRef', kind: 'resolved' },
+  costCenterRef: { labelTag: 'financial.timeline.field.costCenterRef', kind: 'resolved' },
+  categoryRef: { labelTag: 'financial.timeline.field.categoryRef', kind: 'resolved' },
+  subcategoryRef: { labelTag: 'financial.timeline.field.subcategoryRef', kind: 'resolved' },
 }
+
+/**
+ * Traduz o valor cru de um campo `resolved` (código/id) para o texto exibido. Quem monta é o binding (tem o
+ * catálogo i18n e a taxonomia). Sem resolver → o valor cru (nunca quebra).
+ */
+export type TimelineValueResolver = (field: string, raw: string) => string
+
+/**
+ * Resolver padrão (spec 125): forma de pagamento → nome i18n; refs da categorização → nome pela MESMA
+ * resolução do drawer (plano carimbado primeiro, catálogo operacional de fallback). Ref que não resolve (p.ex.
+ * de um plano anterior à reclassificação) → "não identificado", nunca o UUID cru. PURA (recebe o `t`).
+ */
+export const buildTimelineValueResolver =
+  (r: CategorizationResolvers, t: (key: string) => string): TimelineValueResolver =>
+  (field, raw) => {
+    const unresolved = t('financial.timeline.value.unresolved')
+    switch (field) {
+      case 'paymentMethod': {
+        const tag = `financial.paymentMethod.${raw}`
+        const label = t(tag)
+        return label === tag ? raw : label
+      }
+      case 'programRef':
+        return r.program(raw) ?? unresolved
+      case 'budgetPlanRef':
+        return r.budgetPlan(raw) ?? unresolved
+      case 'costCenterRef':
+        return r.costCenter(raw) ?? unresolved
+      case 'categoryRef':
+      case 'subcategoryRef':
+        return r.categoryNode(raw)?.name ?? unresolved
+      default:
+        return raw
+    }
+  }
 /** Campo tem apresentação amigável? (define se entra na timeline). */
 export const isTimelineFieldKnown = (field: string): boolean => field in FIELD_CONFIG
 
@@ -93,9 +138,16 @@ const dateOnlyFmt = new Intl.DateTimeFormat('pt-BR', {
 const moneyFmt = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' })
 
 // Formata o valor cru conforme o tipo do campo; nulo → "—"; não-parseável → o próprio valor cru (nunca quebra).
-const formatChangeValue = (kind: ChangeKind, raw: string | null): string => {
+const formatChangeValue = (
+  kind: ChangeKind,
+  field: string,
+  raw: string | null,
+  resolve: TimelineValueResolver | undefined,
+): string => {
   if (raw === null || raw === '') return '—'
   switch (kind) {
+    case 'resolved':
+      return resolve !== undefined ? resolve(field, raw) : raw
     case 'date': {
       const d = new Date(raw)
       return Number.isNaN(d.getTime()) ? raw : dateOnlyFmt.format(d)
@@ -182,7 +234,10 @@ const byOccurredAtDesc = (entries: readonly DocumentTimelineEntry[]): readonly D
     .map(({ e }) => e)
 
 /** Deriva as linhas da timeline, ordenadas do mais recente ao mais antigo. */
-export const deriveTimelineRows = (entries: readonly DocumentTimelineEntry[]): readonly TimelineRow[] =>
+export const deriveTimelineRows = (
+  entries: readonly DocumentTimelineEntry[],
+  resolve?: TimelineValueResolver,
+): readonly TimelineRow[] =>
   byOccurredAtDesc(entries).map((e, i) => ({
     key: `${e.eventType}-${e.occurredAt}-${String(i)}`,
     eventType: e.eventType,
@@ -199,8 +254,8 @@ export const deriveTimelineRows = (entries: readonly DocumentTimelineEntry[]): r
         acc.push({
           labelTag: cfg.labelTag,
           fieldRaw: c.field,
-          before: formatChangeValue(cfg.kind, c.before),
-          after: formatChangeValue(cfg.kind, c.after),
+          before: formatChangeValue(cfg.kind, c.field, c.before, resolve),
+          after: formatChangeValue(cfg.kind, c.field, c.after, resolve),
         })
       }
       return acc
