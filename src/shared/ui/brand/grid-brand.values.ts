@@ -92,7 +92,7 @@ export const brand = {
       // Anel do nó-folha da árvore (tree-node dot) — contorno na cor primary.
       treeNodeBorder: '#396496',
     },
-    // Paleta dos GRÁFICOS do relatório "Equipe ABC" (donut Gênero, barras verticais Raça/Cor, barras
+    // Paleta dos GRÁFICOS do relatório "Equipe Bem Comum" (donut Gênero, barras verticais Raça/Cor, barras
     // horizontais Idade/Função, linha por Ano). Hex cru permitido aqui (é um `*.values.ts`, isento do lint
     // só-tokens). A UI aplica via classe (styleVariants no `.css.ts`) — as views não importam tokens
     // (§boundaries client-ui ↛ ds-tokens). Tons distintos e legíveis, dentro da família "brand".
@@ -137,7 +137,7 @@ export const brand = {
       line: '#396496',
     },
     // Paleta dos GRÁFICOS do Dashboard financeiro (donut "Pagamentos por Centro de Custo"), harmonizada com
-    // o Equipe ABC: tons dessaturados da família "brand" (sem o vermelho de erro que destoava numa categoria
+    // o Equipe Bem Comum: tons dessaturados da família "brand" (sem o vermelho de erro que destoava numa categoria
     // neutra). Set categórico coeso: azul → ciano → verde-azulado → âmbar. A linha "Visão Geral" usa os
     // tokens de tema `vars.color.chart.*` (retonados junto). Aplicado por classe (styleVariants) — §boundaries.
     dash: {

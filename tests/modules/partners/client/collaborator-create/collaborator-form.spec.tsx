@@ -63,7 +63,7 @@ describe('CollaboratorForm', () => {
       />,
     )
     // Área: PARC/DDI/DCE/EPV (+ placeholder) ; Vínculo: CLT/PJ (+ placeholder)
-    expect(screen.getByRole('option', { name: 'Parcerias' })).toBeTruthy()
+    expect(screen.getByRole('option', { name: 'PARC' })).toBeTruthy()
     expect(screen.getByRole('option', { name: 'CLT' })).toBeTruthy()
     expect(screen.getByRole('option', { name: 'PJ' })).toBeTruthy()
   })

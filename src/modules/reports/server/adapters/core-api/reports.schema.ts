@@ -25,6 +25,9 @@ const CoreApiTeamMemberSchema = z.object({
   genderIdentity: z.string().trim().nullable().catch(null),
   race: z.string().trim().nullable().catch(null),
   age: z.int().nonnegative().nullable().catch(null),
+  // Geração (core-api#1055): CÓDIGO derivado do ANO de nascimento no `partners` — a idade não basta (29 anos
+  // hoje pode ser 1996 ou 1997). Ausente (core-api anterior à #1055) ou inválido → 'NA', nunca linha perdida.
+  generation: z.string().trim().min(1).catch('NA'),
 })
 export const CoreApiTeamReportSchema = z.object({
   team: z.array(CoreApiTeamMemberSchema),

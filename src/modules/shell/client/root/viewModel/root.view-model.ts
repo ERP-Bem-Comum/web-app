@@ -65,9 +65,9 @@ const PAGE_TITLES: Readonly<Record<string, string>> = {
   // isto só alimenta o document.title (senão cairia no fallback "ERP Bem Comum").
   '/relatorios/fornecedores-sem-contrato': 'Fornecedores sem Contrato',
   '/relatorios/realizado-x-planejado': 'Realizado × Planejado',
-  // Relatórios → Equipe ABC — a page desenha o próprio PageHeader (padrão dos demais relatórios);
+  // Relatórios → Equipe Bem Comum — a page desenha o próprio PageHeader (padrão dos demais relatórios);
   // isto só alimenta o document.title (senão cairia no fallback "ERP Bem Comum").
-  '/relatorios/equipe': 'Equipe ABC',
+  '/relatorios/equipe': 'Equipe Bem Comum',
   // Relatórios → Posição de Pagamentos — a page desenha o próprio header "brand"; isto só alimenta o
   // document.title (senão cairia no fallback "ERP Bem Comum").
   '/relatorios/posicao-pagamentos': 'Posição de Pagamentos',

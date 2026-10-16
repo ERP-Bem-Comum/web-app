@@ -9,7 +9,7 @@
  */
 
 /**
- * Membro da equipe (relatório Equipe ABC — LGPD-safe, sem demografia). `program`/`education` e
+ * Membro da equipe (relatório Equipe Bem Comum — LGPD-safe, sem demografia). `program`/`education` e
  * `experienceInPublicSector` são nullable; os demais campos são string livre do backend.
  */
 export type TeamMember = Readonly<{
@@ -28,6 +28,8 @@ export type TeamMember = Readonly<{
   race: string | null
   /** Anos completos, já derivados pelo core-api — `dateOfBirth` nunca cruza a borda. */
   age: number | null
+  /** Código da geração ('BOOMER'…'GEN_Z', 'NA' sem nascimento), derivado no core-api (#1055). */
+  generation: string
 }>
 
 /**

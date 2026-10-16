@@ -195,6 +195,10 @@ export type DocumentFormProps = Readonly<{
   ocrFields: ReadonlySet<OcrFieldKey>
   /** Travas por campo (modo edição). Ausente/criação = nada travado. */
   locks?: FieldLocks
+  /** spec 125: motivo (tag i18n) de forma/complemento travados no Aprovado — o campo PARECE e DIZ por quê. */
+  lockReasons?: Readonly<{ paymentMethod: string | null; paymentComplement: string | null }>
+  /** spec 125: formas que não podem ser escolhidas (Aprovado → não volta para código de barras). */
+  blockedPaymentMethods?: ReadonlySet<PaymentMethod>
   onType: (value: DocumentType | '') => void
   onPaymentMethod: (value: PaymentMethod | '') => void
   onText: (
@@ -283,8 +287,13 @@ export function DocumentForm(props: DocumentFormProps): ReactNode {
   const retEnabled = retentionsEnabledFor(fields.type)
   const bank = hydration.bank
   const contract = props.contract
-  // Categorização só-leitura em edição/consulta (mesma trava do fornecedor); editável em criação/rascunho.
+  // Conta-débito e aprovador só-leitura em edição/consulta (mesma trava do fornecedor).
   const catDisabled = locks.supplier
+  // spec 125: a categorização tem trava PRÓPRIA — no Aprovado ela abre com o fornecedor travado.
+  const taxonomyDisabled = locks.categorization
+  // Complemento (código de barras/cartão/câmbio/texto): travado → visual de desabilitado + motivo abaixo.
+  const complementClass = locks.paymentComplement ? controlDisabled : control
+  const complementReason = props.lockReasons?.paymentComplement ?? null
   // A conta do favorecido acompanha a FORMA (regra pura no view-model): PIX mostra a chave,
   // TED/Transferência mostram a conta, e as demais formas não mostram nada — boleto e guia pagam pelo
   // código de barras, cartão/câmbio/outro não tocam o cadastro bancário.
@@ -559,6 +568,9 @@ export function DocumentForm(props: DocumentFormProps): ReactNode {
                 )}
               </button>
             )}
+            {props.lockReasons?.paymentMethod != null ? (
+              <span className={retentionsHint}>{t(props.lockReasons.paymentMethod)}</span>
+            ) : null}
           </div>
           {/* "Pagar da conta" REAL (#197): contas-cedente da Conciliação. Envia contaDebitoRef → a baixa
               do título é direcionada a essa conta. */}
@@ -602,7 +614,8 @@ export function DocumentForm(props: DocumentFormProps): ReactNode {
               </label>
               <input
                 id="fin-boleto"
-                className={control}
+                className={complementClass}
+                disabled={locks.paymentComplement}
                 inputMode="numeric"
                 placeholder="00000.00000 00000.000000 00000.000000 0 00000000000000"
                 value={fields.paymentComplement}
@@ -623,7 +636,8 @@ export function DocumentForm(props: DocumentFormProps): ReactNode {
               </label>
               <input
                 id="fin-tax-guide"
-                className={control}
+                className={complementClass}
+                disabled={locks.paymentComplement}
                 inputMode="numeric"
                 placeholder="00000000000 0 00000000000 0 00000000000 0 00000000000 0"
                 value={fields.paymentComplement}
@@ -644,7 +658,8 @@ export function DocumentForm(props: DocumentFormProps): ReactNode {
               </label>
               <input
                 id="fin-card"
-                className={control}
+                className={complementClass}
+                disabled={locks.paymentComplement}
                 placeholder="•••• •••• •••• ••••"
                 value={fields.paymentComplement}
                 onChange={(e) => {
@@ -664,7 +679,8 @@ export function DocumentForm(props: DocumentFormProps): ReactNode {
               </label>
               <input
                 id="fin-currency"
-                className={control}
+                className={complementClass}
+                disabled={locks.paymentComplement}
                 placeholder="USD · 5,00 · R$ 0,00"
                 value={fields.paymentComplement}
                 onChange={(e) => {
@@ -684,7 +700,8 @@ export function DocumentForm(props: DocumentFormProps): ReactNode {
               </label>
               <input
                 id="fin-free"
-                className={control}
+                className={complementClass}
+                disabled={locks.paymentComplement}
                 value={fields.paymentComplement}
                 onChange={(e) => {
                   props.onText('paymentComplement', e.target.value)
@@ -695,6 +712,7 @@ export function DocumentForm(props: DocumentFormProps): ReactNode {
             </div>
           </div>
         ) : null}
+        {complementReason !== null ? <span className={retentionsHint}>{t(complementReason)}</span> : null}
       </section>
 
       {/* ── S4 Categorização — auto-preenchida do contrato "Em Andamento" (quando houver) ── */}
@@ -787,13 +805,13 @@ export function DocumentForm(props: DocumentFormProps): ReactNode {
           <ProgramSelect
             label={t('financial.create.field.programa')}
             value={props.programValue}
-            disabled={catDisabled}
+            disabled={taxonomyDisabled}
             options={props.programOptions}
             onChange={props.onProgram}
           />
           <CategoSelect
             label={t('financial.create.field.planoOrcamentario')}
-            disabled={catDisabled}
+            disabled={taxonomyDisabled}
             value={fields.planoOrcamentario}
             options={props.planoOptions}
             onChange={(v) => {
@@ -804,21 +822,21 @@ export function DocumentForm(props: DocumentFormProps): ReactNode {
         <div className={fieldGrid.three}>
           <CategoSelect
             label={t('financial.create.field.centroCusto')}
-            disabled={catDisabled}
+            disabled={taxonomyDisabled}
             value={props.costCenterValue}
             options={props.centroCustoOptions}
             onChange={props.onCostCenter}
           />
           <CategoSelect
             label={t('financial.create.field.categoria')}
-            disabled={catDisabled}
+            disabled={taxonomyDisabled}
             value={props.categoryValue}
             options={props.categoriaOptions}
             onChange={props.onCategory}
           />
           <CategoSelect
             label={t('financial.create.field.subcategoria')}
-            disabled={catDisabled}
+            disabled={taxonomyDisabled}
             value={props.subcategoryValue}
             options={props.subcategoriaOptions}
             onChange={props.onSubcategory}
@@ -835,6 +853,7 @@ export function DocumentForm(props: DocumentFormProps): ReactNode {
       <PaymentMethodModal
         open={props.payModalOpen}
         selected={fields.paymentMethod}
+        blocked={props.blockedPaymentMethods}
         onSelect={props.onSelectPayment}
         onClose={props.onClosePayModal}
       />

@@ -610,6 +610,19 @@ export const errorBanner = style({
   fontFamily: vars.font.family.body, // senão vaza a serifa (Times) default do body
   fontSize: vars.font.size.sm,
 })
+// spec 125: aviso neutro (não é erro) — p.ex. a alteração do Aprovado que ainda espera o backend.
+export const noticeBanner = style({
+  flexShrink: 0,
+  marginBlockStart: vars.space.md,
+  marginInline: vars.space.lg,
+  padding: vars.space.md,
+  borderRadius: vars.radius.md,
+  border: `${vars.borderWidth.thin} solid ${vars.color.border.default}`,
+  background: vars.color.surface.subtle,
+  color: vars.color.text.secondary,
+  fontFamily: vars.font.family.body,
+  fontSize: vars.font.size.sm,
+})
 export const bottombar = style({
   display: 'flex',
   justifyContent: 'flex-end',
@@ -1414,6 +1427,15 @@ export const typeCard = style({
     outline: 'none',
     borderColor: vars.color.institutional.blue,
     boxShadow: `0 0 0 0.1875rem ${vars.color.institutional.blueBg}`,
+  },
+  // spec 125: forma indisponível (Aprovado → não volta para código de barras) PARECE indisponível.
+  ':disabled': {
+    cursor: 'not-allowed',
+    opacity: 0.45,
+    borderColor: vars.color.institutional.paperRule,
+    background: vars.color.surface.subtle,
+    transform: 'none',
+    boxShadow: 'none',
   },
 })
 // Selecionado (mock): borda da marca + anel 3px.

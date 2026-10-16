@@ -94,12 +94,10 @@ export const CompleteCollaboratorRegistrationInputSchema = z.object({
   publicSectorExperienceDuration: z.string().trim().max(120).optional(),
 })
 
-// Edição dos dados cadastrais. PUT /collaborators/:id — OMITE território (#42) e banco/PIX (#40).
-export const UpdateCollaboratorInputSchema = CreateCollaboratorInputSchema.omit({
-  territory: true,
-  bankAccount: true,
-  pixKey: true,
-}).extend({
+// Edição dos dados cadastrais. PUT /collaborators/:id. Banco/PIX (spec 120, core-api#1029) e território
+// (spec 121, core-api#1053) seguem no corpo com a mesma regra: `null` MANTÉM o gravado; objeto valida e
+// substitui. Esvaziar não existe pelo PUT.
+export const UpdateCollaboratorInputSchema = CreateCollaboratorInputSchema.extend({
   id: z.string().trim().min(1).max(64),
 })
 

@@ -3,6 +3,9 @@ import type { ReactNode } from 'react'
 import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
 import { formatMask, unmask, type InputMask } from '#shared/ui/index.ts'
+import { BankSelect, isUnknownBank } from '#shared/ui/brand/bank-select.component.tsx'
+import { BANK_LABELS, BANK_UNKNOWN_HINT } from '#modules/partners/client/shared/bank-select-labels.ts'
+import { derivePixKey } from '#modules/partners/client/domain/derive-pix-key.ts'
 import {
   UsersIcon,
   FileTextIcon,
@@ -27,6 +30,9 @@ import {
   select,
   chevron,
   textarea,
+  hint,
+  controlError,
+  fieldError,
 } from '#shared/ui/brand/brand-form.css.ts'
 
 import {
@@ -37,6 +43,8 @@ import {
   FOOD_CATEGORIES,
   MARITAL_STATUSES,
   PIX_KEY_TYPES,
+  isPixKeyType,
+  BR_UF,
   type CollaboratorDetailFormController,
   type CollaboratorDetailFormState,
 } from './collaborator-detail-form.controller.ts'
@@ -56,6 +64,7 @@ function SelectControl({
   value,
   ariaLabel,
   disabled,
+  invalid = false,
   onChange,
   children,
 }: {
@@ -63,6 +72,7 @@ function SelectControl({
   value: string
   ariaLabel?: string
   disabled: boolean
+  invalid?: boolean
   onChange?: (e: React.ChangeEvent<HTMLSelectElement>) => void
   children: ReactNode
 }): ReactNode {
@@ -70,9 +80,10 @@ function SelectControl({
     <div className={control}>
       <select
         id={id}
-        className={select}
+        className={`${select} ${invalid ? controlError : ''}`}
         value={value}
         aria-label={ariaLabel}
+        aria-invalid={invalid || undefined}
         disabled={disabled}
         onChange={onChange}
       >
@@ -91,11 +102,24 @@ export function CollaboratorDetailContent({
   showComplete,
   preTitle,
 }: CollaboratorDetailContentProps): ReactNode {
-  // Campo de texto. `readOnly` força desabilitado (território/banco são create-only); senão segue `editing`.
+  const isInvalid = (key: string): boolean => c.errors[key] === true
+  const invalidMsg = (key: string): string | null =>
+    c.errors[key] === true ? t('partners.collaborators.form.invalid') : null
+
+  // Campo de texto. `readOnly` força desabilitado (ex.: CPF travado); senão segue `editing`.
+  // `errorKey` liga o campo ao erro de validação do controller (banco/PIX spec 120, território spec 121).
   const txt = (
     key: keyof CollaboratorDetailFormState,
     label: string,
-    opts?: { type?: 'text' | 'email' | 'date'; mask?: InputMask; placeholder?: string; readOnly?: boolean },
+    opts?: {
+      type?: 'text' | 'email' | 'date'
+      mask?: InputMask
+      placeholder?: string
+      readOnly?: boolean
+      /** Explicação mostrada no modo Editar quando o campo fica travado (o porquê, não só o cinza). */
+      lockedHint?: string
+      errorKey?: string
+    },
   ): ReactNode => {
     const disabled = opts?.readOnly === true ? true : !editing
     const display = opts?.mask !== undefined ? formatMask(opts.mask, c.state[key]) : c.state[key]
@@ -107,7 +131,7 @@ export function CollaboratorDetailContent({
         <input
           id={`cd-${key}`}
           type={opts?.type ?? 'text'}
-          className={input}
+          className={`${input} ${opts?.errorKey !== undefined && isInvalid(opts.errorKey) ? controlError : ''}`}
           placeholder={opts?.placeholder}
           value={display}
           disabled={disabled}
@@ -116,6 +140,12 @@ export function CollaboratorDetailContent({
             c.setField(key, opts?.mask !== undefined ? unmask(e.target.value, opts.mask) : e.target.value)
           }}
         />
+        {editing && opts?.readOnly === true && opts.lockedHint !== undefined ? (
+          <span className={hint}>{opts.lockedHint}</span>
+        ) : null}
+        {opts?.errorKey !== undefined && invalidMsg(opts.errorKey) !== null ? (
+          <span className={fieldError}>{invalidMsg(opts.errorKey)}</span>
+        ) : null}
       </div>
     )
   }
@@ -124,9 +154,10 @@ export function CollaboratorDetailContent({
     key: keyof CollaboratorDetailFormState,
     label: string,
     options: readonly Readonly<{ value: string; label: string }>[],
-    opts?: { readOnly?: boolean },
+    opts?: { readOnly?: boolean; errorKey?: string },
   ): ReactNode => {
     const disabled = opts?.readOnly === true ? true : !editing
+    const invalid = opts?.errorKey !== undefined && isInvalid(opts.errorKey)
     return (
       <div className={field}>
         <label htmlFor={`cd-${key}`} className={fieldLabel}>
@@ -137,6 +168,7 @@ export function CollaboratorDetailContent({
           value={c.state[key]}
           ariaLabel={label}
           disabled={disabled}
+          invalid={invalid}
           onChange={(e) => {
             c.setField(key, e.target.value)
           }}
@@ -148,10 +180,14 @@ export function CollaboratorDetailContent({
             </option>
           ))}
         </SelectControl>
+        {opts?.errorKey !== undefined && invalidMsg(opts.errorKey) !== null ? (
+          <span className={fieldError}>{invalidMsg(opts.errorKey)}</span>
+        ) : null}
       </div>
     )
   }
 
+  const ufOptions = BR_UF.map((u) => ({ value: u.sigla, label: `${u.sigla} — ${u.nome}` }))
   const areaOptions = OCCUPATION_AREAS.map((a) => ({
     value: a,
     label: t(`partners.collaborators.area.${a}`),
@@ -204,12 +240,20 @@ export function CollaboratorDetailContent({
               t('partners.collaborators.form.employmentRelationship'),
               vinculoOptions,
             )}
-            {txt('cpf', t('partners.collaborators.form.cpf'), { mask: 'cpf' })}
+            {/* CPF travado no detalhe (decisão da P.O., 05/10): é a identidade do colaborador e não se edita
+                depois do cadastro — nem por quem tem `collaborator:edit-sensitive`. O save segue enviando o CPF
+                original, que o PUT total exige. */}
+            {txt('cpf', t('partners.collaborators.form.cpf'), {
+              mask: 'cpf',
+              readOnly: true,
+              lockedHint: t('partners.collaborators.form.cpfLocked'),
+            })}
           </div>
         </div>
       </section>
 
-      {/* Território (#42) — somente leitura: definido no cadastro; o PUT não altera território. */}
+      {/* Território (#42) — editável no modo Editar (spec 121, core-api#1053), em pré-cadastrado e
+          cadastrado. Substituir pode; apagar não (decisão da P.O.) — esvaziar os dois marca o grupo. */}
       <section className={sectionCard}>
         <div className={sectionHeader}>
           <span className={sectionIcon}>
@@ -219,14 +263,22 @@ export function CollaboratorDetailContent({
         </div>
         <div className={sectionBody}>
           <div className={grid}>
-            {txt('uf', t('partners.collaborators.form.uf'), { readOnly: true })}
-            {txt('municipality', t('partners.collaborators.form.municipality'), { readOnly: true })}
+            {isInvalid('territory.removal') ? (
+              <span className={`${fieldError} ${colSpanFull}`} role="alert">
+                {t('partners.collaborators.form.territoryRemovalBlocked')}
+              </span>
+            ) : null}
+            {sel('uf', t('partners.collaborators.form.uf'), ufOptions, { errorKey: 'territory.uf' })}
+            {txt('municipality', t('partners.collaborators.form.municipality'), {
+              errorKey: 'territory.municipality',
+            })}
           </div>
         </div>
       </section>
 
-      {/* Dados Bancários + PIX (#40) — create-only: definidos no cadastro; o PUT não os altera.
-          Exibidos SOMENTE LEITURA (vazios quando o colaborador não tem payment-target). */}
+      {/* Dados Bancários + PIX (#40) — editáveis no modo Editar (spec 120, core-api#1029), como no
+          Fornecedor. Banco pelo CÓDIGO (a remessa CNAB precisa dos 3 dígitos). Fora do modo Editar
+          ficam somente leitura (vazios quando o colaborador não tem payment-target). */}
       <section className={sectionCard}>
         <div className={sectionHeader}>
           <span className={sectionIcon}>
@@ -236,10 +288,47 @@ export function CollaboratorDetailContent({
         </div>
         <div className={sectionBody}>
           <div className={grid}>
-            {txt('bank', t('partners.collaborators.form.bank'), { readOnly: true })}
-            {txt('agency', t('partners.collaborators.form.agency'), { readOnly: true })}
-            {txt('accountNumber', t('partners.collaborators.form.accountNumber'), { readOnly: true })}
-            {txt('checkDigit', t('partners.collaborators.form.checkDigit'), { readOnly: true })}
+            {isInvalid('bankAccount.removal') ? (
+              <span className={`${fieldError} ${colSpanFull}`} role="alert">
+                {t('partners.collaborators.form.bankRemovalBlocked')}
+              </span>
+            ) : null}
+            <div className={field}>
+              <label htmlFor="cd-bank" className={fieldLabel}>
+                {t('partners.collaborators.form.bank')}
+              </label>
+              <BankSelect
+                id="cd-bank"
+                value={c.state.bank}
+                labels={BANK_LABELS}
+                invalid={isInvalid('bankAccount.bank')}
+                disabled={!editing}
+                ariaLabel={t('partners.collaborators.form.bank')}
+                onChange={(code) => {
+                  c.setField('bank', code)
+                }}
+              />
+              {invalidMsg('bankAccount.bank') !== null ? (
+                <span className={fieldError}>{invalidMsg('bankAccount.bank')}</span>
+              ) : isUnknownBank(c.state.bank) ? (
+                <span className={fieldError}>{BANK_UNKNOWN_HINT}</span>
+              ) : null}
+            </div>
+            {txt('agency', t('partners.collaborators.form.agency'), {
+              mask: 'agency',
+              errorKey: 'bankAccount.agency',
+            })}
+            {txt('accountNumber', t('partners.collaborators.form.accountNumber'), {
+              errorKey: 'bankAccount.accountNumber',
+            })}
+            {txt('checkDigit', t('partners.collaborators.form.checkDigit'), {
+              errorKey: 'bankAccount.checkDigit',
+            })}
+            {isInvalid('pixKey.removal') ? (
+              <span className={`${fieldError} ${colSpanFull}`} role="alert">
+                {t('partners.collaborators.form.pixRemovalBlocked')}
+              </span>
+            ) : null}
             <div className={field}>
               <label htmlFor="cd-pix-type" className={fieldLabel}>
                 {t('partners.collaborators.form.pixKeyType')}
@@ -248,7 +337,21 @@ export function CollaboratorDetailContent({
                 id="cd-pix-type"
                 value={c.state.pixKeyType}
                 ariaLabel={t('partners.collaborators.form.pixKeyType')}
-                disabled
+                disabled={!editing}
+                onChange={(e) => {
+                  if (isPixKeyType(e.target.value)) {
+                    c.setField('pixKeyType', e.target.value)
+                    // A chave vem do dado correspondente do colaborador (CPF travado → sempre o do cadastro).
+                    c.setField(
+                      'pixKey',
+                      derivePixKey(e.target.value, {
+                        document: c.state.cpf,
+                        email: c.state.email,
+                        telephone: c.state.telephone,
+                      }),
+                    )
+                  }
+                }}
               >
                 {PIX_KEY_TYPES.map((k) => (
                   <option key={k} value={k}>
@@ -257,7 +360,7 @@ export function CollaboratorDetailContent({
                 ))}
               </SelectControl>
             </div>
-            {txt('pixKey', t('partners.collaborators.form.pixKey'), { readOnly: true })}
+            {txt('pixKey', t('partners.collaborators.form.pixKey'), { errorKey: 'pixKey.key' })}
           </div>
         </div>
       </section>

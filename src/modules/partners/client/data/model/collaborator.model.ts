@@ -21,7 +21,7 @@ export type RegistrationStatus = 'pre-registration' | 'complete'
 export type ActivationStatus = 'active' | 'inactive'
 // Reuso (DRY) dos tipos/validações de payment-target do Fornecedor (#40).
 export type { BankAccount, PixKey, PixKeyType }
-export { PIX_KEY_TYPES, isPixKeyType }
+export { PIX_KEY_TYPES, isPixKeyType, BankAccountFormSchema, PixKeyFormSchema }
 
 export const OCCUPATION_AREAS = ['PARC', 'DDI', 'DCE', 'EPV'] as const
 export type OccupationArea = (typeof OCCUPATION_AREAS)[number]
@@ -154,8 +154,8 @@ export type CollaboratorDetail = CollaboratorListItem &
     leaveRenewalDuration?: string
     publicSectorExperienceDuration?: string
     territory: Territory | null // #42
-    bankAccount: BankAccount | null // #40 — create-only; exibido read-only no detalhe
-    pixKey: PixKey | null // #40 — create-only; exibido read-only no detalhe
+    bankAccount: BankAccount | null // #40; editável no detalhe (spec 120)
+    pixKey: PixKey | null // #40; editável no detalhe (spec 120)
   }>
 
 export type CollaboratorListResponse = Readonly<{
@@ -191,8 +191,9 @@ export type CollaboratorWriteInput = Readonly<{
   startOfContract: string
   employmentRelationship: EmploymentRelationship
   territory: Territory | null
-  bankAccount: BankAccount | null // #40 — create-only (a borda de update faz strip)
-  pixKey: PixKey | null // #40 — create-only (a borda de update faz strip)
+  // #40. No PUT (spec 120): `null` MANTÉM o que está gravado (não remove); objeto substitui.
+  bankAccount: BankAccount | null
+  pixKey: PixKey | null
 }>
 
 /** Cadastro completo (dados pessoais; todos opcionais). `id` identifica o colaborador. */
