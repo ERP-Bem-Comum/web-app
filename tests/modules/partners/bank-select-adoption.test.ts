@@ -82,16 +82,15 @@ describe('banco do favorecido — seleção FEBRABAN, não texto livre', () => {
 
   it('o seletor do detalhe do colaborador não é decorativo: a borda do PUT leva banco/PIX (spec 120)', () => {
     // Antes da spec 120 este teste barrava o seletor, porque a borda de update fazia `omit` e a troca
-    // seria descartada em silêncio. Agora o inverso: se alguém voltar a omitir banco/PIX no PUT, a tela
-    // passa a aceitar a troca e jogá-la fora.
+    // seria descartada em silêncio. Agora o inverso: se alguém voltar a omitir banco/PIX (ou o território,
+    // spec 121) no PUT, a tela passa a aceitar a troca e jogá-la fora.
     const io = read('src/modules/partners/server/adapters/collaborator.io-schemas.ts')
-    const update = /UpdateCollaboratorInputSchema = CreateCollaboratorInputSchema\.omit\(\{([^}]*)\}\)/.exec(
-      io,
-    )
-    assert.ok(update !== null, 'UpdateCollaboratorInputSchema não encontrado')
+    const start = io.indexOf('export const UpdateCollaboratorInputSchema = ')
+    assert.ok(start >= 0, 'UpdateCollaboratorInputSchema não encontrado')
+    const decl = io.slice(start, io.indexOf('.extend(', start))
     assert.ok(
-      !/bankAccount|pixKey/.test(update[1] ?? ''),
-      'a borda do PUT do colaborador voltou a descartar banco/PIX (spec 120)',
+      !/bankAccount|pixKey|territory/.test(decl),
+      'a borda do PUT do colaborador voltou a descartar banco/PIX ou território (specs 120/121)',
     )
   })
 })

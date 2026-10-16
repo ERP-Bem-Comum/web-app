@@ -45,6 +45,7 @@ import {
   MARITAL_STATUSES,
   PIX_KEY_TYPES,
   isPixKeyType,
+  BR_UF,
   type CollaboratorDetailFormController,
   type CollaboratorDetailFormState,
 } from './collaborator-detail-form.controller.ts'
@@ -64,6 +65,7 @@ function SelectControl({
   value,
   ariaLabel,
   disabled,
+  invalid = false,
   onChange,
   children,
 }: {
@@ -71,6 +73,7 @@ function SelectControl({
   value: string
   ariaLabel?: string
   disabled: boolean
+  invalid?: boolean
   onChange?: (e: React.ChangeEvent<HTMLSelectElement>) => void
   children: ReactNode
 }): ReactNode {
@@ -78,9 +81,10 @@ function SelectControl({
     <div className={control}>
       <select
         id={id}
-        className={select}
+        className={`${select} ${invalid ? controlError : ''}`}
         value={value}
         aria-label={ariaLabel}
+        aria-invalid={invalid || undefined}
         disabled={disabled}
         onChange={onChange}
       >
@@ -103,8 +107,8 @@ export function CollaboratorDetailContent({
   const invalidMsg = (key: string): string | null =>
     c.errors[key] === true ? t('partners.collaborators.form.invalid') : null
 
-  // Campo de texto. `readOnly` força desabilitado (território é create-only); senão segue `editing`.
-  // `errorKey` liga o campo ao erro de validação do controller (grupo bancário/PIX, spec 120).
+  // Campo de texto. `readOnly` força desabilitado (ex.: CPF travado); senão segue `editing`.
+  // `errorKey` liga o campo ao erro de validação do controller (banco/PIX spec 120, território spec 121).
   const txt = (
     key: keyof CollaboratorDetailFormState,
     label: string,
@@ -151,9 +155,10 @@ export function CollaboratorDetailContent({
     key: keyof CollaboratorDetailFormState,
     label: string,
     options: readonly Readonly<{ value: string; label: string }>[],
-    opts?: { readOnly?: boolean },
+    opts?: { readOnly?: boolean; errorKey?: string },
   ): ReactNode => {
     const disabled = opts?.readOnly === true ? true : !editing
+    const invalid = opts?.errorKey !== undefined && isInvalid(opts.errorKey)
     return (
       <div className={field}>
         <label htmlFor={`cd-${key}`} className={fieldLabel}>
@@ -164,6 +169,7 @@ export function CollaboratorDetailContent({
           value={c.state[key]}
           ariaLabel={label}
           disabled={disabled}
+          invalid={invalid}
           onChange={(e) => {
             c.setField(key, e.target.value)
           }}
@@ -175,10 +181,14 @@ export function CollaboratorDetailContent({
             </option>
           ))}
         </SelectControl>
+        {opts?.errorKey !== undefined && invalidMsg(opts.errorKey) !== null ? (
+          <span className={fieldError}>{invalidMsg(opts.errorKey)}</span>
+        ) : null}
       </div>
     )
   }
 
+  const ufOptions = BR_UF.map((u) => ({ value: u.sigla, label: `${u.sigla} — ${u.nome}` }))
   const areaOptions = OCCUPATION_AREAS.map((a) => ({
     value: a,
     label: t(`partners.collaborators.area.${a}`),
@@ -244,7 +254,8 @@ export function CollaboratorDetailContent({
         </div>
       </section>
 
-      {/* Território (#42) — somente leitura: definido no cadastro; o PUT não altera território. */}
+      {/* Território (#42) — editável no modo Editar (spec 121, core-api#1053), em pré-cadastrado e
+          cadastrado. Substituir pode; apagar não (decisão da P.O.) — esvaziar os dois marca o grupo. */}
       <section className={sectionCard}>
         <div className={sectionHeader}>
           <span className={sectionIcon}>
@@ -254,8 +265,15 @@ export function CollaboratorDetailContent({
         </div>
         <div className={sectionBody}>
           <div className={grid}>
-            {txt('uf', t('partners.collaborators.form.uf'), { readOnly: true })}
-            {txt('municipality', t('partners.collaborators.form.municipality'), { readOnly: true })}
+            {isInvalid('territory.removal') ? (
+              <span className={`${fieldError} ${colSpanFull}`} role="alert">
+                {t('partners.collaborators.form.territoryRemovalBlocked')}
+              </span>
+            ) : null}
+            {sel('uf', t('partners.collaborators.form.uf'), ufOptions, { errorKey: 'territory.uf' })}
+            {txt('municipality', t('partners.collaborators.form.municipality'), {
+              errorKey: 'territory.municipality',
+            })}
           </div>
         </div>
       </section>

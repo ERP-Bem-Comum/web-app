@@ -157,6 +157,7 @@ describe('toTeamRows — dado real do colaborador + área cruzada de Colaborador
       genderIdentity: 'MULHER_CIS',
       race: 'PARDO',
       age: 34,
+      generation: 'MILLENNIAL',
     },
     {
       id: 'tm-2',
@@ -172,6 +173,7 @@ describe('toTeamRows — dado real do colaborador + área cruzada de Colaborador
       genderIdentity: null,
       race: null,
       age: null,
+      generation: 'NA',
     },
   ]
 
@@ -190,6 +192,8 @@ describe('toTeamRows — dado real do colaborador + área cruzada de Colaborador
     assert.equal(rows[0]?.idade, 34)
     assert.equal(rows[0]?.genero, 'MULHER_CIS')
     assert.equal(rows[0]?.racaCor, 'PARDO')
+    assert.equal(rows[0]?.geracao, 'MILLENNIAL')
+    assert.equal(rows[1]?.geracao, 'NA')
   })
 
   it('gênero/raça/idade ausentes → sentinela, nunca linha descartada', () => {
