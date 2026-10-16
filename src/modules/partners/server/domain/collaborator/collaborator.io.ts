@@ -49,6 +49,7 @@ export interface CompleteCollaboratorRegistrationInput {
   rg?: string
   dateOfBirth?: string
   genderIdentity?: string
+  genderIdentityDescription?: string // core-api#1054; só com genderIdentity = 'OUTRO'
   race?: string
   education?: string
   foodCategory?: string
@@ -124,6 +125,7 @@ export type CollaboratorDetail = CollaboratorListItem &
     emergencyContactName?: string
     emergencyContactTelephone?: string
     genderIdentity?: string
+    genderIdentityDescription?: string // core-api#1054; só com genderIdentity = 'OUTRO'
     race?: string
     allergies?: string
     foodCategory?: string

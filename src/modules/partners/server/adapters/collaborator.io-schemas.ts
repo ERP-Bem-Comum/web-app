@@ -68,6 +68,7 @@ export const CompleteCollaboratorRegistrationInputSchema = z.object({
   rg: z.string().trim().max(20).optional(),
   dateOfBirth: z.iso.date().optional(),
   genderIdentity: z.string().trim().max(60).optional(),
+  genderIdentityDescription: z.string().trim().max(120).optional(), // core-api#1054 (max 120)
   race: z.string().trim().max(60).optional(),
   education: z.string().trim().max(80).optional(),
   foodCategory: z.string().trim().max(60).optional(),

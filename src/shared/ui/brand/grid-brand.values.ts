@@ -254,6 +254,10 @@ export const brand = {
     focus: '0 0 0 3px rgba(57,100,150,0.14)',
     // Barra de ações fixa dos formulários "brand" (sombra para cima).
     actionbar: '0 -1px 3px rgba(16,24,40,.05)',
+    // Destaque temporário de um campo que ACABOU de aparecer (ex.: "Outra identidade de gênero"): halo
+    // tintado do azul institucional que some sozinho. O `Off` é o mesmo halo transparente (fim da animação).
+    highlight: '0 0 0 6px #e9eff6, 0 0 0 7px rgba(57,100,150,0.35)',
+    highlightOff: '0 0 0 6px rgba(233,239,246,0), 0 0 0 7px rgba(57,100,150,0)',
   },
   text: {
     thead: '11.5px',

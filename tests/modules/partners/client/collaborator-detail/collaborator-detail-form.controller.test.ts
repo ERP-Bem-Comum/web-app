@@ -36,6 +36,7 @@ const emptyState: CollaboratorDetailFormState = {
   emergencyContactName: '',
   emergencyContactTelephone: '',
   genderIdentity: '',
+  genderIdentityDescription: '',
   race: '',
   allergies: '',
   foodCategory: '',
