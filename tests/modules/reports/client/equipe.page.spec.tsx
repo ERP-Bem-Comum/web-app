@@ -53,6 +53,7 @@ const TEAM: readonly TeamMember[] = Array.from({ length: 36 }, (_v, i) => ({
   genderIdentity: i % 3 === 0 ? 'MULHER_CIS' : 'HOMEM_CIS',
   race: i % 4 === 0 ? 'INDIGENA' : 'PARDO',
   age: 25 + (i % 30),
+  generation: i % 6 === 0 ? 'NA' : i % 2 === 0 ? 'GEN_Z' : 'MILLENNIAL',
 }))
 
 function renderPage(): void {
@@ -209,6 +210,28 @@ describe('EquipePage — filtros Status / Situação Cadastral / Idade', () => {
     fireEvent.click(screen.getByText('Filtrar'))
     // Ninguém com 60+ na fixture → tabela vazia, sem quebrar a tela.
     expect(screen.queryAllByRole('button', { name: /Ver detalhes de/ }).length).toBe(0)
+  })
+
+  // Spec 123: lista fechada em ordem cronológica + N/A, mesmo sem ninguém Boomer/X na fixture.
+  it('Geração oferece as 4 gerações + N/A', async () => {
+    await renderComDemografia()
+    expect(optionsOf('Geração')).toEqual([
+      'Todos',
+      'Baby Boomer',
+      'Geração X',
+      'Millennial (Geração Y)',
+      'Geração Z',
+      'N/A',
+    ])
+  })
+
+  it('filtrar por Geração recorta pelo código por pessoa e entra no resumo', async () => {
+    await renderComDemografia()
+    fireEvent.change(screen.getByLabelText('Geração'), { target: { value: 'NA' } })
+    fireEvent.click(screen.getByText('Filtrar'))
+    // Fixture: `generation` = 'NA' quando i % 6 === 0 → 6 dos 36.
+    expect(screen.getAllByRole('button', { name: /Ver detalhes de/ }).length).toBe(6)
+    expect(screen.getByText(/Geração: N\/A/)).toBeTruthy()
   })
 })
 

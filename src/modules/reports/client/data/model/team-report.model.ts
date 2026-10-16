@@ -20,6 +20,8 @@ export type TeamMember = Readonly<{
   race: string | null
   /** Anos completos, derivados no core-api — `dateOfBirth` nunca cruza a borda (LGPD). */
   age: number | null
+  /** Código da geração ('BOOMER'…'GEN_Z', 'NA' sem nascimento), derivado no core-api (#1055). */
+  generation: string
 }>
 
 /**

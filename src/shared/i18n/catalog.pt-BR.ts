@@ -2894,6 +2894,13 @@ export const ptBR: Catalog = {
   'reports.equipe.filters.status': 'Status',
   'reports.equipe.filters.situacaoCadastral': 'Situação Cadastral',
   'reports.equipe.filters.idade': 'Idade',
+  'reports.equipe.filters.geracao': 'Geração',
+  'reports.equipe.generation.BOOMER': 'Baby Boomer',
+  'reports.equipe.generation.GEN_X': 'Geração X',
+  'reports.equipe.generation.MILLENNIAL': 'Millennial (Geração Y)',
+  'reports.equipe.generation.GEN_Z': 'Geração Z',
+  'reports.equipe.generation.OUTROS': 'Outras gerações',
+  'reports.equipe.generation.NA': 'N/A',
   'reports.equipe.filters.vinculo': 'Vínculo Empregatício',
   'reports.equipe.filters.filtrar': 'Filtrar',
 

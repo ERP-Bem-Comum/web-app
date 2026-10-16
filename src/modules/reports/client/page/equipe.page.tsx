@@ -127,8 +127,19 @@ const byKeyMap =
     return { value: codigo, label: label === tag ? codigo : label }
   }
 
+/** Geração (core-api#1055): o código vem por pessoa e o rótulo é do relatório — Colaboradores não tem o campo. */
+const GENERATION_LABEL_KEYS: Readonly<Record<string, string>> = {
+  BOOMER: 'reports.equipe.generation.BOOMER',
+  GEN_X: 'reports.equipe.generation.GEN_X',
+  MILLENNIAL: 'reports.equipe.generation.MILLENNIAL',
+  GEN_Z: 'reports.equipe.generation.GEN_Z',
+  OUTROS: 'reports.equipe.generation.OUTROS',
+  NA: 'reports.equipe.generation.NA',
+}
+
 const statusOption = byKeyMap(STATUS_LABEL_KEYS)
 const registrationOption = byKeyMap(REGISTRATION_LABEL_KEYS)
+const generationOption = byKeyMap(GENERATION_LABEL_KEYS)
 
 /** Rótulo p/ o resumo dos filtros aplicados; '' (nada aplicado) continua '' — o resumo omite a linha. */
 const labelOrEmpty = (
@@ -224,6 +235,7 @@ export function EquipePage(): ReactNode {
       racaCor: filterOpts.racaCor.map(labeled('race')),
       status: filterOpts.status.map(statusOption),
       situacaoCadastral: filterOpts.situacaoCadastral.map(registrationOption),
+      geracao: filterOpts.geracao.map(generationOption),
       // Livres: o valor É o rótulo.
       anoContrato: filterOpts.anoContrato.map(asIs),
       funcao: filterOpts.funcao.map(asIs),
@@ -310,6 +322,10 @@ export function EquipePage(): ReactNode {
       // Rótulo da faixa vem da MESMA lista do select (API), não de um mapa local.
       label: t('reports.equipe.filters.idade'),
       value: faixaEtariaOptions.find((o) => o.value === applied.faixaEtaria)?.label ?? '',
+    },
+    {
+      label: t('reports.equipe.filters.geracao'),
+      value: applied.geracao === '' ? '' : generationOption(applied.geracao).label,
     },
     { label: t('reports.equipe.filters.busca'), value: applied.search },
   ])
@@ -473,6 +489,16 @@ export function EquipePage(): ReactNode {
               value={draft.faixaEtaria}
               onChange={(v) => {
                 setDraft((d) => ({ ...d, faixaEtaria: v }))
+              }}
+            />
+            {/* Geração: código por pessoa vindo do core-api (#1055) — derivar da idade erraria nas fronteiras. */}
+            <FilterField
+              label={t('reports.equipe.filters.geracao')}
+              placeholder={allOption}
+              options={opts.geracao}
+              value={draft.geracao}
+              onChange={(v) => {
+                setDraft((d) => ({ ...d, geracao: v }))
               }}
             />
             <FilterField

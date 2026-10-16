@@ -44,6 +44,7 @@ const FIX: readonly TeamMemberRow[] = [
   {
     nome: 'A',
     idade: 22,
+    geracao: 'MILLENNIAL',
     programa: 'DDI',
     funcao: 'Analista',
     vinculo: 'CLT',
@@ -57,6 +58,7 @@ const FIX: readonly TeamMemberRow[] = [
   {
     nome: 'B',
     idade: 35,
+    geracao: 'MILLENNIAL',
     programa: 'EPV',
     funcao: 'Analista',
     vinculo: 'PJ',
@@ -70,6 +72,7 @@ const FIX: readonly TeamMemberRow[] = [
   {
     nome: 'C',
     idade: 45,
+    geracao: 'MILLENNIAL',
     programa: 'PARC',
     funcao: 'Coordenador',
     vinculo: 'CLT',
@@ -83,6 +86,7 @@ const FIX: readonly TeamMemberRow[] = [
   {
     nome: 'D',
     idade: 55,
+    geracao: 'MILLENNIAL',
     programa: 'DDI',
     funcao: 'Coordenador',
     vinculo: 'CLT',
@@ -96,6 +100,7 @@ const FIX: readonly TeamMemberRow[] = [
   {
     nome: 'E',
     idade: 66,
+    geracao: 'MILLENNIAL',
     programa: 'EPV',
     funcao: 'Gerente',
     vinculo: 'PJ',
@@ -109,6 +114,7 @@ const FIX: readonly TeamMemberRow[] = [
   {
     nome: 'F',
     idade: null,
+    geracao: 'NA',
     programa: 'PARC',
     funcao: 'Analista',
     vinculo: 'CLT',
@@ -259,10 +265,13 @@ describe('placeholder sintético (LGPD)', () => {
   // lista é uma decisão consciente, não um ajuste mecânico: nada de cpf/email/telefone/endereço/
   // remuneração/alergias/biografia, que é o que este teste existe para barrar. `status` e
   // `situacaoCadastral` são estado operacional do vínculo (não PII) e alimentam 2 dos filtros da tela.
-  it('cada linha carrega SOMENTE as 11 chaves de exibição/filtro — nenhum campo sensível', () => {
+  // `geracao` (spec 123) é um balde MAIS GROSSO que a `idade` já presente e chega como código derivado no
+  // core-api — nem data nem ano de nascimento atravessam.
+  it('cada linha carrega SOMENTE as 12 chaves de exibição/filtro — nenhum campo sensível', () => {
     const allowed = new Set([
       'nome',
       'idade',
+      'geracao',
       'programa',
       'funcao',
       'vinculo',
@@ -310,6 +319,7 @@ describe('teamFilterOptions', () => {
   const mk = (over: Partial<TeamMemberRow>): TeamMemberRow => ({
     nome: 'x',
     idade: null,
+    geracao: 'NA',
     programa: '—',
     funcao: '—',
     vinculo: '—',
@@ -370,6 +380,7 @@ describe('countByTemplate (contagem dos gráficos a partir das linhas)', () => {
   const mk = (genero: string): TeamMemberRow => ({
     nome: 'x',
     idade: null,
+    geracao: 'NA',
     programa: '—',
     funcao: '—',
     vinculo: '',
@@ -432,6 +443,7 @@ describe('applyTeamFilters (client-side)', () => {
   const mk = (over: Partial<TeamMemberRow>): TeamMemberRow => ({
     nome: 'x',
     idade: null,
+    geracao: 'NA',
     programa: 'Alfa',
     funcao: 'Analista',
     vinculo: 'CLT',
@@ -500,5 +512,61 @@ describe('applyTeamFilters (client-side)', () => {
 
   it('sem match → vazio (não quebra)', () => {
     assert.strictEqual(applyTeamFilters(ROWS, { ...EMPTY_TEAM_FILTERS, programa: 'Inexistente' }).length, 0)
+  })
+
+  // Spec 123: compara o CÓDIGO que veio do core-api — nunca deriva da idade (erraria nas fronteiras).
+  it('por geração (código por pessoa; NA = sem nascimento)', () => {
+    const rows = [
+      mk({ nome: 'Z', geracao: 'GEN_Z', idade: 29 }),
+      mk({ nome: 'M', geracao: 'MILLENNIAL', idade: 29 }),
+      mk({ nome: 'Sem', geracao: 'NA' }),
+    ]
+    assert.deepStrictEqual(
+      applyTeamFilters(rows, { ...EMPTY_TEAM_FILTERS, geracao: 'GEN_Z' }).map((x) => x.nome),
+      ['Z'],
+    )
+    assert.deepStrictEqual(
+      applyTeamFilters(rows, { ...EMPTY_TEAM_FILTERS, geracao: 'NA' }).map((x) => x.nome),
+      ['Sem'],
+    )
+    assert.strictEqual(applyTeamFilters(rows, { ...EMPTY_TEAM_FILTERS, geracao: '' }).length, 3)
+  })
+})
+
+describe('teamFilterOptions — geração (spec 123)', () => {
+  const mk = (geracao: string): TeamMemberRow => ({
+    nome: 'x',
+    idade: null,
+    geracao,
+    programa: '—',
+    funcao: '—',
+    vinculo: '—',
+    genero: '—',
+    racaCor: '—',
+    escolaridade: '—',
+    anoContrato: 2021,
+    status: 'ATIVO',
+    situacaoCadastral: 'Complete',
+  })
+
+  it('lista fechada na ordem cronológica com NA no fim, mesmo sem ninguém na geração', () => {
+    assert.deepStrictEqual(teamFilterOptions([mk('GEN_Z')]).geracao, [
+      'BOOMER',
+      'GEN_X',
+      'MILLENNIAL',
+      'GEN_Z',
+      'NA',
+    ])
+  })
+
+  it('código desconhecido do backend (OUTROS) entra antes do NA — ninguém fica sem filtro', () => {
+    assert.deepStrictEqual(teamFilterOptions([mk('OUTROS'), mk('OUTROS'), mk('NA')]).geracao, [
+      'BOOMER',
+      'GEN_X',
+      'MILLENNIAL',
+      'GEN_Z',
+      'OUTROS',
+      'NA',
+    ])
   })
 })
