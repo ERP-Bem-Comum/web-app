@@ -12,7 +12,7 @@
 
 O backend de contratos passou a **gerar o número do contrato** (sequencial por ano) e a **persistir/retornar** a classificação (CT/OS) e os metadados de cadastro (programa, plano orçamentário, categorização, centro de custo). O formato de criação de contrato também mudou. Esta feature alinha o **frontend** a esse novo comportamento: passar a exibir o número e os metadados **reais**, remover a numeração inventada hoje no app, e ajustar o fluxo de criação para continuar funcionando. É **frontend-only** e **aditiva** — não altera o backend.
 
-## User Scenarios & Testing *(mandatory)*
+## User Scenarios & Testing _(mandatory)_
 
 ### User Story 1 - Número de contrato confiável e criação aderente (Priority: P1)
 
@@ -58,16 +58,18 @@ Como usuária da gestão de contratos, quero ver o **Programa** (e os demais met
 - **Número fora do formato esperado** vindo do backend: exibir o que veio sem inventar/normalizar de forma destrutiva.
 - **Status novo do backend** (ex.: `Cancelled` do #32, fora do escopo desta fatia): a leitura **não quebra** o grid/detalhe (D9 — branch de escape no parse + degradação segura do status); o fluxo/UI próprio de cancelamento fica para slice futuro.
 
-## Requirements *(mandatory)*
+## Requirements _(mandatory)_
 
 ### Functional Requirements
 
 - **FR-001**: O app MUST exibir o número do contrato **exatamente como atribuído pelo sistema** (sequencial por ano), no grid e no detalhe.
 - **FR-002**: O app MUST NOT gerar, inventar ou alterar número de contrato em nenhum fluxo (a geração aleatória atual é removida).
+  - _Emenda 2026-10-02 (spec 118, ADR-0022):_ um número **digitado pela usuária** na criação não é "inventado" e pode ser enviado ao backend, que valida, normaliza e grava. Gerar, calcular ou presumir número no front continua proibido.
 - **FR-003**: O app MUST exibir o **prefixo conforme a classificação real** retornada (CT para Contrato, OS para Ordem de Serviço), em vez de assumir "CT" sempre.
 - **FR-004**: O grid de contratos MUST exibir a **sigla do Programa** quando o contrato tiver programa, e "—" quando não tiver.
 - **FR-005**: O detalhe do contrato MUST exibir **programa, plano orçamentário, categorização e centro de custo** quando presentes, e vazio/"—" quando ausentes.
-- **FR-006**: No fluxo de criação, a usuária MUST NOT informar o número do contrato; o número atribuído pelo sistema MUST ser refletido ao concluir a criação.
+- **FR-006**: ~~No fluxo de criação, a usuária MUST NOT informar o número do contrato~~; o número atribuído pelo sistema MUST ser refletido ao concluir a criação.
+  - _Emenda 2026-10-02 (spec 118, ADR-0022):_ a usuária **MAY** informar o número (`NNN/AAAA` ou `NNNN/AAAA`, qualquer ano). Vazio, o sistema atribui o próximo número livre do ano, como antes. Depois de criado, o número é imutável.
 - **FR-007**: O fluxo de criação MUST permitir escolher a **classificação (Contrato/Ordem de Serviço)** e registrá-la no contrato criado.
 - **FR-008**: Os **dois modos** de cadastro existem no **sistema** por meio de **dois fluxos** (refinamento D7, pós-leitura do código): (a) **criar como rascunho** (`mode: Pending`) e (b) **cadastro + assinatura** via o fluxo de 2 passos já existente (criar → **anexar documento assinado / ativar**). O **formulário de criação permanece Pending-only** nesta fatia; não há criação single-step `Active`.
 - **FR-009**: A obrigatoriedade da **data de assinatura** pertence ao **fluxo de ativação/anexo de documento** (já existente), não ao formulário de criação desta fatia.
@@ -76,13 +78,13 @@ Como usuária da gestão de contratos, quero ver o **Programa** (e os demais met
 - **FR-012**: Erros do backend (na leitura e na criação) MUST continuar sendo apresentados como **mensagens amigáveis** ao usuário, sem expor detalhes técnicos (cadeia de erro existente preservada).
 - **FR-013**: A feature MUST ser **aditiva**, sem regressão no grid, no detalhe, na criação, nem nos demais módulos do app.
 
-### Key Entities *(include if feature involves data)*
+### Key Entities _(include if feature involves data)_
 
 - **Contrato (visão de leitura)**: identificação visível por **número** (`CT/OS NNNN/AAAA`) + **classificação** (Contrato/Ordem de Serviço); inclui **programa** (referência + sigla exibível), **plano orçamentário**, **categorização** e **centro de custo** como metadados de cadastro; demais atributos já existentes (objeto, valor, vigência, status) inalterados.
 - **Programa (referência exibível)**: vínculo do contrato a um programa, representado por um identificador e uma **sigla** curta usada na coluna Programa do grid e no detalhe.
-- **Contrato (intenção de criação)**: dados informados pela usuária para criar um contrato — **sem número** (atribuído pelo sistema), **com classificação** (CT/OS), **modo de cadastro** (rascunho vs cadastro+assinatura, com data de assinatura quando aplicável) e os metadados de cadastro.
+- **Contrato (intenção de criação)**: dados informados pela usuária para criar um contrato — **número opcional** (vazio = atribuído pelo sistema; emenda da spec 118), **com classificação** (CT/OS), **modo de cadastro** (rascunho vs cadastro+assinatura, com data de assinatura quando aplicável) e os metadados de cadastro.
 
-## Success Criteria *(mandatory)*
+## Success Criteria _(mandatory)_
 
 ### Measurable Outcomes
 
@@ -92,7 +94,7 @@ Como usuária da gestão de contratos, quero ver o **Programa** (e os demais met
 - **SC-004**: O fluxo de criação conclui com **sucesso** nos cenários válidos (rascunho e cadastro+assinatura) contra o backend atualizado — sem regressão de inclusão.
 - **SC-005**: **Zero regressões** no grid, detalhe, criação e demais módulos — verificado por `pnpm verify` + `pnpm test:dom` e checagem em tela.
 
-## Impacto Arquitetural *(frontend — web-app v2)*
+## Impacto Arquitetural _(frontend — web-app v2)_
 
 > Esta spec é do repositório **web-app v2 (frontend)**, não do core-api. A seção do template voltada ao core-api é **N/A** aqui; abaixo, o equivalente para o front.
 
