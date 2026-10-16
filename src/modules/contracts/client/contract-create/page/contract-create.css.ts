@@ -58,9 +58,12 @@ export const topbarTitle = style({
   flexWrap: 'wrap',
 })
 
+// Número do contrato ao lado do título (spec 118): a P.O. pediu destaque — é o dado que a usuária
+// acabou de informar, e no tamanho antigo (0.75rem) ele sumia ao lado do "Novo Contrato".
 export const topbarMeta = style({
   fontFamily: vars.font.family.mono,
-  fontSize: '0.75rem',
+  fontSize: '1rem',
+  fontWeight: vars.font.weight.bold,
   color: vars.color.institutional.ink2,
   background: vars.color.institutional.blueBg,
   padding: `${vars.space.xs} ${vars.space.sm}`,
@@ -932,13 +935,21 @@ export const modalFooter = style({
   borderTop: `${vars.borderWidth.thin} solid ${vars.color.institutional.blueLine}`,
 })
 
+// Resumo do modal "Concluir Novo Contrato". `minmax(0, 1fr)` (e `minInlineSize: 0` no card) deixa a
+// coluna ENCOLHER: com `1fr` puro o mínimo é o conteúdo, e o nome do contratado (nowrap) empurrava o
+// modal para uma rolagem horizontal. Contratado ocupa a linha inteira; Valor e Vigência dividem a de baixo.
 export const summaryGrid = style({
   display: 'grid',
-  gridTemplateColumns: 'repeat(3, 1fr)',
+  gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
   gap: vars.space.md,
 })
 
+export const summaryCardWide = style({
+  gridColumn: '1 / -1',
+})
+
 export const summaryCard = style({
+  minInlineSize: 0,
   padding: vars.space.md,
   background: vars.color.surface.subtle,
   border: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
@@ -991,22 +1002,23 @@ export const statusDot = style({
   lineHeight: 1,
 })
 
+// Status e Data de Assinatura lado a lado (P.O., spec 118) — mesma grade de 2 colunas encolhíveis.
+export const modalPairRow = style({
+  display: 'grid',
+  gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+  gap: vars.space.md,
+  alignItems: 'start',
+})
+
+// Caixa do status com a MESMA altura do input de data ao lado, para as duas colunas alinharem.
 export const modalStatusRow = style({
   display: 'flex',
   alignItems: 'center',
-  gap: vars.space.md,
-  padding: `${vars.space.sm} ${vars.space.md}`,
+  height: '2.5rem',
+  boxSizing: 'border-box',
+  padding: `0 ${vars.space.sm}`,
   border: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
   borderRadius: vars.radius.md,
-})
-
-export const modalStatusLabel = style({
-  fontFamily: vars.font.family.body,
-  fontSize: '0.6875rem',
-  fontWeight: vars.font.weight.bold,
-  textTransform: 'uppercase',
-  letterSpacing: '0.04em',
-  color: vars.color.institutional.ink5,
 })
 
 export const fieldHint = style({

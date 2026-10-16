@@ -132,3 +132,14 @@ número gerado, não com o informado.
 - **View:** o topo mostra "número a definir" com o campo vazio, e `CT 0123/2024`/`OS 0123/2024` com ele
   preenchido.
 - **CSV:** OS sai com prefixo "OS".
+
+## Ajustes visuais (P.O., 16/10, após validar no local contra a core-api#1069)
+
+- **Topo:** o número ao lado de "Novo Contrato" (`CT 0123/2024`) ficou maior e em negrito (`1rem`, antes
+  `0.75rem`): é o dado que a usuária acabou de informar.
+- **Modal de conclusão:** "Finalizar cadastro" passa a **"Concluir Novo Contrato"** ("Concluir Nova Ordem de
+  Serviço" para OS), via i18n.
+- **Resumo do modal:** Contratado ocupa a linha inteira; Valor e Vigência dividem a linha de baixo. As colunas
+  usam `minmax(0, 1fr)`: com `1fr` puro, o nome longo do contratado empurrava o modal para uma rolagem
+  horizontal.
+- **Status e Data de Assinatura lado a lado**, com a caixa do status na mesma altura do campo de data.

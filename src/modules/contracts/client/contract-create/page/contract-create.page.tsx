@@ -38,9 +38,10 @@ import {
   modalBody,
   modalFooter,
   modalStatusRow,
-  modalStatusLabel,
+  modalPairRow,
   summaryGrid,
   summaryCard,
+  summaryCardWide,
   summaryCardLabel,
   summaryCardValue,
   statusBadge,
@@ -352,8 +353,12 @@ export function ContractCreatePage(): ReactNode {
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
                 <div className={modalHeaderIcon}>📄</div>
                 <div className={modalHeaderText}>
-                  <h2 className={modalTitle}>Finalizar cadastro</h2>
-                  <span className={modalSubtitle}>Revise os dados e anexe o documento assinado</span>
+                  <h2 className={modalTitle}>
+                    {form.state.classification === 'Contract'
+                      ? t('contracts.create.modal.finalizeTitle')
+                      : t('contracts.create.modal.finalizeTitleOS')}
+                  </h2>
+                  <span className={modalSubtitle}>{t('contracts.create.modal.finalizeSubtitle')}</span>
                 </div>
               </div>
               <button type="button" className={modalClose} onClick={closeModal} aria-label="Fechar">
@@ -367,7 +372,7 @@ export function ContractCreatePage(): ReactNode {
               <div>
                 <div className={sectionTitle}>{t('contracts.create.modal.summary')}</div>
                 <div className={summaryGrid}>
-                  <div className={summaryCard}>
+                  <div className={`${summaryCard} ${summaryCardWide}`}>
                     <div className={summaryCardLabel}>Contratado</div>
                     <div className={summaryCardValue} title={form.selectedPartner?.name ?? '—'}>
                       {form.selectedPartner?.name ?? '—'}
@@ -389,34 +394,38 @@ export function ContractCreatePage(): ReactNode {
                 </div>
               </div>
 
-              {/* Status preview */}
-              <div className={modalStatusRow}>
-                <span className={modalStatusLabel}>Status do contrato</span>
-                <span className={`${statusBadge} ${statusStyle}`} style={{ marginLeft: 'auto' }}>
-                  <span className={statusDot}>●</span>
-                  {statusLabel}
-                </span>
-              </div>
-
-              {/* Data de Assinatura */}
-              <div className={field}>
-                <label className={fieldLabel}>Data de Assinatura</label>
-                <input
-                  className={`${input} ${uploadedFile && !signatureDate ? inputError : ''}`}
-                  type="date"
-                  value={signatureDate}
-                  onChange={(e) => {
-                    setSignatureDate(e.target.value)
-                  }}
-                />
-                {uploadedFile && !signatureDate ? (
-                  <div className={fieldHintError}>
-                    <span>⚠</span>
-                    Ao anexar o contrato assinado, informe a data de assinatura.
+              {/* Status + Data de Assinatura, lado a lado */}
+              <div className={modalPairRow}>
+                <div className={field}>
+                  <span className={fieldLabel}>Status do contrato</span>
+                  <div className={modalStatusRow}>
+                    <span className={`${statusBadge} ${statusStyle}`}>
+                      <span className={statusDot}>●</span>
+                      {statusLabel}
+                    </span>
                   </div>
-                ) : (
-                  <div className={fieldHint}>Informe a data de assinatura do contrato.</div>
-                )}
+                </div>
+
+                {/* Data de Assinatura */}
+                <div className={field}>
+                  <label className={fieldLabel}>Data de Assinatura</label>
+                  <input
+                    className={`${input} ${uploadedFile && !signatureDate ? inputError : ''}`}
+                    type="date"
+                    value={signatureDate}
+                    onChange={(e) => {
+                      setSignatureDate(e.target.value)
+                    }}
+                  />
+                  {uploadedFile && !signatureDate ? (
+                    <div className={fieldHintError}>
+                      <span>⚠</span>
+                      Ao anexar o contrato assinado, informe a data de assinatura.
+                    </div>
+                  ) : (
+                    <div className={fieldHint}>Informe a data de assinatura do contrato.</div>
+                  )}
+                </div>
               </div>
 
               {/* Upload PDF */}
