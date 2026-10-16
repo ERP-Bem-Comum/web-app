@@ -1,6 +1,6 @@
 # 122 — Identidade de Gênero no lugar de "Sexo" (Colaborador)
 
-**Tamanho:** S · **Status:** implementado (front) · **Data:** 2026-10-12
+**Tamanho:** S · **Status:** implementado (front), com o texto livre de "Outra" (16/10) · **Data:** 2026-10-12
 **Depende de:** nada para as opções fechadas · `core-api#1054` para o texto livre de "Outra"
 **Origem:** pedido do cliente via P.O. — o campo com Feminino/Masculino vira **Identidade de Gênero**.
 
@@ -17,8 +17,12 @@ estado do form), mas **não havia seletor em tela**.
   cliente: Mulher cisgênero · Homem cisgênero · Mulher transgênero · Homem transgênero · Pessoa não
   binária · Outra identidade de gênero · Prefiro não responder.
 - **Travesti fora do seletor.** A P.O. informou que o legado não oferecia a opção, logo não há registro.
-- **"Outra identidade de gênero"** com campo `______`: o texto livre depende do backend (`core-api#1054`, molde
-  `foodCategory` + `foodCategoryDescription`). Até lá, "Outra" vai sem complemento.
+- **"Outra identidade de gênero"** com campo `______`: texto livre `genderIdentityDescription` (`core-api#1054`,
+  código no core-api#1068; molde `foodCategory` + `foodCategoryDescription`). O campo **"Qual identidade de
+  gênero?"** só aparece com "Outra", é opcional (até 120 caracteres) e só vai no corpo junto de `OUTRO`:
+  o core-api **recusa com 422** (`gender-identity-description-requires-other`) a descrição com outra
+  identidade — regra confirmada pela P.O. em 16/10. Trocar de "Outra" para outra opção esconde o campo e
+  descarta o texto no envio.
 
 ## Escopo (front)
 

@@ -14,6 +14,7 @@ import { UsersIcon, FileTextIcon, HeartHandshakeIcon, HeartPulseIcon } from '#sh
 // Enums dos selects vêm RE-EXPORTADOS pelo controller (boundary §XI: a view burra não importa `data/`).
 import {
   GENDER_IDENTITY_OPTIONS,
+  GENDER_IDENTITY_OTHER,
   RACES,
   EDUCATION_LEVELS,
   FOOD_CATEGORIES,
@@ -173,6 +174,13 @@ export function AutocadastroForm({
           </h2>
           <div className={grid}>
             {sel('genderIdentity', t('partners.collaborators.detail.field.genderIdentity'), genderOptions)}
+            {/* "Outra identidade de gênero: ______" (core-api#1054) — só existe com "Outra". */}
+            {c.state.genderIdentity === GENDER_IDENTITY_OTHER
+              ? txt(
+                  'genderIdentityDescription',
+                  t('partners.collaborators.detail.field.genderIdentityDescription'),
+                )
+              : null}
             {sel('race', t('partners.collaborators.detail.field.race'), raceOptions)}
             {sel('maritalStatus', t('partners.collaborators.detail.field.maritalStatus'), maritalOptions)}
             {txt('rg', t('partners.collaborators.detail.field.rg'))}

@@ -42,6 +42,7 @@ import {
   boolToTri,
   buildCompleteFields,
   computeHasCompleteData as computeHasCompleteFields,
+  GENDER_IDENTITY_OTHER,
   type CollaboratorCompleteFieldsState,
 } from './collaborator-complete-fields.ts'
 
@@ -51,6 +52,7 @@ export {
   EMPLOYMENT_RELATIONSHIPS,
   GENDER_IDENTITIES,
   GENDER_IDENTITY_OPTIONS,
+  GENDER_IDENTITY_OTHER,
   RACES,
   EDUCATION_LEVELS,
   FOOD_CATEGORIES,
@@ -112,6 +114,7 @@ const fromDetail = (c: CollaboratorDetail): CollaboratorDetailFormState => ({
   emergencyContactName: c.emergencyContactName ?? '',
   emergencyContactTelephone: c.emergencyContactTelephone ?? '',
   genderIdentity: c.genderIdentity ?? '',
+  genderIdentityDescription: c.genderIdentityDescription ?? '',
   race: c.race ?? '',
   allergies: c.allergies ?? '',
   foodCategory: c.foodCategory ?? '',

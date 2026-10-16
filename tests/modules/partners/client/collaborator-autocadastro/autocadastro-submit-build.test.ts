@@ -63,3 +63,29 @@ describe('buildSubmit (Autocadastro #040)', () => {
     assert.equal(input.childrenCount, 2)
   })
 })
+
+describe('genderIdentityDescription (core-api#1054) — só vai junto de "Outra"', () => {
+  it('"Outra" + texto → envia o texto aparado', () => {
+    const input = buildSubmit('tk', '123', {
+      ...emptyCompleteFieldsState,
+      genderIdentity: 'OUTRO',
+      genderIdentityDescription: '  Agênero ',
+    })
+    assert.equal(input.genderIdentity, 'OUTRO')
+    assert.equal(input.genderIdentityDescription, 'Agênero')
+  })
+
+  it('"Outra" sem texto → descrição undefined (o texto é opcional)', () => {
+    const input = buildSubmit('tk', '123', { ...emptyCompleteFieldsState, genderIdentity: 'OUTRO' })
+    assert.equal(input.genderIdentityDescription, undefined)
+  })
+
+  it('outra identidade com texto sobrando no estado → NÃO envia (o core-api recusaria com 422)', () => {
+    const input = buildSubmit('tk', '123', {
+      ...emptyCompleteFieldsState,
+      genderIdentity: 'MULHER_CIS',
+      genderIdentityDescription: 'Agênero',
+    })
+    assert.equal(input.genderIdentityDescription, undefined)
+  })
+})

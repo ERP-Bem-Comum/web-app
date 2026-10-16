@@ -148,6 +148,7 @@ export type CollaboratorDetail = CollaboratorListItem &
     emergencyContactName?: string
     emergencyContactTelephone?: string
     genderIdentity?: string
+    genderIdentityDescription?: string
     race?: string
     allergies?: string
     foodCategory?: string
@@ -217,6 +218,7 @@ export type CollaboratorCompleteInput = Readonly<{
   rg?: string
   dateOfBirth?: string
   genderIdentity?: string
+  genderIdentityDescription?: string
   race?: string
   education?: string
   foodCategory?: string
