@@ -213,15 +213,16 @@ describe('EquipePage — filtros Status / Situação Cadastral / Idade', () => {
   })
 
   // Spec 123: lista fechada em ordem cronológica + N/A, mesmo sem ninguém Boomer/X na fixture.
-  it('Geração oferece as 4 gerações + N/A', async () => {
+  // Spec 127: cada opção traz o período de nascimento (recortes Pew do core-api).
+  it('Geração oferece as 4 gerações + N/A, com o período ao lado', async () => {
     await renderComDemografia()
     expect(optionsOf('Geração')).toEqual([
       'Todos',
-      'Baby Boomer',
-      'Geração X',
-      'Millennial (Geração Y)',
-      'Geração Z',
-      'N/A',
+      'Baby Boomer (1946–1964)',
+      'Geração X (1965–1980)',
+      'Millennial / Geração Y (1981–1996)',
+      'Geração Z (1997–2012)',
+      'N/A (sem data de nascimento)',
     ])
   })
 

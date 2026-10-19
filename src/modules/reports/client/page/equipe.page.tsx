@@ -137,9 +137,23 @@ const GENERATION_LABEL_KEYS: Readonly<Record<string, string>> = {
   NA: 'reports.equipe.generation.NA',
 }
 
+/**
+ * Opções do FILTRO de Geração com o período de nascimento ao lado (spec 127). Só o select usa: gráfico e CSV
+ * seguem com o nome curto (`GENERATION_LABEL_KEYS`).
+ */
+const GENERATION_FILTER_LABEL_KEYS: Readonly<Record<string, string>> = {
+  BOOMER: 'reports.equipe.filters.generationOption.BOOMER',
+  GEN_X: 'reports.equipe.filters.generationOption.GEN_X',
+  MILLENNIAL: 'reports.equipe.filters.generationOption.MILLENNIAL',
+  GEN_Z: 'reports.equipe.filters.generationOption.GEN_Z',
+  OUTROS: 'reports.equipe.filters.generationOption.OUTROS',
+  NA: 'reports.equipe.filters.generationOption.NA',
+}
+
 const statusOption = byKeyMap(STATUS_LABEL_KEYS)
 const registrationOption = byKeyMap(REGISTRATION_LABEL_KEYS)
 const generationOption = byKeyMap(GENERATION_LABEL_KEYS)
+const generationFilterOption = byKeyMap(GENERATION_FILTER_LABEL_KEYS)
 
 /** Rótulo p/ o resumo dos filtros aplicados; '' (nada aplicado) continua '' — o resumo omite a linha. */
 const labelOrEmpty = (
@@ -235,7 +249,7 @@ export function EquipePage(): ReactNode {
       racaCor: filterOpts.racaCor.map(labeled('race')),
       status: filterOpts.status.map(statusOption),
       situacaoCadastral: filterOpts.situacaoCadastral.map(registrationOption),
-      geracao: filterOpts.geracao.map(generationOption),
+      geracao: filterOpts.geracao.map(generationFilterOption),
       // Livres: o valor É o rótulo.
       anoContrato: filterOpts.anoContrato.map(asIs),
       funcao: filterOpts.funcao.map(asIs),
