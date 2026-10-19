@@ -2911,6 +2911,14 @@ export const ptBR: Catalog = {
   'reports.equipe.generation.GEN_Z': 'Geração Z',
   'reports.equipe.generation.OUTROS': 'Outras gerações',
   'reports.equipe.generation.NA': 'N/A',
+  // Opções do FILTRO de Geração com o período (spec 127). Anos = recortes Pew do core-api
+  // (`partners/public-api/generation.ts`, `generationIdOf`) — mudou lá, muda aqui.
+  'reports.equipe.filters.generationOption.BOOMER': 'Baby Boomer (1946–1964)',
+  'reports.equipe.filters.generationOption.GEN_X': 'Geração X (1965–1980)',
+  'reports.equipe.filters.generationOption.MILLENNIAL': 'Millennial / Geração Y (1981–1996)',
+  'reports.equipe.filters.generationOption.GEN_Z': 'Geração Z (1997–2012)',
+  'reports.equipe.filters.generationOption.OUTROS': 'Outras gerações (até 1945 ou após 2012)',
+  'reports.equipe.filters.generationOption.NA': 'N/A (sem data de nascimento)',
   'reports.equipe.filters.vinculo': 'Vínculo Empregatício',
   'reports.equipe.filters.filtrar': 'Filtrar',
 
