@@ -43,6 +43,8 @@ import {
   GENDER_IDENTITY_OTHER,
   RACES,
   EDUCATION_LEVELS,
+  EDUCATION_LEVEL_OPTIONS,
+  selectableWithCurrent,
   FOOD_CATEGORIES,
   MARITAL_STATUSES,
   PIX_KEY_TYPES,
@@ -228,7 +230,12 @@ export function CollaboratorDetailContent({
     value: v,
     label: t(`partners.collaborators.race.${v}`),
   }))
-  const educationOptions = EDUCATION_LEVELS.map((v) => ({
+  // "Educação Infantil" saiu do seletor (spec 126); quem já tem o valor gravado continua vendo ele.
+  const educationOptions = selectableWithCurrent(
+    EDUCATION_LEVEL_OPTIONS,
+    EDUCATION_LEVELS,
+    c.state.education,
+  ).map((v) => ({
     value: v,
     label: t(`partners.collaborators.education.${v}`),
   }))

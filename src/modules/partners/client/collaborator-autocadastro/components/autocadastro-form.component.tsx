@@ -17,7 +17,7 @@ import {
   GENDER_IDENTITY_OPTIONS,
   GENDER_IDENTITY_OTHER,
   RACES,
-  EDUCATION_LEVELS,
+  EDUCATION_LEVEL_OPTIONS,
   FOOD_CATEGORIES,
   MARITAL_STATUSES,
   type AutocadastroFormController,
@@ -116,7 +116,8 @@ export function AutocadastroForm({
     value: v,
     label: t(`partners.collaborators.race.${v}`),
   }))
-  const educationOptions = EDUCATION_LEVELS.map((v) => ({
+  // "Educação Infantil" saiu do seletor (spec 126). Autocadastro é de quem ainda não tem dado gravado.
+  const educationOptions = EDUCATION_LEVEL_OPTIONS.map((v) => ({
     value: v,
     label: t(`partners.collaborators.education.${v}`),
   }))
