@@ -1,11 +1,9 @@
 /**
- * StatusActions ("Mudar Status") — view BURRA (§XI). Dropdown de ação em massa sobre a seleção, fiel ao
- * mock (Aprovar / Voltar p/ edição / Enviar p/ aprovação / Marcar como pago).
+ * StatusActions ("Mudar Status") — view BURRA (§XI). Dropdown de ação em massa sobre a seleção.
  *
- * ⚠️ CHROME honesto por ora: `approve`/`undo-approval` já existem e o `version` agora vem na listagem
- * (012/#47) — ou seja, "Aprovar" e "Voltar p/ edição" em massa já são VIÁVEIS (falta só fiar a mutation
- * em lote + tratamento de 409); `submit` (Rascunho→Aberto) não tem rota (core-api#91); `pay`/`transmit`/
- * `reconcile` não existem (roadmap #58/#59/#60, epic #64). Itens desabilitados com tooltip por enquanto.
+ * Layout (refino da spec 119): grupos NOMEADOS na ordem do ciclo do título — Aprovação (Aprovar · Voltar
+ * para edição) · Pagamento (Marcar como pago) · Correção (Desfazer baixa · Desfazer transmissão) — e a ação
+ * destrutiva (Excluir) isolada no fim, no tom de erro. Item desativado mostra o motivo no `title`.
  */
 import type { MouseEvent, ReactNode } from 'react'
 
@@ -13,16 +11,16 @@ import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
 import { CalendarCheckIcon } from '#shared/ui/icons/index.ts'
 
+import { wrapper, trigger } from './export-dropdown.css.ts'
 import {
-  wrapper,
-  trigger,
-  menu,
-  menuItem,
-  menuItemBorder,
-  menuItemDisabled,
-  itemCol,
-  itemHint,
-} from './export-dropdown.css.ts'
+  statusMenu,
+  statusGroup,
+  statusGroupLabel,
+  statusItem,
+  statusItemLabel,
+  statusItemLabelDanger,
+  statusItemHint,
+} from './status-actions.css.ts'
 
 const t = createTranslator(ptBR)
 
@@ -35,16 +33,11 @@ export type StatusActionsProps = Readonly<{
   // Aprovar (Aberto→Aprovado) e Voltar p/ edição (Aprovado→Aberto) — habilitados conforme a seleção.
   canApprove: boolean
   canReopen: boolean
-  // Excluir — Aberto (hard-delete) OU Rascunho (descarte). O core-api trata os dois no mesmo DELETE
-  // /documents/:id (cancelDocument → cancelDraft, #166). Abre o modal de confirmação.
+  // Excluir — Aberto (hard-delete) OU Rascunho (descarte), core-api#166. Abre o modal de confirmação.
   canDelete: boolean
-  // Marcar como pago (baixa manual, #224) — títulos APROVADOS ou TRANSMITIDOS (ADR-0065 §6 do
-  // core-api). Transmitido entra porque `Pago` continua manual: quem afirma que o dinheiro saiu é
-  // quem conferiu o extrato, e é justamente o título que já foi ao banco que espera essa conferência.
+  // Marcar como pago (baixa manual, #224) — títulos Aprovados ou Transmitidos (ADR-0065 §6 do core-api).
   canPay: boolean
-  // Spec 119 / core-api#61 — desfazimentos por título, cada um abre o modal de motivo ANTES de agir.
-  // Desfazer baixa: só títulos Pago (conciliado desfaz a conciliação antes). Desfazer transmissão: só
-  // títulos Transmitido (voltam a Aprovado, sem liberar nova remessa).
+  // Spec 119 / core-api#61 — desfazimentos por título; cada um abre o modal de motivo ANTES de agir.
   canUndoPayment: boolean
   canUndoTransmission: boolean
   running: boolean
@@ -56,8 +49,41 @@ export type StatusActionsProps = Readonly<{
   onUndoTransmission: () => void
 }>
 
+type ItemProps = Readonly<{
+  enabled: boolean
+  running: boolean
+  labelTag: string
+  hintTag: string
+  disabledTitleTag: string
+  danger?: boolean
+  onClick: () => void
+}>
+
+function Item(props: ItemProps): ReactNode {
+  const active = props.enabled && !props.running
+  return (
+    <button
+      type="button"
+      className={statusItem}
+      disabled={!active}
+      title={props.enabled ? undefined : t(props.disabledTitleTag)}
+      onClick={(e) => {
+        props.onClick()
+        closeDetails(e)
+      }}
+    >
+      <span
+        className={`${statusItemLabel}${props.danger === true && active ? ` ${statusItemLabelDanger}` : ''}`}
+      >
+        {t(props.labelTag)}
+      </span>
+      <span className={statusItemHint}>{t(props.hintTag)}</span>
+    </button>
+  )
+}
+
 export function StatusActions(props: StatusActionsProps): ReactNode {
-  const { canApprove, canReopen, canDelete, canPay, canUndoPayment, canUndoTransmission, running } = props
+  const { running } = props
   return (
     <details className={wrapper}>
       <summary
@@ -70,110 +96,70 @@ export function StatusActions(props: StatusActionsProps): ReactNode {
         </span>
       </summary>
 
-      <div className={menu}>
-        {/* Aprovar — Aberto→Aprovado (em massa) */}
-        <button
-          type="button"
-          className={`${menuItem}${canApprove && !running ? '' : ` ${menuItemDisabled}`}`}
-          disabled={!canApprove || running}
-          title={canApprove ? undefined : t('financial.list.status.needOpen')}
-          onClick={(e) => {
-            props.onApprove()
-            closeDetails(e)
-          }}
-        >
-          <span className={itemCol}>
-            {t('financial.list.status.approve')}
-            <span className={itemHint}>{t('financial.list.status.approveHint')}</span>
-          </span>
-        </button>
+      <div className={statusMenu}>
+        <div className={statusGroup} role="group" aria-label={t('financial.list.status.group.approval')}>
+          <span className={statusGroupLabel}>{t('financial.list.status.group.approval')}</span>
+          <Item
+            enabled={props.canApprove}
+            running={running}
+            labelTag="financial.list.status.approve"
+            hintTag="financial.list.status.approveHint"
+            disabledTitleTag="financial.list.status.needOpen"
+            onClick={props.onApprove}
+          />
+          <Item
+            enabled={props.canReopen}
+            running={running}
+            labelTag="financial.list.status.reopen"
+            hintTag="financial.list.status.reopenHint"
+            disabledTitleTag="financial.list.status.needApproved"
+            onClick={props.onReopen}
+          />
+        </div>
 
-        {/* Voltar para edição — Aprovado→Aberto (undo) */}
-        <button
-          type="button"
-          className={`${menuItem} ${menuItemBorder}${canReopen && !running ? '' : ` ${menuItemDisabled}`}`}
-          disabled={!canReopen || running}
-          title={canReopen ? undefined : t('financial.list.status.needApproved')}
-          onClick={(e) => {
-            props.onReopen()
-            closeDetails(e)
-          }}
-        >
-          <span className={itemCol}>
-            {t('financial.list.status.reopen')}
-            <span className={itemHint}>{t('financial.list.status.reopenHint')}</span>
-          </span>
-        </button>
+        <div className={statusGroup} role="group" aria-label={t('financial.list.status.group.payment')}>
+          <span className={statusGroupLabel}>{t('financial.list.status.group.payment')}</span>
+          <Item
+            enabled={props.canPay}
+            running={running}
+            labelTag="financial.list.status.pay"
+            hintTag="financial.list.status.payHint"
+            disabledTitleTag="financial.list.status.needApprovedToPay"
+            onClick={props.onPay}
+          />
+        </div>
 
-        {/* "Marcar como pago" — baixa manual (#224): Aprovado→Pago por título. ("Enviar p/ aprovação"
-            foi removido: a finalização do rascunho acontece reabrindo o documento na tela de Lançar, e a
-            aprovação já é coberta por "Aprovar".) */}
-        <button
-          type="button"
-          className={`${menuItem} ${menuItemBorder}${canPay && !running ? '' : ` ${menuItemDisabled}`}`}
-          disabled={!canPay || running}
-          title={canPay ? undefined : t('financial.list.status.needApprovedToPay')}
-          onClick={(e) => {
-            props.onPay()
-            closeDetails(e)
-          }}
-        >
-          <span className={itemCol}>
-            {t('financial.list.status.pay')}
-            <span className={itemHint}>{t('financial.list.status.payHint')}</span>
-          </span>
-        </button>
+        <div className={statusGroup} role="group" aria-label={t('financial.list.status.group.correction')}>
+          <span className={statusGroupLabel}>{t('financial.list.status.group.correction')}</span>
+          <Item
+            enabled={props.canUndoPayment}
+            running={running}
+            labelTag="financial.list.undo.payment.action"
+            hintTag="financial.list.undo.payment.actionHint"
+            disabledTitleTag="financial.list.undo.payment.needPaid"
+            onClick={props.onUndoPayment}
+          />
+          <Item
+            enabled={props.canUndoTransmission}
+            running={running}
+            labelTag="financial.list.undo.transmission.action"
+            hintTag="financial.list.undo.transmission.actionHint"
+            disabledTitleTag="financial.list.undo.transmission.needTransmitted"
+            onClick={props.onUndoTransmission}
+          />
+        </div>
 
-        {/* Desfazer baixa — Pago → status anterior à baixa (spec 119). Abre o modal de motivo. */}
-        <button
-          type="button"
-          className={`${menuItem} ${menuItemBorder}${canUndoPayment && !running ? '' : ` ${menuItemDisabled}`}`}
-          disabled={!canUndoPayment || running}
-          title={canUndoPayment ? undefined : t('financial.list.undo.payment.needPaid')}
-          onClick={(e) => {
-            props.onUndoPayment()
-            closeDetails(e)
-          }}
-        >
-          <span className={itemCol}>
-            {t('financial.list.undo.payment.action')}
-            <span className={itemHint}>{t('financial.list.undo.payment.actionHint')}</span>
-          </span>
-        </button>
-
-        {/* Desfazer transmissão — Transmitido → Aprovado (spec 119). Abre o modal de motivo. */}
-        <button
-          type="button"
-          className={`${menuItem} ${menuItemBorder}${canUndoTransmission && !running ? '' : ` ${menuItemDisabled}`}`}
-          disabled={!canUndoTransmission || running}
-          title={canUndoTransmission ? undefined : t('financial.list.undo.transmission.needTransmitted')}
-          onClick={(e) => {
-            props.onUndoTransmission()
-            closeDetails(e)
-          }}
-        >
-          <span className={itemCol}>
-            {t('financial.list.undo.transmission.action')}
-            <span className={itemHint}>{t('financial.list.undo.transmission.actionHint')}</span>
-          </span>
-        </button>
-
-        {/* Excluir — Aberto (hard-delete) ou Rascunho (descarte), core-api#166. Abre modal de confirmação. */}
-        <button
-          type="button"
-          className={`${menuItem} ${menuItemBorder}${canDelete && !running ? '' : ` ${menuItemDisabled}`}`}
-          disabled={!canDelete || running}
-          title={canDelete ? undefined : t('financial.list.delete.needOpen')}
-          onClick={(e) => {
-            props.onDelete()
-            closeDetails(e)
-          }}
-        >
-          <span className={itemCol}>
-            {t('financial.list.delete.action')}
-            <span className={itemHint}>{t('financial.list.delete.actionHint')}</span>
-          </span>
-        </button>
+        <div className={statusGroup}>
+          <Item
+            enabled={props.canDelete}
+            running={running}
+            labelTag="financial.list.delete.action"
+            hintTag="financial.list.delete.actionHint"
+            disabledTitleTag="financial.list.delete.needOpen"
+            danger
+            onClick={props.onDelete}
+          />
+        </div>
       </div>
     </details>
   )

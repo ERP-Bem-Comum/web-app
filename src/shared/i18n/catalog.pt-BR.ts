@@ -2113,8 +2113,11 @@ export const ptBR: Catalog = {
   'financial.list.dueDate.modalApply': 'Aplicar',
   // Baixa de Pagamento (baixa manual #224/#232) — modal de data de pagamento (a ação na linha é "Marcar como pago").
   // Spec 119 / core-api#61 — desfazer baixa e transmissão (Mudar Status), e alerta do Voltar para edição.
+  'financial.list.status.group.approval': 'Aprovação',
+  'financial.list.status.group.payment': 'Pagamento',
+  'financial.list.status.group.correction': 'Correção',
   'financial.list.undo.payment.action': 'Desfazer baixa',
-  'financial.list.undo.payment.actionHint': 'Volta o título ao status anterior à baixa',
+  'financial.list.undo.payment.actionHint': 'volta ao status anterior à baixa',
   'financial.list.undo.payment.needPaid':
     'Selecione títulos com status Pago. Conciliado: desfaça a conciliação antes.',
   'financial.list.undo.payment.modalTitle': 'Desfazer baixa',
@@ -2124,7 +2127,7 @@ export const ptBR: Catalog = {
     'títulos voltam ao status anterior à baixa, e a data de pagamento é removida:',
   'financial.list.undo.payment.apply': 'Desfazer baixa',
   'financial.list.undo.transmission.action': 'Desfazer transmissão',
-  'financial.list.undo.transmission.actionHint': 'Volta o título para Aprovado, sem liberar nova remessa',
+  'financial.list.undo.transmission.actionHint': 'volta para Aprovado, sem liberar nova remessa',
   'financial.list.undo.transmission.needTransmitted': 'Selecione títulos com status Transmitido.',
   'financial.list.undo.transmission.modalTitle': 'Desfazer transmissão',
   'financial.list.undo.transmission.modalBodyOne':
