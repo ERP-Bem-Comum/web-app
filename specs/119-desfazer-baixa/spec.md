@@ -1,133 +1,125 @@
-# 119 — Desfazer a baixa manual no Contas a Pagar
+# 119 — Desfazer a baixa e a transmissão no Contas a Pagar
 
-**Tamanho:** M · **Status:** spec (aguardando backend) · **Data:** 2026-10-02
-**Depende de:** `core-api#61` (Fatia 6: `DesfazerPagamento`). Decisões da P.O. registradas lá em 02/10.
-**Origem:** pedido da P.O., porque a usuária pode errar a **data da baixa** e precisar corrigir.
+**Tamanho:** L · **Status:** spec revisada (19/10) · **Data:** 2026-10-02 (revisão: 2026-10-19)
+**Backend:** `core-api#61` (Fatia 6). Decisões da P.O. de 02/10, 03/10 e 19/10.
+**Origem:** a usuária pode errar a **data da baixa** — e, mais amplo, um lançamento pode precisar ser
+corrigido depois de transmitido ou pago.
 
 ## Problema
 
-No grid de Contas a Pagar, "Marcar como pago" dá a baixa manual (`Aprovado`/`Transmitido` → `Pago`), com data
-retroativa (`PaymentDateModal`). Depois disso **não existe volta**: um título `Pago` não tem nenhuma ação no
-"Mudar Status", e o core-api não tem rota para sair de `Pago`. Uma data de baixa digitada errada fica errada.
+Hoje um título só anda para frente. `Pago` não tem volta, `Transmitido` só volta descartando a remessa
+inteira, e o "Voltar para edição" (desfazer aprovação) tem o defeito oposto: leva o documento e **todos** os
+títulos para "Em aberto" **mesmo que algum esteja Transmitido ou Pago**, pulando qualquer trava e sem motivo
+(`core-api: document.ts`, `undoApproval`).
 
-## Fluxo escolhido
+## O ciclo (P.O., 19/10)
 
-**Desfazer a baixa e dar a baixa de novo** com a data certa, reaproveitando o "Marcar como pago" que já existe.
-
-| Alternativa                                                     | Decisão                                                                                                             |
-| --------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
-| **A. Desfazer a baixa** (volta ao status anterior) + nova baixa | ✅ **Escolhida**: cobre data errada **e** baixa no título errado; o caso de uso já está no roteiro do backend (#61) |
-| B. Corrigir só a data de pagamento (o título segue Pago)        | Descartada: só cobre a data; baixa no título errado continuaria sem saída; caso de uso novo fora do roteiro         |
-
-## Regras (decisões da P.O., 02/10)
-
-1. **O título volta ao status diretamente anterior à baixa:**
-   - baixa dada em **Aprovado** → volta para **Aprovado**;
-   - baixa dada em **Transmitido** → volta para **Transmitido**.
-
-   Um título que saiu pela remessa e voltasse para Aprovado ficaria elegível a uma **nova remessa**, com risco
-   de pagamento em dobro.
-
-2. **Só títulos com status Pago.** Conciliado e Parcialmente conciliado ficam **fora do escopo**: desfazer a
-   conciliação é um evento que já existe no módulo de Conciliação (decisão da P.O., 03/10).
-3. **Motivo obrigatório**, registrado na aba **Histórico** do documento (quem, quando, por quê).
-4. **Permissão:** a mesma da baixa manual (`payable:approve`).
-5. Ao desfazer, a **data de pagamento some** do título. A coluna Pagamento volta a "—".
-
-## Ciclo de desfazimento (P.O., 03/10)
-
-Cada etapa tem rotina e evento próprios de desfazimento, aplicados **em sequência**:
+Cada etapa tem desfazimento próprio, com trava e motivo, **em sequência**:
 
 ```
-Aprovado / Transmitido ──baixa──▶ Pago ──conciliação──▶ Conciliado
-          ◀── desfazer a baixa ───      ◀── desfazer a conciliação ──
-          (esta spec, core-api#61)      (já existe, módulo de Conciliação)
+Aprovado ──remessa──▶ Transmitido ──baixa──▶ Pago ──conciliação──▶ Conciliado
+   ◀─ desfazer transmitido ─  ◀── desfazer baixa ──  ◀─ desfazer conciliação ─
+          (119, novo)              (119, novo)           (já existe)
+
+Aprovado ──voltar para edição──▶ Em aberto      (já existe; ganha trava + alerta nesta spec)
 ```
 
-- Um título só chega a **Conciliado** se estiver **Pago** antes: é assim que ele aparece na Conciliação.
-- **Desfazer a conciliação** (Conciliado → Pago) já existe no módulo de Conciliação.
-- **Desfazer a baixa** (Pago → status anterior) é a rotina nova desta spec, com evento próprio.
-- Para desfazer as duas, a ordem é: primeiro a conciliação, depois a baixa.
+Em **Aprovado**, a edição do título (spec 125, `core-api#1057`) já cobre a maior parte das correções.
+"Voltar para edição" fica para **erro grave de lançamento** (ex.: número do documento errado, que
+contamina os impostos gerados) — a ferramenta permite, mas trata como operação fora da rotina.
 
-## Escopo (front)
+## Regras
 
-| #   | Entrega                                                                                                                    |
-| --- | -------------------------------------------------------------------------------------------------------------------------- |
-| 1   | Item **"Desfazer baixa"** no "Mudar Status", habilitado com 1+ títulos **Pago** selecionados                               |
-| 2   | Modal **"Desfazer baixa"**: lista os títulos, campo **Motivo** obrigatório, aviso de que o título volta ao status anterior |
-| 3   | Cadeia BFF: server fn → use-case → adapter `POST .../undo-manual-payment` com `{ version, reason }`, por título            |
-| 4   | Erros do backend mapeados para mensagens em PT (título não está pago, conflito de versão)                                  |
-| 5   | Aba **Histórico**: rótulo do evento novo ("Baixa desfeita", com o motivo)                                                  |
-| 6   | Sucesso invalida a lista e os contadores, como a baixa faz hoje                                                            |
+### Desfazer a baixa (`Pago` → status anterior)
 
-## Comportamento
+1. Volta ao status **diretamente anterior à baixa**: `Aprovado` → `Aprovado`; `Transmitido` → `Transmitido`
+   (P.O., 02/10). O anterior vem da **trilha**: a baixa grava a mudança de status com o "antes".
+2. **Baixa sem o "antes" na trilha** (anterior à migration que criou a trilha): deduz pela remessa — título
+   numa remessa ativa volta a `Transmitido`, senão a `Aprovado` (P.O., 19/10).
+3. Só títulos **Pago**. Conciliado e Parcialmente conciliado ficam fora: primeiro desfaz-se a conciliação
+   (P.O., 03/10).
+4. A **data de pagamento some**; o título deixa de contar como realizado nos relatórios.
 
-- **O modal abre ANTES de desfazer.** "Mudar Status → Desfazer baixa" abre o modal, que é a confirmação e onde
-  se informa o motivo. A baixa só é desfeita no botão "Desfazer baixa" do modal. Cancelar não muda nada.
-- **Individual ou em lote**, no mesmo molde do "Marcar como pago": 1 ou mais títulos Pagos selecionados.
-- **Um motivo para o lote todo**, como a data é uma só na baixa em lote.
-- **Uma chamada por título** (o backend desfaz por título). Falha parcial: os títulos que passaram ficam
-  desfeitos, e a tela lista **quais falharam e por quê**, no padrão que o `bulk-status.binding.ts` já usa no
-  Aprovar e no "Voltar para edição".
-- **Sem lembrete de refazer a baixa.** O modal não orienta a usar "Marcar como pago" depois: dar a nova baixa
-  é responsabilidade de quem desfez (decisão da P.O., 02/10).
-- **Seleção misturada:** só os títulos **Pago** entram; os de qualquer outro status, inclusive os conciliados,
-  são ignorados, sem aviso próprio. O item fica desativado quando a seleção não tem nenhum título Pago.
+### Desfazer a transmissão (`Transmitido` → `Aprovado`) — novo (P.O., 19/10)
+
+O título foi à remessa, mas o banco não processou e ele será pago de outra forma (ex.: baixa manual).
+Desfazer mantém a verdade para o usuário: o pagamento **não** foi feito via remessa.
+
+1. Só títulos **Transmitido**.
+2. **A retransmissão segue bloqueada:** o título continua vinculado à remessa, e o gerador recusa título
+   que já está numa remessa ativa (`remittance-payables-already-held`). O próprio convênio Multipag também
+   barra. Nenhuma trava nova é necessária.
+3. **Remessa ainda "Na fila"** (não foi ao banco): **recusa**, orientando a **descartar a remessa** — com a
+   remessa na fila, ela ainda pode ser enviada e paga pelo banco, e uma baixa manual no título pagaria em
+   dobro. Só se desfaz a transmissão de remessa já **Transmitida** ou com **Falha** (recomendação aceita
+   por padrão, 19/10).
+
+### Voltar para edição (`Aprovado` → `Em aberto`) — trava + alerta
+
+1. **Trava:** recusado se **algum título do documento** estiver além de `Aprovado` (Transmitido, Pago,
+   Parcialmente conciliado, Conciliado). A mensagem diz o que desfazer antes, na ordem.
+2. **Alerta reforçado:** se algum título do documento **já teve baixa ou transmissão desfeita** (está no
+   Histórico), o modal avisa antes de confirmar: o título já foi transmitido/pago antes; o pagamento pode
+   ter acontecido no banco; conferir o extrato antes de relançar. Operação fora da rotina tem que parecer
+   fora da rotina.
+
+### Comum aos dois desfazer novos
+
+- **Motivo obrigatório**, registrado no **Histórico** do documento (quem, quando, por quê).
+- **Permissão:** `payable:approve` (a da baixa).
+- **Individual ou em lote**, um motivo para o lote; uma chamada por título; falha parcial lista quais
+  títulos falharam e por quê (padrão do `bulk-status.binding.ts`).
+- O **modal abre antes**: é a confirmação e o lugar do motivo. Cancelar não muda nada.
+- **Sem lembrete** de refazer a baixa depois (P.O., 02/10).
+- **Seleção misturada:** cada ação considera só os títulos no status dela; os demais são ignorados.
 
 ## Desenho da tela
 
 ```
  Mudar Status ▾
  ├ Aprovar
- ├ Voltar para edição
+ ├ Voltar para edição            (trava: só sem título além de Aprovado; alerta se houve desfazimento)
  ├ Marcar como pago
- ├ Desfazer baixa                      ← novo (só títulos Pago)
- │   "Volta o título ao status anterior à baixa"
+ ├ Desfazer baixa                ← novo (títulos Pago)
+ ├ Desfazer transmissão          ← novo (títulos Transmitido)
  └ Excluir
 
  ┌ Desfazer baixa ─────────────────────────────────┐
  │ 2 títulos voltam ao status anterior à baixa:     │
  │  • NF 0847 · Fornecedor X · pago em 10/09/2026   │
  │  • NF 0912 · Fornecedor Y · pago em 12/09/2026   │
- │                                                  │
  │ Motivo *  [ Data da baixa digitada errada      ] │
- │                                                  │
  │                       [Cancelar] [Desfazer baixa]│
  └──────────────────────────────────────────────────┘
 ```
 
-## Contrato com o backend (proposto na #61)
+O modal de "Desfazer transmissão" segue o mesmo molde ("voltam para Aprovado; continuam bloqueados para
+nova remessa").
 
-- **Rota:** `POST /financial/documents/:id/payables/:payableId/undo-manual-payment`
-- **Body:** `{ version: number, reason: string }` (optimistic lock como na baixa).
-- **Efeito:** `Pago` → status anterior à baixa (`Approved` ou `Transmitted`); `paidAt` → `null`; evento na trilha.
-- **Erros esperados:** `payable-not-paid` (inclui o título conciliado, que não está mais Pago) e conflito de versão.
-- **A confirmar quando a #61 sair:** nomes reais dos slugs, nome do evento na trilha e o status de retorno
-  na resposta. A spec se ajusta ao código mergeado, não à proposta.
+## Contrato com o backend (proposto — a spec se ajusta ao código mergeado)
 
-**Ordem de entrega:** o front só vai para a `develop` depois da #61 na `dev` do core-api.
+| Ação                 | Rota                                                                    | Body                  |
+| -------------------- | ----------------------------------------------------------------------- | --------------------- |
+| Desfazer baixa       | `POST /financial/documents/:id/payables/:payableId/undo-manual-payment` | `{ version, reason }` |
+| Desfazer transmissão | `POST /financial/documents/:id/payables/:payableId/undo-transmission`   | `{ version, reason }` |
+| Voltar para edição   | `POST /financial/documents/:id/undo-approval` (existe)                  | sem mudança           |
 
-## Onde mexe (front)
+- Trilha: eventos novos com autor e **motivo** (a trilha ganha coluna de motivo).
+- Read-model (`fin_payable_view`): os dois eventos atualizam o status; o desfazer baixa limpa `paid_at`.
+- Erros: título fora do status esperado; conflito de concorrência; remessa na fila; "Voltar para edição"
+  com título além de Aprovado.
 
-| Camada     | Arquivo                                                                                                                                                     |
-| ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| View-model | `contas-a-pagar-list/contas-a-pagar.view-model.ts`: alvo `undoPayment` no `deriveTitleActionTargets` (por título, sem dedup por documento) (só status Pago) |
-| View       | `components/status-actions.component.tsx` (item novo) e um modal novo de motivo, no molde do `payment-date-modal.component.tsx`                             |
-| Binding    | `bulk-status.binding.ts`: o comando novo, como `undoApproval`/`markPaid`                                                                                    |
-| BFF        | server fn + use-case + `core-api-financial.ts` (rota e `SLUG_TO_ERROR`)                                                                                     |
-| Histórico  | `document-timeline.view-model.ts`: rótulo do evento novo                                                                                                    |
-| i18n       | `catalog.pt-BR.ts`                                                                                                                                          |
+**Ordem de entrega:** backend (`core-api#61`) primeiro; o front só vai para a `develop` depois dele na `dev`.
 
 ## Fora de escopo
 
-- **Corrigir a data sem desfazer** (alternativa B).
-- **Desfazer pagamento automático** (retorno do banco, #690): não existe ainda.
-- **Títulos Conciliado e Parcialmente conciliado:** desfazer a conciliação já existe no módulo de Conciliação.
+- Corrigir a data sem desfazer.
+- Desfazer pagamento automático (retorno do banco, #690): não existe ainda.
+- Desfazer conciliação: já existe no módulo de Conciliação.
 
 ## Testes (planejados)
 
-- **View-model:** `undoPayment` só com títulos Pago; Conciliado e demais status ficam de fora; seleção sem
-  nenhum título Pago desativa o item.
-- **Modal:** motivo obrigatório; botão desativado sem motivo; lista os títulos com a data de pagamento.
-- **BFF:** corpo com `version` e `reason`; mapeamento dos erros.
-- **Histórico:** rótulo do evento novo.
+- **Backend:** cada ramo das regras acima (status anterior pela trilha e pela remessa; recusas; remessa na
+  fila; trava do voltar para edição; read-model; trilha com motivo).
+- **Front:** alvos por status no view-model; modais com motivo obrigatório; alerta do voltar para edição
+  a partir do Histórico; mapeamento de erros; rótulos do Histórico.
