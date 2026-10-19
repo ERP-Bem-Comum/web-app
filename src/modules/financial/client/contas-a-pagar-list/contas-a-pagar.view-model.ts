@@ -416,11 +416,11 @@ export type UndoTarget = Readonly<{
 }>
 
 /**
- * Spec 119 (P.O., 19/10): o documento JÁ teve baixa ou transmissão desfeita? Se sim, o "Voltar para
- * edição" não age direto: abre o alerta reforçado — o título já foi transmitido/pago antes, e o pagamento
+ * Spec 119 (P.O., 19/10): o documento JÁ teve baixa desfeita? Se sim, o "Voltar para
+ * edição" não age direto: abre o alerta reforçado — o título já foi pago antes, e o pagamento
  * pode ter acontecido no banco. PURA: recebe os tipos de evento da trilha, não a trilha inteira.
  */
-const UNDO_EVENTS: ReadonlySet<string> = new Set(['ManualPaymentUndone', 'TransmissionUndone'])
+const UNDO_EVENTS: ReadonlySet<string> = new Set(['ManualPaymentUndone'])
 export const hadUndoInHistory = (eventTypes: readonly string[]): boolean =>
   eventTypes.some((type) => UNDO_EVENTS.has(type))
 
@@ -429,8 +429,6 @@ export type TitleActionTargets = Readonly<{
   reopen: readonly StatusTarget[] // documentos com título Aprovado
   // Spec 119: só títulos Pago (conciliado desfaz a conciliação antes, no módulo de Conciliação).
   undoPayment: readonly UndoTarget[]
-  // Spec 119: só títulos Transmitido.
-  undoTransmission: readonly UndoTarget[]
   deletable: readonly StatusTarget[] // Rascunho (descarte) + Aberto (hard-delete) — ambos canceláveis (#166)
   draftCount: number // rascunhos "ignorados" — 0 desde #166 (rascunho agora É excluível)
   // #270: vencimento por TÍTULO (Aberto ou Aprovado), isolado — por payable (sem dedup por documento).
@@ -481,7 +479,6 @@ export const deriveTitleActionTargets = (
     approve: aberto,
     reopen: dedupByDoc(sel.filter((r) => r.status === 'Aprovado')),
     undoPayment: sel.filter((r) => r.status === 'Pago').map(toUndo),
-    undoTransmission: sel.filter((r) => r.status === 'Transmitido').map(toUndo),
     deletable: [...rascunho, ...aberto],
     draftCount: 0, // #166: rascunho agora É excluível → nada "ignorado" no modal
     dueEditable: selDueEditableRows.map((r) => ({

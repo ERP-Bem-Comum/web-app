@@ -131,7 +131,6 @@ export type FinancialRepository = Readonly<{
   registerManualPayment: (input: ManualPaymentInput) => Promise<Result<DocumentDetail, FinancialError>>
   // Spec 119 / core-api#61: desfazer a baixa (Pago → anterior) e a transmissão (Transmitido → Aprovado).
   undoManualPayment: (input: UndoPayableInput) => Promise<Result<DocumentDetail, FinancialFailure>>
-  undoTransmission: (input: UndoPayableInput) => Promise<Result<DocumentDetail, FinancialFailure>>
   // 042: Top-5 pagamentos recentes (widget do Dashboard). Sem input.
   getRecentPayments: () => Promise<Result<readonly RecentPayment[], FinancialError>>
   // 052: estatísticas do Dashboard (DTO completo composto no BFF). Sem input.
@@ -162,7 +161,6 @@ export const createFinancialRepository = (
     cancelDocumentFn: CancelFn
     registerManualPaymentFn: PayFn
     undoManualPaymentFn: UndoPayableFn
-    undoTransmissionFn: UndoPayableFn
     recentPaymentsFn: RecentPaymentsFn
     dashboardStatisticsFn: DashboardStatisticsFn
     dashboardRealizedFn: DashboardRealizedFn
@@ -238,10 +236,6 @@ export const createFinancialRepository = (
   },
   undoManualPayment: async (input) => {
     const res = await deps.undoManualPaymentFn({ data: input })
-    return res.ok ? ok(res.data) : err({ error: res.error, message: res.message })
-  },
-  undoTransmission: async (input) => {
-    const res = await deps.undoTransmissionFn({ data: input })
     return res.ok ? ok(res.data) : err({ error: res.error, message: res.message })
   },
   getRecentPayments: async () => {

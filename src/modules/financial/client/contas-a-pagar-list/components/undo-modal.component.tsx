@@ -1,6 +1,6 @@
 /**
- * UndoModal — view BURRA (§XI): modal de DESFAZIMENTO (spec 119 / core-api#61), um só para os dois:
- * "Desfazer baixa" (Pago → status anterior) e "Desfazer transmissão" (Transmitido → Aprovado).
+ * UndoModal — view BURRA (§XI): modal do "Desfazer baixa" (spec 119 / core-api#61) — Pago → status
+ * anterior à baixa. `kind` fica como discriminador para um desfazimento futuro.
  *
  * É a confirmação E o lugar do motivo: abre ANTES de qualquer chamada, lista os títulos que vão voltar
  * e só habilita o botão com motivo preenchido (o core-api também o exige — vai ao Histórico). Sem
@@ -26,7 +26,7 @@ import {
 
 const t = createTranslator(ptBR)
 
-export type UndoKind = 'payment' | 'transmission'
+export type UndoKind = 'payment'
 
 export type UndoModalProps = Readonly<{
   kind: UndoKind | null // null = fechado
@@ -38,12 +38,10 @@ export type UndoModalProps = Readonly<{
   onCancel: () => void
 }>
 
-// "NF 0847 · Fornecedor X · pago em 10/09/2026" — a data só na baixa (transmitido nunca foi pago).
-const describe = (kind: UndoKind, target: UndoTarget): string => {
+// "NF 0847 · Fornecedor X · pago em 10/09/2026" — a data some quando o backend não a expõe ("—").
+const describe = (target: UndoTarget): string => {
   const base = `${target.documentNumber} · ${target.supplier}`
-  return kind === 'payment' && target.pagamento !== '—'
-    ? `${base} · ${t('financial.list.undo.paidOn')} ${target.pagamento}`
-    : base
+  return target.pagamento !== '—' ? `${base} · ${t('financial.list.undo.paidOn')} ${target.pagamento}` : base
 }
 
 export function UndoModal(props: UndoModalProps): ReactNode {
@@ -69,7 +67,7 @@ export function UndoModal(props: UndoModalProps): ReactNode {
         </p>
         <ul className={confirmList}>
           {props.targets.map((target) => (
-            <li key={target.payableId}>{describe(kind, target)}</li>
+            <li key={target.payableId}>{describe(target)}</li>
           ))}
         </ul>
         <textarea

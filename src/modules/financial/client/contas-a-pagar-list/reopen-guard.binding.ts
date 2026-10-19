@@ -1,8 +1,7 @@
 /**
  * Guarda do "Voltar para edição" (spec 119, P.O. 19/10) — ADAPTER React.
  *
- * Antes de devolver documentos para edição, lê a trilha de cada um: se algum JÁ teve baixa ou transmissão
- * desfeita, abre o alerta reforçado (o pagamento pode ter acontecido no banco); senão, segue direto, como
+ * Antes de devolver documentos para edição, lê a trilha de cada um: se algum JÁ teve baixa desfeita, abre o alerta reforçado (o pagamento pode ter acontecido no banco); senão, segue direto, como
  * sempre foi. Operação fora da rotina tem que PARECER fora da rotina — e só quando é.
  *
  * Trilha que não pôde ser lida conta como "teve": na dúvida, avisar custa um clique; não avisar pode custar

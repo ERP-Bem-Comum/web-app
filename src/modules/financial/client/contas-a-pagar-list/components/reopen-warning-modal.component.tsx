@@ -1,7 +1,7 @@
 /**
  * ReopenWarningModal — view BURRA (§XI): alerta reforçado do "Voltar para edição" (spec 119, P.O. 19/10).
- * Só aparece quando algum documento da seleção JÁ teve baixa ou transmissão desfeita: o título já foi
- * transmitido/pago antes, e devolvê-lo para edição é operação fora da rotina. Estado mora na page.
+ * Só aparece quando algum documento da seleção JÁ teve baixa desfeita: o título já foi pago
+ * antes, e devolvê-lo para edição é operação fora da rotina. Estado mora na page.
  */
 import type { ReactNode } from 'react'
 

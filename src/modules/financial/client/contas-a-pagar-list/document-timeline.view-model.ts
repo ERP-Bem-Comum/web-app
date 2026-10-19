@@ -34,11 +34,9 @@ export const timelineEventPresentation = (type: TimelineEventType): TimelineEven
       return { labelTag: 'financial.timeline.event.reconciled', tone: 'reconciled' }
     case 'ReconciliationUndone':
       return { labelTag: 'financial.timeline.event.reconciliationUndone', tone: 'open' } // desfaz → volta a Pago
-    // Spec 119: desfazimentos — tom "approved" (o título volta a Aprovado/Transmitido, nunca a Aberto).
+    // Spec 119: baixa desfeita — tom "approved" (o título volta a Aprovado/Transmitido, nunca a Aberto).
     case 'ManualPaymentUndone':
       return { labelTag: 'financial.timeline.event.paymentUndone', tone: 'approved' }
-    case 'TransmissionUndone':
-      return { labelTag: 'financial.timeline.event.transmissionUndone', tone: 'approved' }
   }
 }
 

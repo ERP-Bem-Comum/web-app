@@ -136,7 +136,7 @@ export const createCoreApiFinancialClient = (baseUrl: string): FinancialClient =
 
   // Spec 119 / core-api#61: os dois desfazimentos têm a mesma forma — POST por título, `{ version, reason }`.
   const undoPayable = async (
-    action: 'undo-manual-payment' | 'undo-transmission',
+    action: 'undo-manual-payment',
     input: UndoPayableInput,
     token: string,
   ): Promise<Result<DocumentDetail, FinancialFailure>> => {
@@ -412,6 +412,5 @@ export const createCoreApiFinancialClient = (baseUrl: string): FinancialClient =
     // Spec 119 / core-api#61: desfazer baixa e transmissão de UM título. Mesmo molde do `undoApproval`:
     // a mensagem do core-api viaja junto, porque todas as recusas são 409 e só ela as distingue.
     undoManualPayment: async (input, token) => undoPayable('undo-manual-payment', input, token),
-    undoTransmission: async (input, token) => undoPayable('undo-transmission', input, token),
   }
 }

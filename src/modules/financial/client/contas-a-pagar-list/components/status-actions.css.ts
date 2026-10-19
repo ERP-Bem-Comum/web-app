@@ -111,10 +111,3 @@ export const statusItemIcon = style({
   selectors: { [`${statusItem}:disabled &`]: { color: vars.color.institutional.ink5 } },
 })
 export const statusItemText = style({ display: 'flex', flexDirection: 'column', gap: '0.125rem' })
-export const statusItemNote = style({
-  display: 'inline-flex',
-  alignItems: 'center',
-  gap: vars.space.xs,
-  fontSize: vars.font.size.xs,
-  color: vars.color.institutional.ink4,
-})

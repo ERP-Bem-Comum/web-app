@@ -1,7 +1,7 @@
 /**
  * Spec 119 / core-api#61 — PURO (node:test, imports relativos).
- *  - alvos de "Desfazer baixa" (só Pago) e "Desfazer transmissão" (só Transmitido), POR TÍTULO;
- *  - `hadUndoInHistory`: a guarda do "Voltar para edição" reconhece os dois desfazimentos na trilha;
+ *  - alvos de "Desfazer baixa" (só Pago), POR TÍTULO;
+ *  - `hadUndoInHistory`: a guarda do "Voltar para edição" reconhece a baixa desfeita na trilha;
  *  - Histórico: rótulo dos eventos novos.
  */
 import { describe, it } from 'node:test'
@@ -70,25 +70,15 @@ describe('spec 119 — alvos dos desfazimentos', () => {
     assert.equal(tg.undoPayment.length, 0)
   })
 
-  it('Desfazer transmissão: só títulos Transmitido', () => {
-    const tg = deriveTitleActionTargets(rows, all)
-    assert.deepEqual(
-      tg.undoTransmission.map((t) => t.payableId),
-      ['p2'],
-    )
-  })
-
-  it('seleção sem nenhum Pago/Transmitido → os dois vazios (itens desativados)', () => {
+  it('seleção sem nenhum Pago → vazio (item desativado)', () => {
     const tg = deriveTitleActionTargets(rows, new Set(['p4']))
     assert.equal(tg.undoPayment.length, 0)
-    assert.equal(tg.undoTransmission.length, 0)
   })
 })
 
 describe('spec 119 — guarda do "Voltar para edição"', () => {
-  it('baixa ou transmissão desfeita na trilha → alerta', () => {
+  it('baixa desfeita na trilha → alerta', () => {
     assert.equal(hadUndoInHistory(['DocumentSaved', 'ManualPaymentUndone']), true)
-    assert.equal(hadUndoInHistory(['TransmissionUndone']), true)
   })
 
   it('sem desfazimento (inclusive conciliação desfeita) → segue direto', () => {
@@ -102,10 +92,6 @@ describe('spec 119 — Histórico', () => {
     assert.equal(
       timelineEventPresentation('ManualPaymentUndone').labelTag,
       'financial.timeline.event.paymentUndone',
-    )
-    assert.equal(
-      timelineEventPresentation('TransmissionUndone').labelTag,
-      'financial.timeline.event.transmissionUndone',
     )
   })
 })

@@ -26,7 +26,7 @@ const target: UndoTarget = {
   pagamento: '10/09/2026',
 }
 
-const renderModal = (reason: string, kind: 'payment' | 'transmission' = 'payment') => {
+const renderModal = (reason: string, kind: 'payment' = 'payment') => {
   const onApply = vi.fn()
   render(
     <UndoModal
@@ -62,11 +62,6 @@ describe('UndoModal (spec 119)', () => {
   it('desfazer baixa lista o título com a data de pagamento', () => {
     renderModal('')
     expect(screen.getByText('NF 0847 · Fornecedor X · pago em 10/09/2026')).toBeTruthy()
-  })
-
-  it('desfazer transmissão lista o título SEM data (nunca foi pago)', () => {
-    renderModal('', 'transmission')
-    expect(screen.getByText('NF 0847 · Fornecedor X')).toBeTruthy()
   })
 
   it('motivo vazio ou só espaços → botão desativado', () => {

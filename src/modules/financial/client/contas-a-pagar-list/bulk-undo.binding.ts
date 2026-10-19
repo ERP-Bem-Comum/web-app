@@ -1,6 +1,6 @@
 /**
- * Binding dos DESFAZIMENTOS em massa (spec 119 / core-api#61) — ADAPTER React. "Desfazer baixa"
- * (Pago → status anterior) e "Desfazer transmissão" (Transmitido → Aprovado), UMA chamada por título,
+ * Binding do DESFAZER BAIXA em massa (spec 119 / core-api#61) — ADAPTER React. Pago → status anterior
+ * à baixa, UMA chamada por título,
  * com o MESMO motivo para o lote todo.
  *
  * `Promise.all` e não sequência encadeada (como a baixa): o core-api desfaz por título com CAS no próprio
@@ -8,7 +8,7 @@
  *
  * As falhas são REPORTADAS por título, no molde do `bulk-status.binding.ts`: todas as recusas chegam
  * como 409 → `conflict`, e só a MENSAGEM do core-api diz qual foi e o que fazer — "desfaça a
- * conciliação antes", "descarte a remessa, que ainda está na fila". Um "algumas falharam" não diria.
+ * conciliação antes". Um "algumas falharam" não diria.
  */
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 
@@ -26,7 +26,6 @@ type UndoVars = Readonly<{ targets: readonly UndoTarget[]; reason: string }>
 
 export type BulkUndoBinding = Readonly<{
   undoPayment: (targets: readonly UndoTarget[], reason: string) => void
-  undoTransmission: (targets: readonly UndoTarget[], reason: string) => void
   running: boolean
   /** Cabeçalho do bloco de erros; `null` quando nada falhou. O detalhe vem em `failures`. */
   errorTag: string | null
@@ -77,27 +76,13 @@ export function useBulkUndo(onCompleted: () => void): BulkUndoBinding {
       Promise.all(targets.map((t) => financialRepository.undoManualPayment(toInput(t, reason)))),
     onSuccess: afterRun,
   })
-  const transmissionMut = useMutation({
-    mutationKey: ['financial', 'documents', 'bulk-undo-transmission'] as const,
-    mutationFn: ({ targets, reason }: UndoVars): Promise<BulkResult> =>
-      Promise.all(targets.map((t) => financialRepository.undoTransmission(toInput(t, reason)))),
-    onSuccess: afterRun,
-  })
 
-  const running = paymentMut.isPending || transmissionMut.isPending
-  const failures = running
-    ? []
-    : [
-        ...collectFailures(paymentMut.data, paymentMut.variables?.targets ?? []),
-        ...collectFailures(transmissionMut.data, transmissionMut.variables?.targets ?? []),
-      ]
+  const running = paymentMut.isPending
+  const failures = running ? [] : [...collectFailures(paymentMut.data, paymentMut.variables?.targets ?? [])]
 
   return {
     undoPayment: (targets, reason) => {
       if (targets.length > 0) paymentMut.mutate({ targets, reason })
-    },
-    undoTransmission: (targets, reason) => {
-      if (targets.length > 0) transmissionMut.mutate({ targets, reason })
     },
     running,
     errorTag: failures.length === 0 ? null : 'financial.list.undo.bulkError',

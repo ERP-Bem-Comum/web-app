@@ -23,14 +23,12 @@ const props = (over: Partial<StatusActionsProps> = {}): StatusActionsProps => ({
   canDelete: false,
   canPay: false,
   canUndoPayment: true,
-  canUndoTransmission: false,
   running: false,
   onApprove: vi.fn(),
   onReopen: vi.fn(),
   onDelete: vi.fn(),
   onPay: vi.fn(),
   onUndoPayment: vi.fn(),
-  onUndoTransmission: vi.fn(),
   ...over,
 })
 
@@ -62,9 +60,9 @@ describe('StatusActions — grupos (spec 119)', () => {
     fireEvent.click(button('financial.list.undo.payment.action'))
     expect(p.onUndoPayment).toHaveBeenCalledOnce()
 
-    const transmission = button('financial.list.undo.transmission.action')
-    expect(transmission.disabled).toBe(true)
-    expect(transmission.title).toBe(tr('financial.list.undo.transmission.needTransmitted'))
+    const approve = button('financial.list.status.approve')
+    expect(approve.disabled).toBe(true)
+    expect(approve.title).toBe(tr('financial.list.status.needOpen'))
   })
 
   it('rodando → tudo desativado', () => {

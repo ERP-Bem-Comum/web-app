@@ -96,10 +96,6 @@ export type FinancialClient = Readonly<{
     input: UndoPayableInput,
     token: string,
   ) => Promise<Result<DocumentDetail, FinancialFailure>>
-  undoTransmission: (
-    input: UndoPayableInput,
-    token: string,
-  ) => Promise<Result<DocumentDetail, FinancialFailure>>
   getRecentPayments: (token: string) => Promise<Result<readonly RecentPayment[], FinancialError>>
   // #241/#237: KPI "Despesas por Centro de Custo" do Dashboard (cost-centers + variação M-1 vs M-2).
   getDashboardCostCenters: (token: string) => Promise<Result<DashboardCostCenters, FinancialError>>
@@ -231,11 +227,6 @@ export const createUndoManualPayment =
   (deps: Deps) =>
   (input: UndoPayableInput, token: string): Promise<Result<DocumentDetail, FinancialFailure>> =>
     deps.client.undoManualPayment(input, token)
-
-export const createUndoTransmission =
-  (deps: Deps) =>
-  (input: UndoPayableInput, token: string): Promise<Result<DocumentDetail, FinancialFailure>> =>
-    deps.client.undoTransmission(input, token)
 
 export const createGetRecentPayments =
   (deps: Deps) =>

@@ -20,7 +20,6 @@ import { undoApprovalFn } from '#modules/financial/server/adapters/server-fns/un
 import { cancelDocumentFn } from '#modules/financial/server/adapters/server-fns/cancel-document.service.fn.ts'
 import { registerManualPaymentFn } from '#modules/financial/server/adapters/server-fns/register-manual-payment.service.fn.ts'
 import { undoManualPaymentFn } from '#modules/financial/server/adapters/server-fns/undo-manual-payment.service.fn.ts'
-import { undoTransmissionFn } from '#modules/financial/server/adapters/server-fns/undo-transmission.service.fn.ts'
 import { recentPaymentsFn } from '#modules/financial/server/adapters/server-fns/recent-payments.query.fn.ts'
 import { getDashboardStatisticsFn } from '#modules/financial/server/adapters/server-fns/get-dashboard-statistics.query.fn.ts'
 import { dashboardRealizedFn } from '#modules/financial/server/adapters/server-fns/dashboard-realized.query.fn.ts'
@@ -46,7 +45,6 @@ export const financialRepository = createFinancialRepository({
   cancelDocumentFn: (opts) => cancelDocumentFn(opts),
   registerManualPaymentFn: (opts) => registerManualPaymentFn(opts),
   undoManualPaymentFn: (opts) => undoManualPaymentFn(opts),
-  undoTransmissionFn: (opts) => undoTransmissionFn(opts),
   recentPaymentsFn: () => recentPaymentsFn(),
   dashboardStatisticsFn: () => getDashboardStatisticsFn(),
   dashboardRealizedFn: (opts) => dashboardRealizedFn(opts),

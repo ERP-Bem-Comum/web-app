@@ -2,7 +2,7 @@
  * StatusActions ("Mudar Status") — view BURRA (§XI). Dropdown de ação em massa sobre a seleção.
  *
  * Layout (refino da spec 119): grupos NOMEADOS na ordem do ciclo do título — Aprovação (Aprovar · Voltar
- * para edição) · Pagamento (Marcar como pago) · Correção (Desfazer baixa · Desfazer transmissão) — e a ação
+ * para edição) · Pagamento (Marcar como pago) · Correções (Desfazer baixa) — e a ação
  * destrutiva (Excluir) isolada no fim, no tom de erro. Item desativado mostra o motivo no `title`.
  */
 import type { MouseEvent, ReactNode } from 'react'
@@ -14,9 +14,7 @@ import {
   ChevronDownIcon,
   CreditCardIcon,
   EditIcon,
-  InfoIcon,
   RefreshIcon,
-  SendIcon,
   TrashIcon,
   UndoIcon,
 } from '#shared/ui/icons/index.ts'
@@ -37,7 +35,6 @@ import {
   statusItemRow,
   statusItemIcon,
   statusItemText,
-  statusItemNote,
 } from './status-actions.css.ts'
 
 const t = createTranslator(ptBR)
@@ -57,21 +54,18 @@ export type StatusActionsProps = Readonly<{
   canDelete: boolean
   // Marcar como pago (baixa manual, #224) — títulos Aprovados ou Transmitidos (ADR-0065 §6 do core-api).
   canPay: boolean
-  // Spec 119 / core-api#61 — desfazimentos por título; cada um abre o modal de motivo ANTES de agir.
+  // Spec 119 / core-api#61 — desfazer baixa por título; abre o modal de motivo ANTES de agir.
   canUndoPayment: boolean
-  canUndoTransmission: boolean
   running: boolean
   onApprove: () => void
   onReopen: () => void
   onDelete: () => void
   onPay: () => void
   onUndoPayment: () => void
-  onUndoTransmission: () => void
 }>
 
 type ItemProps = Readonly<{
   icon: ReactNode
-  noteTag?: string // linha extra de aviso (ex.: "Não libera uma nova remessa")
   enabled: boolean
   running: boolean
   labelTag: string
@@ -103,12 +97,6 @@ function Item(props: ItemProps): ReactNode {
             {t(props.labelTag)}
           </span>
           <span className={statusItemHint}>{t(props.hintTag)}</span>
-          {props.noteTag !== undefined ? (
-            <span className={statusItemNote}>
-              <InfoIcon size={12} />
-              {t(props.noteTag)}
-            </span>
-          ) : null}
         </span>
       </span>
     </button>
@@ -185,16 +173,6 @@ export function StatusActions(props: StatusActionsProps): ReactNode {
             hintTag="financial.list.undo.payment.actionHint"
             disabledTitleTag="financial.list.undo.payment.needPaid"
             onClick={props.onUndoPayment}
-          />
-          <Item
-            enabled={props.canUndoTransmission}
-            running={running}
-            icon={<SendIcon />}
-            labelTag="financial.list.undo.transmission.action"
-            hintTag="financial.list.undo.transmission.actionHint"
-            disabledTitleTag="financial.list.undo.transmission.needTransmitted"
-            noteTag="financial.list.undo.transmission.note"
-            onClick={props.onUndoTransmission}
           />
         </div>
 

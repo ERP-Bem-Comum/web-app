@@ -231,7 +231,7 @@ export function ContasAPagarPage(): ReactNode {
     bulk.reopen(targets)
   })
 
-  // ── Spec 119 / core-api#61: desfazer baixa (Pago → anterior) e transmissão (Transmitido → Aprovado). O
+  // ── Spec 119 / core-api#61: desfazer baixa (Pago → status anterior à baixa). O
   //    modal abre ANTES (é a confirmação e o lugar do motivo); um motivo para o lote todo. ──
   const [undoKind, setUndoKind] = useState<UndoKind | null>(null)
   const [undoReason, setUndoReason] = useState('')
@@ -240,15 +240,9 @@ export function ContasAPagarPage(): ReactNode {
     setUndoKind(null)
     setUndoReason('')
   })
-  const undoTargets =
-    undoKind === 'payment'
-      ? titleTargets.undoPayment
-      : undoKind === 'transmission'
-        ? titleTargets.undoTransmission
-        : []
+  const undoTargets = undoKind === 'payment' ? titleTargets.undoPayment : []
   const applyUndo = (): void => {
     if (undoKind === 'payment') undo.undoPayment(undoTargets, undoReason.trim())
-    if (undoKind === 'transmission') undo.undoTransmission(undoTargets, undoReason.trim())
   }
 
   // ── Alterar vencimento (1+) — modal com seletor de data; aplica a cada Aberto via PATCH. ──
@@ -585,7 +579,6 @@ export function ContasAPagarPage(): ReactNode {
               canDelete={titleTargets.deletable.length > 0}
               canPay={payEligible.length > 0}
               canUndoPayment={titleTargets.undoPayment.length > 0}
-              canUndoTransmission={titleTargets.undoTransmission.length > 0}
               running={bulk.running || del.running || pay.running || undo.running || reopenGuard.checking}
               onApprove={() => {
                 bulk.approve(titleTargets.approve)
@@ -595,9 +588,6 @@ export function ContasAPagarPage(): ReactNode {
               }}
               onUndoPayment={() => {
                 setUndoKind('payment')
-              }}
-              onUndoTransmission={() => {
-                setUndoKind('transmission')
               }}
               onDelete={() => {
                 setDeleteOpen(true)
