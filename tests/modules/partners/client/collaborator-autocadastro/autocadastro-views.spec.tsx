@@ -96,6 +96,15 @@ describe('AutocadastroForm (view burra)', () => {
     expect(onSubmit).toHaveBeenCalled()
   })
 
+  it('Escolaridade sem "Educação Infantil" (spec 126)', () => {
+    render(<AutocadastroForm {...formProps()} />)
+    const select = screen.getByLabelText(t('partners.collaborators.detail.field.education'))
+    const labels = Array.from(select.querySelectorAll('option')).map((o) => o.textContent)
+    const edu = (v: string): string => t(`partners.collaborators.education.${v}`)
+    expect(labels).not.toContain(edu('EDUCACAO_INFANTIL'))
+    expect(labels).toContain(edu('ENSINO_FUNDAMENTAL'))
+  })
+
   it('encaminha a digitação do cpfPrefix ao controller (setCpfPrefix)', () => {
     const controller = fakeController()
     render(<AutocadastroForm {...formProps({ controller })} />)

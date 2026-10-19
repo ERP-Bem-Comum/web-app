@@ -84,6 +84,34 @@ export const EDUCATION_LEVELS = [
   'MESTRADO',
   'DOUTORADO',
 ] as const
+export type EducationLevel = (typeof EDUCATION_LEVELS)[number]
+/**
+ * Opções do SELETOR de Escolaridade (spec 126). EDUCACAO_INFANTIL fica fora (decisão da P.O., 19/10/2026) mas
+ * segue em `EDUCATION_LEVELS`, que espelha o enum do core-api e é a lista canônica do gráfico de Escolaridade
+ * do Equipe — tirar de lá descartaria do gráfico quem já tem o valor gravado.
+ */
+export const EDUCATION_LEVEL_OPTIONS = [
+  'ENSINO_FUNDAMENTAL',
+  'ENSINO_MEDIO',
+  'ENSINO_SUPERIOR',
+  'POS_GRADUACAO',
+  'MESTRADO',
+  'DOUTORADO',
+] as const satisfies readonly EducationLevel[]
+
+/**
+ * Opções de um seletor que esconde valores do enum: se o valor ATUAL é um dos escondidos (gravado antes da
+ * opção sair), ele entra no fim da lista — senão o <select> mostraria "Selecione..." e o dado pareceria
+ * faltando. Valor fora do enum inteiro não entra (não é dado válido).
+ */
+export const selectableWithCurrent = <V extends string>(
+  options: readonly V[],
+  all: readonly V[],
+  current: string,
+): readonly V[] => {
+  const hidden = all.find((v) => v === current && !options.includes(v))
+  return hidden === undefined ? options : [...options, hidden]
+}
 export const FOOD_CATEGORIES = [
   'ONIVORO',
   'VEGANO',

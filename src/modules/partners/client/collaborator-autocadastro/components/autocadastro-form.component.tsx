@@ -14,7 +14,7 @@ import { UsersIcon, FileTextIcon, HeartHandshakeIcon, HeartPulseIcon } from '#sh
 // Enums dos selects vêm RE-EXPORTADOS pelo controller (boundary §XI: a view burra não importa `data/`).
 import {
   RACES,
-  EDUCATION_LEVELS,
+  EDUCATION_LEVEL_OPTIONS,
   FOOD_CATEGORIES,
   SEXES,
   MARITAL_STATUSES,
@@ -114,7 +114,8 @@ export function AutocadastroForm({
     value: v,
     label: t(`partners.collaborators.race.${v}`),
   }))
-  const educationOptions = EDUCATION_LEVELS.map((v) => ({
+  // "Educação Infantil" saiu do seletor (spec 126). Autocadastro é de quem ainda não tem dado gravado.
+  const educationOptions = EDUCATION_LEVEL_OPTIONS.map((v) => ({
     value: v,
     label: t(`partners.collaborators.education.${v}`),
   }))
