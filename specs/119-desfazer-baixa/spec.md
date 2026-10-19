@@ -2,31 +2,34 @@
 
 **Tamanho:** L · **Status:** front implementado (19/10) — backend core-api#1073 · **Data:** 2026-10-02 (revisão: 2026-10-19)
 **Backend:** `core-api#61` (Fatia 6). Decisões da P.O. de 02/10, 03/10 e 19/10.
-**Origem:** a usuária pode errar a **data da baixa** — e, mais amplo, um lançamento pode precisar ser
-corrigido depois de transmitido ou pago.
+**Origem:** a usuária pode errar a **data da baixa** e precisa corrigi-la.
 
 ## Problema
 
-Hoje um título só anda para frente. `Pago` não tem volta, `Transmitido` só volta descartando a remessa
-inteira, e o "Voltar para edição" (desfazer aprovação) tem o defeito oposto: leva o documento e **todos** os
-títulos para "Em aberto" **mesmo que algum esteja Transmitido ou Pago**, pulando qualquer trava e sem motivo
-(`core-api: document.ts`, `undoApproval`).
+Hoje `Pago` não tem volta. E o "Voltar para edição" (desfazer aprovação) tem o defeito oposto: leva o
+documento e **todos** os títulos para "Em aberto" **mesmo que algum esteja Transmitido ou Pago**, pulando
+qualquer trava e sem motivo (`core-api: document.ts`, `undoApproval`).
 
 ## O ciclo (P.O., 19/10)
 
-Cada etapa tem desfazimento próprio, com trava e motivo, **em sequência**:
+O desfazimento de um título conciliado anda **em sequência**, cada etapa com a sua trava:
 
 ```
-Aprovado ──remessa──▶ Transmitido ──baixa──▶ Pago ──conciliação──▶ Conciliado
-   ◀─ desfazer transmitido ─  ◀── desfazer baixa ──  ◀─ desfazer conciliação ─
-          (119, novo)              (119, novo)           (já existe)
+Aprovado|Transmitido ──baixa──▶ Pago ──conciliação──▶ Conciliado
+          ◀── desfazer baixa ──     ◀─ desfazer conciliação ─
+             (119, novo)               (já existe; travas de período)
 
 Aprovado ──voltar para edição──▶ Em aberto      (já existe; ganha trava + alerta nesta spec)
 ```
 
-Em **Aprovado**, a edição do título (spec 125, `core-api#1057`) já cobre a maior parte das correções.
-"Voltar para edição" fica para **erro grave de lançamento** (ex.: número do documento errado, que
-contamina os impostos gerados) — a ferramenta permite, mas trata como operação fora da rotina.
+1. **Desfazer conciliação** (módulo Conciliação, sujeito às travas de período) → o título volta a `Pago`.
+2. **Desfazer baixa** → volta ao status anterior: `Aprovado` ou `Transmitido`.
+3. Em **Aprovado**, a edição do título (spec 125, `core-api#1057`) cobre a maior parte das correções; e
+   dali o usuário pode **voltar para edição** (status anteriores) para corrigir ou até excluir o registro.
+   "Voltar para edição" é para **erro grave de lançamento** (ex.: número do documento errado, que
+   contamina os impostos gerados) — a ferramenta permite, mas trata como operação fora da rotina.
+
+`Transmitido` não tem desfazimento: o título segue o ciclo da remessa.
 
 ## Regras
 
@@ -40,22 +43,16 @@ contamina os impostos gerados) — a ferramenta permite, mas trata como operaç�
    (P.O., 03/10).
 4. A **data de pagamento some**; o título deixa de contar como realizado nos relatórios.
 
-### Desfazer a transmissão — ABORTADO (P.O., 19/10)
-
-Chegou a ser implementado e foi retirado: o comando reverteria só o status, e a P.O. decidiu manter o
-título transmitido no seu ciclo (o próprio convênio Multipag bloqueia retransmitir o mesmo arquivo).
-
 ### Voltar para edição (`Aprovado` → `Em aberto`) — trava + alerta
 
-1. **Trava:** recusado se algum título do documento estiver **Pago, Parcialmente conciliado ou Conciliado**
-   (os que têm desfazer próprio). Transmitido NÃO trava — sem o desfazer transmissão, o documento ficaria
-   sem caminho de volta. A mensagem diz o que desfazer antes: conciliação, depois baixa.
-2. **Alerta reforçado:** se algum título do documento **já teve baixa desfeita** (está no
-   Histórico), o modal avisa antes de confirmar: o título já foi transmitido/pago antes; o pagamento pode
-   ter acontecido no banco; conferir o extrato antes de relançar. Operação fora da rotina tem que parecer
-   fora da rotina.
+1. **Trava (P.O., 19/10):** só com **todos** os títulos do documento em **Aprovado**. Qualquer outro
+   status recusa. Pago/Conciliado: a mensagem diz o que desfazer antes (conciliação, depois baixa).
+   Transmitido não volta para edição.
+2. **Alerta reforçado:** se algum título do documento **já teve baixa desfeita** (está no Histórico), o
+   modal avisa antes de confirmar: o pagamento pode ter acontecido no banco; conferir o extrato antes de
+   relançar. Operação fora da rotina tem que parecer fora da rotina.
 
-### Comum aos dois desfazer novos
+### Desfazer baixa — comum
 
 - **Motivo obrigatório**, registrado no **Histórico** do documento (quem, quando, por quê).
 - **Permissão:** `payable:approve` (a da baixa).
@@ -70,7 +67,7 @@ título transmitido no seu ciclo (o próprio convênio Multipag bloqueia retrans
 ```
  Mudar Status ▾
  ├ Aprovar
- ├ Voltar para edição            (trava: só sem título além de Aprovado; alerta se houve desfazimento)
+ ├ Voltar para edição            (trava: só com todos os títulos em Aprovado; alerta se houve baixa desfeita)
  ├ Marcar como pago
  ├ Desfazer baixa                ← novo (títulos Pago)
  └ Excluir
@@ -91,10 +88,10 @@ título transmitido no seu ciclo (o próprio convênio Multipag bloqueia retrans
 | Desfazer baixa     | `POST /financial/documents/:id/payables/:payableId/undo-manual-payment` | `{ version, reason }` |
 | Voltar para edição | `POST /financial/documents/:id/undo-approval` (existe)                  | sem mudança           |
 
-- Trilha: eventos novos com autor e **motivo** (a trilha ganha coluna de motivo).
-- Read-model (`fin_payable_view`): os dois eventos atualizam o status; o desfazer baixa limpa `paid_at`.
-- Erros: título fora do status esperado; conflito de concorrência; remessa na fila; "Voltar para edição"
-  com título além de Aprovado.
+- Trilha: evento novo (`ManualPaymentUndone`) com autor e **motivo** (a trilha ganha coluna de motivo).
+- Read-model (`fin_payable_view`): o evento restaura o status e limpa `paid_at`.
+- Erros: título fora do status esperado; conflito de concorrência; "Voltar para edição" com título fora
+  de Aprovado.
 
 **Ordem de entrega:** backend (`core-api#61`) primeiro; o front só vai para a `develop` depois dele na `dev`.
 
@@ -103,10 +100,11 @@ título transmitido no seu ciclo (o próprio convênio Multipag bloqueia retrans
 - Corrigir a data sem desfazer.
 - Desfazer pagamento automático (retorno do banco, #690): não existe ainda.
 - Desfazer conciliação: já existe no módulo de Conciliação.
+- **Desfazer transmissão** (P.O., 19/10): não segue. Chegou a ser implementado e foi retirado por inteiro.
 
 ## Testes (planejados)
 
-- **Backend:** cada ramo das regras acima (status anterior pela trilha e pela remessa; recusas; remessa na
-  fila; trava do voltar para edição; read-model; trilha com motivo).
+- **Backend:** cada ramo das regras acima (status anterior pela trilha e pela remessa; recusas; trava do
+  voltar para edição; read-model; trilha com motivo).
 - **Front:** alvos por status no view-model; modais com motivo obrigatório; alerta do voltar para edição
   a partir do Histórico; mapeamento de erros; rótulos do Histórico.

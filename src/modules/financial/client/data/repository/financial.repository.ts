@@ -78,7 +78,7 @@ type CancelFn = (opts: {
   data: CancelInput
 }) => Promise<Readonly<{ ok: true }> | Readonly<{ ok: false; error: FinancialError }>>
 type PayFn = (opts: { data: ManualPaymentInput }) => Promise<FnResult<DocumentDetail>>
-// Spec 119: desfazer baixa / transmissão — falha COM TEXTO, como o `ApproveFn` (as recusas são todas 409).
+// Spec 119: desfazer baixa — falha COM TEXTO, como o `ApproveFn` (as recusas são todas 409).
 type UndoPayableFn = (opts: {
   data: UndoPayableInput
 }) => Promise<
@@ -129,7 +129,7 @@ export type FinancialRepository = Readonly<{
   cancel: (input: CancelInput) => Promise<Result<void, FinancialError>>
   // #224: baixa manual de um título (Aprovado→Pago).
   registerManualPayment: (input: ManualPaymentInput) => Promise<Result<DocumentDetail, FinancialError>>
-  // Spec 119 / core-api#61: desfazer a baixa (Pago → anterior) e a transmissão (Transmitido → Aprovado).
+  // Spec 119 / core-api#61: desfazer a baixa (Pago → status anterior).
   undoManualPayment: (input: UndoPayableInput) => Promise<Result<DocumentDetail, FinancialFailure>>
   // 042: Top-5 pagamentos recentes (widget do Dashboard). Sem input.
   getRecentPayments: () => Promise<Result<readonly RecentPayment[], FinancialError>>

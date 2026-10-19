@@ -181,8 +181,7 @@ export interface ManualPaymentInput {
   reason?: string
 }
 
-// Spec 119 / core-api#61: desfazer a baixa (Pago → status anterior) ou a transmissão (Transmitido →
-// Aprovado) de UM título. `reason` é obrigatório (vai ao Histórico). `version` segue o contrato da baixa —
+// Spec 119 / core-api#61: desfazer a baixa (Pago → status anterior) de UM título. `reason` é obrigatório (vai ao Histórico). `version` segue o contrato da baixa —
 // a pré-condição real é o status do título, checada no core-api.
 export interface UndoPayableInput {
   documentId: string

@@ -140,7 +140,7 @@ export const ManualPaymentInputSchema = z.object({
   reason: z.string().trim().min(1).max(500).optional(),
 })
 
-// Spec 119 / core-api#61: desfazer baixa / transmissão — motivo obrigatório (o core-api também exige).
+// Spec 119 / core-api#61: desfazer baixa — motivo obrigatório (o core-api também exige).
 export const UndoPayableInputSchema = z.object({
   documentId: z.uuid(),
   payableId: z.uuid(),

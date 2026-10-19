@@ -225,7 +225,7 @@ export function ContasAPagarPage(): ReactNode {
 
   // ── Mudar Status em massa: Aprovar (Aberto→Aprovado) · Voltar p/ edição (Aprovado→Aberto) ──
   const bulk = useBulkStatus(clearSelection)
-  // Spec 119: "Voltar para edição" passa pela guarda — documento que já teve baixa/transmissão desfeita
+  // Spec 119: "Voltar para edição" passa pela guarda — documento que já teve baixa desfeita
   // abre o alerta reforçado antes; os demais seguem direto, como sempre.
   const reopenGuard = useReopenGuard((targets) => {
     bulk.reopen(targets)

@@ -148,7 +148,7 @@ export type ManualPaymentInput = Readonly<{
   reason?: string
 }>
 
-// Spec 119 / core-api#61: desfazer a baixa ou a transmissão de UM título. Motivo obrigatório.
+// Spec 119 / core-api#61: desfazer a baixa de UM título. Motivo obrigatório.
 export type UndoPayableInput = Readonly<{
   documentId: string
   payableId: string
