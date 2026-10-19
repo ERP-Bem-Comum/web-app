@@ -110,6 +110,7 @@ const detailToModel = (raw: unknown): Result<CollaboratorDetail, PartnersError> 
     emergencyContactName: u(c.emergencyContactName),
     emergencyContactTelephone: u(c.emergencyContactTelephone),
     genderIdentity: u(c.genderIdentity),
+    genderIdentityDescription: u(c.genderIdentityDescription),
     race: u(c.race),
     allergies: u(c.allergies),
     foodCategory: u(c.foodCategory),

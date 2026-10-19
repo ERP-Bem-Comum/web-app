@@ -3,7 +3,23 @@
  * Replicação v1: campos completos + modal de finalização + selectedPartner + checklist.
  */
 import { useState, useCallback, useMemo } from 'react'
-import type { CreateContractInput } from '#modules/contracts/client/data/model/contracts.model.ts'
+import {
+  CONTRACT_NUMBER_PATTERN,
+  type CreateContractInput,
+} from '#modules/contracts/client/data/model/contracts.model.ts'
+
+/**
+ * Máscara do número do contrato (spec 118) — PURA. Só dígitos; a barra entra sozinha antes dos 4 últimos
+ * (o ano), e o campo aceita até `NNNN/AAAA` (8 dígitos).
+ */
+export function maskContractNumber(raw: string): string {
+  const digits = raw.replace(/\D/g, '').slice(0, 8)
+  return digits.length <= 4 ? digits : `${digits.slice(0, -4)}/${digits.slice(-4)}`
+}
+
+/** Vazio é válido (o core-api gera o número); preenchido precisa de `NNN/AAAA` ou `NNNN/AAAA`. */
+export const isContractNumberValid = (value: string): boolean =>
+  value.trim() === '' || CONTRACT_NUMBER_PATTERN.test(value.trim())
 
 export interface SelectedPartner {
   readonly id: string
@@ -26,6 +42,8 @@ export interface SelectedPartner {
 }
 
 export type ContractFormState = Readonly<{
+  // Spec 118: número informado pela usuária, já mascarado (`0123/2024`). '' = o core-api gera.
+  contractNumber: string
   title: string
   objective: string
   originalValueCents: number
@@ -70,6 +88,8 @@ export interface ContractFormController {
   readonly showModal: boolean
   readonly isOvertopOS: boolean
   readonly validationAttempted: boolean
+  /** Número preenchido fora do formato `NNN(N)/AAAA` — bloqueia o envio (spec 118). */
+  readonly contractNumberInvalid: boolean
   readonly update: <K extends keyof ContractFormState>(key: K, value: ContractFormState[K]) => void
   // #502/S3: seletores cascata-aware da taxonomia do plano — setam o ref (linka) + o nome (exibível) e
   // zeram os níveis de baixo (senão a folha gravada ficaria órfã, §IV). Trocar o plano zera os 3.
@@ -95,11 +115,11 @@ export interface ContractFormController {
     done: number
     total: number
   }>
-  readonly currentYear: number
 }
 
 export const useContractFormController = (): ContractFormController => {
   const [state, setState] = useState<ContractFormState>({
+    contractNumber: '',
     title: '',
     objective: '',
     originalValueCents: 0,
@@ -130,8 +150,6 @@ export const useContractFormController = (): ContractFormController => {
   const [selectedPartner, setSelectedPartner] = useState<SelectedPartner | null>(null)
   const [showModal, setShowModal] = useState(false)
   const [validationAttempted, setValidationAttempted] = useState(false)
-  // Ano corrente estável (lazy) p/ o número provisório — fora do render da view burra (C1).
-  const [currentYear] = useState(() => new Date().getFullYear())
 
   const update = useCallback(<K extends keyof ContractFormState>(key: K, value: ContractFormState[K]) => {
     setState((s) => ({ ...s, [key]: value }))
@@ -181,6 +199,8 @@ export const useContractFormController = (): ContractFormController => {
     return state.classification === 'ServiceOrder' && state.originalValueCents > 999_999
   }, [state.classification, state.originalValueCents])
 
+  const contractNumberInvalid = !isContractNumberValid(state.contractNumber)
+
   const checklist = useMemo(() => {
     const checks = {
       contratado:
@@ -210,7 +230,10 @@ export const useContractFormController = (): ContractFormController => {
           : derived.length > 120
             ? `${derived.slice(0, 120).trimEnd()}…`
             : derived
+    const contractNumber = state.contractNumber.trim()
     return {
+      // Spec 118: só vai quando preenchido; vazio, o core-api gera o próximo número livre do ano.
+      ...(contractNumber !== '' ? { sequentialNumber: contractNumber } : {}),
       title,
       objective: state.objective,
       originalValueCents: state.originalValueCents,
@@ -247,6 +270,7 @@ export const useContractFormController = (): ContractFormController => {
     showModal,
     isOvertopOS,
     validationAttempted,
+    contractNumberInvalid,
     update,
     selectPlan,
     selectCostCenter,
@@ -258,6 +282,5 @@ export const useContractFormController = (): ContractFormController => {
     triggerValidation,
     submit,
     checklist,
-    currentYear,
   }
 }

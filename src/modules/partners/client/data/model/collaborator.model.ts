@@ -74,6 +74,21 @@ export const GENDER_IDENTITIES = [
   'NAO_BINARIO',
   'OUTRO',
 ] as const
+export type GenderIdentity = (typeof GENDER_IDENTITIES)[number]
+/**
+ * Opções do SELETOR de Identidade de Gênero (spec 122), na ordem e na redação definidas pelo cliente.
+ * TRAVESTI fica fora do seletor (decisão da P.O., 12/10) mas segue em `GENDER_IDENTITIES`, que espelha o
+ * enum do core-api — assim um valor gravado ainda é exibido e contado nos relatórios.
+ */
+export const GENDER_IDENTITY_OPTIONS = [
+  'MULHER_CIS',
+  'HOMEM_CIS',
+  'MULHER_TRANS',
+  'HOMEM_TRANS',
+  'NAO_BINARIO',
+  'OUTRO',
+  'PREFIRO_NAO_RESPONDER',
+] as const satisfies readonly GenderIdentity[]
 export const RACES = ['AMARELO', 'BRANCO', 'PARDO', 'INDIGENA', 'PRETO', 'PREFIRO_NAO_RESPONDER'] as const
 export const EDUCATION_LEVELS = [
   'EDUCACAO_INFANTIL',
@@ -133,6 +148,7 @@ export type CollaboratorDetail = CollaboratorListItem &
     emergencyContactName?: string
     emergencyContactTelephone?: string
     genderIdentity?: string
+    genderIdentityDescription?: string
     race?: string
     allergies?: string
     foodCategory?: string
@@ -213,6 +229,7 @@ export type CollaboratorCompleteInput = Readonly<{
   rg?: string
   dateOfBirth?: string
   genderIdentity?: string
+  genderIdentityDescription?: string
   race?: string
   education?: string
   foodCategory?: string
