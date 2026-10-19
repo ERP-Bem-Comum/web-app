@@ -1143,6 +1143,10 @@ export const ptBR: Catalog = {
   'financial.timeline.event.draft': 'Rascunho criado',
   'financial.timeline.event.reconciled': 'Conciliado',
   'financial.timeline.event.reconciliationUndone': 'Conciliação desfeita',
+  // Spec 119 / core-api#61 — desfazimentos no Histórico, com o motivo.
+  'financial.timeline.event.paymentUndone': 'Baixa desfeita',
+  'financial.timeline.event.transmissionUndone': 'Transmissão desfeita',
+  'financial.timeline.reason': 'Motivo',
   'financial.timeline.field.dueDate': 'Vencimento',
   'financial.timeline.field.grossValue': 'Valor',
   'financial.timeline.field.description': 'Descrição',
@@ -2108,6 +2112,38 @@ export const ptBR: Catalog = {
   'financial.list.dueDate.modalCancel': 'Cancelar',
   'financial.list.dueDate.modalApply': 'Aplicar',
   // Baixa de Pagamento (baixa manual #224/#232) — modal de data de pagamento (a ação na linha é "Marcar como pago").
+  // Spec 119 / core-api#61 — desfazer baixa e transmissão (Mudar Status), e alerta do Voltar para edição.
+  'financial.list.undo.payment.action': 'Desfazer baixa',
+  'financial.list.undo.payment.actionHint': 'Volta o título ao status anterior à baixa',
+  'financial.list.undo.payment.needPaid':
+    'Selecione títulos com status Pago. Conciliado: desfaça a conciliação antes.',
+  'financial.list.undo.payment.modalTitle': 'Desfazer baixa',
+  'financial.list.undo.payment.modalBodyOne':
+    'Este título volta ao status anterior à baixa, e a data de pagamento é removida:',
+  'financial.list.undo.payment.modalBodyMany':
+    'títulos voltam ao status anterior à baixa, e a data de pagamento é removida:',
+  'financial.list.undo.payment.apply': 'Desfazer baixa',
+  'financial.list.undo.transmission.action': 'Desfazer transmissão',
+  'financial.list.undo.transmission.actionHint': 'Volta o título para Aprovado, sem liberar nova remessa',
+  'financial.list.undo.transmission.needTransmitted': 'Selecione títulos com status Transmitido.',
+  'financial.list.undo.transmission.modalTitle': 'Desfazer transmissão',
+  'financial.list.undo.transmission.modalBodyOne':
+    'Este título volta para Aprovado. Ele continua vinculado à remessa e não pode entrar em outra:',
+  'financial.list.undo.transmission.modalBodyMany':
+    'títulos voltam para Aprovado. Eles continuam vinculados à remessa e não podem entrar em outra:',
+  'financial.list.undo.transmission.apply': 'Desfazer transmissão',
+  'financial.list.undo.paidOn': 'pago em',
+  'financial.list.undo.reasonLabel': 'Motivo',
+  'financial.list.undo.reasonPlaceholder': 'Motivo (obrigatório) — fica registrado no Histórico do documento',
+  'financial.list.undo.cancel': 'Cancelar',
+  'financial.list.undo.bulkError': 'Não foi possível desfazer alguns títulos:',
+  'financial.list.reopenWarning.title': 'Voltar para edição — atenção',
+  'financial.list.reopenWarning.risk':
+    'Este documento já teve baixa ou transmissão desfeita. O pagamento pode ter acontecido no banco.',
+  'financial.list.reopenWarning.advice':
+    'Confira o extrato bancário antes de corrigir e relançar. Voltar para edição é uma operação fora da rotina — use só para erro grave de lançamento.',
+  'financial.list.reopenWarning.cancel': 'Cancelar',
+  'financial.list.reopenWarning.confirm': 'Voltar para edição mesmo assim',
   'financial.list.pay.modalTitle': 'Baixa de Pagamento',
   'financial.list.pay.dateLabel': 'Data de pagamento',
   'financial.list.pay.modalBodyOne': 'Informe a data de pagamento (saída bancária) do título selecionado.',

@@ -560,6 +560,26 @@ export const confirmDateInput = style({
   color: vars.color.institutional.ink2,
 })
 
+// Spec 119 — modal de desfazimento: o motivo (obrigatório) e a lista dos títulos que vão voltar.
+export const confirmTextarea = style([
+  confirmDateInput,
+  {
+    minBlockSize: `calc(${vars.space.xl} * 3)`,
+    resize: 'vertical',
+    lineHeight: 1.5,
+  },
+])
+export const confirmList = style({
+  marginBlock: vars.space.sm,
+  paddingInlineStart: vars.space.lg,
+  maxBlockSize: '12rem',
+  overflowY: 'auto',
+  fontFamily: vars.font.family.body,
+  fontSize: vars.font.size.xs,
+  lineHeight: 1.6,
+  color: vars.color.institutional.ink2,
+})
+
 // ── Grid (Figma 205-638) — enriquecido pela 012/#47: + Contrato, Forma, Emissão, Bruto ─────────────
 // Larguras balanceadas (espaço proporcional entre as colunas); Fornecedor é a flexível (minmax).
 // Ordem: checkbox · Tipo · Documento · Fornecedor · Contrato · Forma · Emissão · Venc · Bruto · Líquido ·

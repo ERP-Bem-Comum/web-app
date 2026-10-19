@@ -1,6 +1,6 @@
 # 119 — Desfazer a baixa e a transmissão no Contas a Pagar
 
-**Tamanho:** L · **Status:** spec revisada (19/10) · **Data:** 2026-10-02 (revisão: 2026-10-19)
+**Tamanho:** L · **Status:** front implementado (19/10) — backend core-api#1073 · **Data:** 2026-10-02 (revisão: 2026-10-19)
 **Backend:** `core-api#61` (Fatia 6). Decisões da P.O. de 02/10, 03/10 e 19/10.
 **Origem:** a usuária pode errar a **data da baixa** — e, mais amplo, um lançamento pode precisar ser
 corrigido depois de transmitido ou pago.

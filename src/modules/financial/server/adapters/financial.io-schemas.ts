@@ -140,6 +140,14 @@ export const ManualPaymentInputSchema = z.object({
   reason: z.string().trim().min(1).max(500).optional(),
 })
 
+// Spec 119 / core-api#61: desfazer baixa / transmissão — motivo obrigatório (o core-api também exige).
+export const UndoPayableInputSchema = z.object({
+  documentId: z.uuid(),
+  payableId: z.uuid(),
+  version: z.int().min(0),
+  reason: z.string().trim().min(1).max(500),
+})
+
 // Listagem (GET /documents).
 export const ListDocumentsInputSchema = z.object({
   status: z.enum(DOCUMENT_STATUSES).optional(),
@@ -183,4 +191,5 @@ const _g_paydue: AssertEqual<
   D.UpdatePayableDueDateInput
 > = true
 const _g_manualpay: AssertEqual<z.infer<typeof ManualPaymentInputSchema>, D.ManualPaymentInput> = true
+const _g_undopay: AssertEqual<z.infer<typeof UndoPayableInputSchema>, D.UndoPayableInput> = true
 const _g_list: AssertEqual<z.infer<typeof ListDocumentsInputSchema>, D.ListDocumentsInput> = true

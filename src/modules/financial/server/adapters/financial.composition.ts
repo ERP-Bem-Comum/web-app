@@ -24,6 +24,8 @@ import {
   createUndoApproval,
   createCancelDocument,
   createRegisterManualPayment,
+  createUndoManualPayment,
+  createUndoTransmission,
   createGetRecentPayments,
   createPreviewRemittance,
   createGenerateRemittance,
@@ -55,6 +57,9 @@ const build = () => {
     undoApproval: createUndoApproval({ client }),
     cancelDocument: createCancelDocument({ client }),
     registerManualPayment: createRegisterManualPayment({ client }),
+    // Spec 119 / core-api#61: desfazer baixa (Pago → anterior) e transmissão (Transmitido → Aprovado).
+    undoManualPayment: createUndoManualPayment({ client }),
+    undoTransmission: createUndoTransmission({ client }),
     getRecentPayments: createGetRecentPayments({ client }),
     // VAN (core-api#728): pré-voo do lote da remessa CNAB 240. Leitura pura — não gera arquivo.
     previewRemittance: createPreviewRemittance({ client }),

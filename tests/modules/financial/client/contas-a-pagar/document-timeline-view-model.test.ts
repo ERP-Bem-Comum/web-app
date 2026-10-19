@@ -86,6 +86,7 @@ describe('deriveTimelineRows', () => {
       occurredAt: '2026-07-10T19:40:00.000Z',
       isSystem: false,
       actorName: 'Maria Silva',
+      reason: null,
       changes: [
         { field: 'dueDate', before: '2026-07-10', after: '2026-08-15T00:00:00.000Z' },
         { field: 'value', before: '3700', after: '400000' },
@@ -100,6 +101,7 @@ describe('deriveTimelineRows', () => {
       occurredAt: '2026-07-10T19:20:00.000Z',
       isSystem: true,
       actorName: null,
+      reason: null,
       changes: [],
     },
   ]
@@ -162,6 +164,7 @@ describe('deriveTimelineRows — campos resolvidos (spec 125)', () => {
     occurredAt: '2026-10-14T12:00:00.000Z',
     isSystem: false,
     actorName: 'Ana',
+    reason: null,
     changes: [
       { field: 'paymentMethod', before: 'Boleto', after: 'PIX' },
       { field: 'paymentDetail', before: '34191.79001', after: null },

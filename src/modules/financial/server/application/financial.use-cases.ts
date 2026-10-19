@@ -15,6 +15,7 @@ import type {
   UpdatePayableDueDateInput,
   CancelInput,
   ManualPaymentInput,
+  UndoPayableInput,
   ListPayableTitlesInput,
   PayableTitleListResponse,
   PayableCountsInput,
@@ -89,6 +90,16 @@ export type FinancialClient = Readonly<{
     input: ManualPaymentInput,
     token: string,
   ) => Promise<Result<DocumentDetail, FinancialError>>
+  // Spec 119 / core-api#61: as recusas são todas 409 → `conflict`, e só a MENSAGEM PT-BR do core-api
+  // diz qual foi (não está pago, remessa na fila, conciliado…) e o que fazer. Por isso, falha COM TEXTO.
+  undoManualPayment: (
+    input: UndoPayableInput,
+    token: string,
+  ) => Promise<Result<DocumentDetail, FinancialFailure>>
+  undoTransmission: (
+    input: UndoPayableInput,
+    token: string,
+  ) => Promise<Result<DocumentDetail, FinancialFailure>>
   getRecentPayments: (token: string) => Promise<Result<readonly RecentPayment[], FinancialError>>
   // #241/#237: KPI "Despesas por Centro de Custo" do Dashboard (cost-centers + variação M-1 vs M-2).
   getDashboardCostCenters: (token: string) => Promise<Result<DashboardCostCenters, FinancialError>>
@@ -215,6 +226,16 @@ export const createRegisterManualPayment =
   (deps: Deps) =>
   (input: ManualPaymentInput, token: string): Promise<Result<DocumentDetail, FinancialError>> =>
     deps.client.registerManualPayment(input, token)
+
+export const createUndoManualPayment =
+  (deps: Deps) =>
+  (input: UndoPayableInput, token: string): Promise<Result<DocumentDetail, FinancialFailure>> =>
+    deps.client.undoManualPayment(input, token)
+
+export const createUndoTransmission =
+  (deps: Deps) =>
+  (input: UndoPayableInput, token: string): Promise<Result<DocumentDetail, FinancialFailure>> =>
+    deps.client.undoTransmission(input, token)
 
 export const createGetRecentPayments =
   (deps: Deps) =>

@@ -44,6 +44,10 @@ import { DocumentDetailDrawer, type DrawerTab } from '../components/document-det
 import { DeleteConfirmModal } from '../components/delete-confirm.component.tsx'
 import { DueDateModal } from '../components/due-date-modal.component.tsx'
 import { PaymentDateModal } from '../components/payment-date-modal.component.tsx'
+import { UndoModal, type UndoKind } from '../components/undo-modal.component.tsx'
+import { ReopenWarningModal } from '../components/reopen-warning-modal.component.tsx'
+import { useBulkUndo } from '../bulk-undo.binding.ts'
+import { useReopenGuard } from '../reopen-guard.binding.ts'
 import { ExportDropdown } from '../components/export-dropdown.component.tsx'
 import { StatusActions } from '../components/status-actions.component.tsx'
 import { RemittancePreviewModal } from '../components/remittance-preview-modal.component.tsx'
@@ -214,6 +218,31 @@ export function ContasAPagarPage(): ReactNode {
 
   // ── Mudar Status em massa: Aprovar (Aberto→Aprovado) · Voltar p/ edição (Aprovado→Aberto) ──
   const bulk = useBulkStatus(clearSelection)
+  // Spec 119: "Voltar para edição" passa pela guarda — documento que já teve baixa/transmissão desfeita
+  // abre o alerta reforçado antes; os demais seguem direto, como sempre.
+  const reopenGuard = useReopenGuard((targets) => {
+    bulk.reopen(targets)
+  })
+
+  // ── Spec 119 / core-api#61: desfazer baixa (Pago → anterior) e transmissão (Transmitido → Aprovado). O
+  //    modal abre ANTES (é a confirmação e o lugar do motivo); um motivo para o lote todo. ──
+  const [undoKind, setUndoKind] = useState<UndoKind | null>(null)
+  const [undoReason, setUndoReason] = useState('')
+  const undo = useBulkUndo(() => {
+    clearSelection()
+    setUndoKind(null)
+    setUndoReason('')
+  })
+  const undoTargets =
+    undoKind === 'payment'
+      ? titleTargets.undoPayment
+      : undoKind === 'transmission'
+        ? titleTargets.undoTransmission
+        : []
+  const applyUndo = (): void => {
+    if (undoKind === 'payment') undo.undoPayment(undoTargets, undoReason.trim())
+    if (undoKind === 'transmission') undo.undoTransmission(undoTargets, undoReason.trim())
+  }
 
   // ── Alterar vencimento (1+) — modal com seletor de data; aplica a cada Aberto via PATCH. ──
   const [dueOpen, setDueOpen] = useState(false)
@@ -447,6 +476,25 @@ export function ContasAPagarPage(): ReactNode {
         }}
       />
 
+      <UndoModal
+        kind={undoKind}
+        targets={undoTargets}
+        reason={undoReason}
+        running={undo.running}
+        onReasonChange={setUndoReason}
+        onApply={applyUndo}
+        onCancel={() => {
+          setUndoKind(null)
+        }}
+      />
+
+      <ReopenWarningModal
+        targets={reopenGuard.pending}
+        running={bulk.running}
+        onConfirm={reopenGuard.confirm}
+        onCancel={reopenGuard.cancel}
+      />
+
       <RemittancePreviewModal
         open={remittance.open}
         running={remittance.running}
@@ -526,12 +574,20 @@ export function ContasAPagarPage(): ReactNode {
               canReopen={titleTargets.reopen.length > 0}
               canDelete={titleTargets.deletable.length > 0}
               canPay={payEligible.length > 0}
-              running={bulk.running || del.running || pay.running}
+              canUndoPayment={titleTargets.undoPayment.length > 0}
+              canUndoTransmission={titleTargets.undoTransmission.length > 0}
+              running={bulk.running || del.running || pay.running || undo.running || reopenGuard.checking}
               onApprove={() => {
                 bulk.approve(titleTargets.approve)
               }}
               onReopen={() => {
-                bulk.reopen(titleTargets.reopen)
+                reopenGuard.request(titleTargets.reopen)
+              }}
+              onUndoPayment={() => {
+                setUndoKind('payment')
+              }}
+              onUndoTransmission={() => {
+                setUndoKind('transmission')
               }}
               onDelete={() => {
                 setDeleteOpen(true)
@@ -549,6 +605,18 @@ export function ContasAPagarPage(): ReactNode {
                 {t(bulk.errorTag)}
                 {bulk.failures.map((f) => (
                   <span key={f.documentNumber} className={selErrorLine}>
+                    {`${f.documentNumber}: ${f.message ?? t(f.tag)}`}
+                  </span>
+                ))}
+              </span>
+            ) : null}
+            {/* Spec 119: uma linha por TÍTULO que falhou no desfazimento, com a mensagem do core-api — as
+                recusas são todas 409, e só o texto diz o que fazer (desfazer a conciliação, descartar a remessa). */}
+            {undo.errorTag !== null ? (
+              <span className={selError}>
+                {t(undo.errorTag)}
+                {undo.failures.map((f, i) => (
+                  <span key={`${f.documentNumber}-${String(i)}`} className={selErrorLine}>
                     {`${f.documentNumber}: ${f.message ?? t(f.tag)}`}
                   </span>
                 ))}

@@ -14,6 +14,7 @@ import type {
   UpdatePayableDueDateInput,
   CancelInput,
   ManualPaymentInput,
+  UndoPayableInput,
   ListPayableTitlesInput,
   PayableTitleListResponse,
   PayableCountsInput,
@@ -77,6 +78,13 @@ type CancelFn = (opts: {
   data: CancelInput
 }) => Promise<Readonly<{ ok: true }> | Readonly<{ ok: false; error: FinancialError }>>
 type PayFn = (opts: { data: ManualPaymentInput }) => Promise<FnResult<DocumentDetail>>
+// Spec 119: desfazer baixa / transmissão — falha COM TEXTO, como o `ApproveFn` (as recusas são todas 409).
+type UndoPayableFn = (opts: {
+  data: UndoPayableInput
+}) => Promise<
+  | Readonly<{ ok: true; data: DocumentDetail }>
+  | Readonly<{ ok: false; error: FinancialError; message: string | null }>
+>
 // 042: widget "Últimos pagamentos" — sem input (Top-5 do backend).
 type RecentPaymentsFn = () => Promise<FnResult<readonly RecentPayment[]>>
 // 052: estatísticas do Dashboard — sem input (o BFF compõe o DTO completo).
@@ -121,6 +129,9 @@ export type FinancialRepository = Readonly<{
   cancel: (input: CancelInput) => Promise<Result<void, FinancialError>>
   // #224: baixa manual de um título (Aprovado→Pago).
   registerManualPayment: (input: ManualPaymentInput) => Promise<Result<DocumentDetail, FinancialError>>
+  // Spec 119 / core-api#61: desfazer a baixa (Pago → anterior) e a transmissão (Transmitido → Aprovado).
+  undoManualPayment: (input: UndoPayableInput) => Promise<Result<DocumentDetail, FinancialFailure>>
+  undoTransmission: (input: UndoPayableInput) => Promise<Result<DocumentDetail, FinancialFailure>>
   // 042: Top-5 pagamentos recentes (widget do Dashboard). Sem input.
   getRecentPayments: () => Promise<Result<readonly RecentPayment[], FinancialError>>
   // 052: estatísticas do Dashboard (DTO completo composto no BFF). Sem input.
@@ -150,6 +161,8 @@ export const createFinancialRepository = (
     undoApprovalFn: ApproveFn
     cancelDocumentFn: CancelFn
     registerManualPaymentFn: PayFn
+    undoManualPaymentFn: UndoPayableFn
+    undoTransmissionFn: UndoPayableFn
     recentPaymentsFn: RecentPaymentsFn
     dashboardStatisticsFn: DashboardStatisticsFn
     dashboardRealizedFn: DashboardRealizedFn
@@ -222,6 +235,14 @@ export const createFinancialRepository = (
   registerManualPayment: async (input) => {
     const res = await deps.registerManualPaymentFn({ data: input })
     return res.ok ? ok(res.data) : err(res.error)
+  },
+  undoManualPayment: async (input) => {
+    const res = await deps.undoManualPaymentFn({ data: input })
+    return res.ok ? ok(res.data) : err({ error: res.error, message: res.message })
+  },
+  undoTransmission: async (input) => {
+    const res = await deps.undoTransmissionFn({ data: input })
+    return res.ok ? ok(res.data) : err({ error: res.error, message: res.message })
   },
   getRecentPayments: async () => {
     const res = await deps.recentPaymentsFn()

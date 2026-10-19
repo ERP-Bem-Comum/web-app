@@ -42,15 +42,22 @@ export type StatusActionsProps = Readonly<{
   // core-api). Transmitido entra porque `Pago` continua manual: quem afirma que o dinheiro saiu é
   // quem conferiu o extrato, e é justamente o título que já foi ao banco que espera essa conferência.
   canPay: boolean
+  // Spec 119 / core-api#61 — desfazimentos por título, cada um abre o modal de motivo ANTES de agir.
+  // Desfazer baixa: só títulos Pago (conciliado desfaz a conciliação antes). Desfazer transmissão: só
+  // títulos Transmitido (voltam a Aprovado, sem liberar nova remessa).
+  canUndoPayment: boolean
+  canUndoTransmission: boolean
   running: boolean
   onApprove: () => void
   onReopen: () => void
   onDelete: () => void
   onPay: () => void
+  onUndoPayment: () => void
+  onUndoTransmission: () => void
 }>
 
 export function StatusActions(props: StatusActionsProps): ReactNode {
-  const { canApprove, canReopen, canDelete, canPay, running } = props
+  const { canApprove, canReopen, canDelete, canPay, canUndoPayment, canUndoTransmission, running } = props
   return (
     <details className={wrapper}>
       <summary
@@ -114,6 +121,40 @@ export function StatusActions(props: StatusActionsProps): ReactNode {
           <span className={itemCol}>
             {t('financial.list.status.pay')}
             <span className={itemHint}>{t('financial.list.status.payHint')}</span>
+          </span>
+        </button>
+
+        {/* Desfazer baixa — Pago → status anterior à baixa (spec 119). Abre o modal de motivo. */}
+        <button
+          type="button"
+          className={`${menuItem} ${menuItemBorder}${canUndoPayment && !running ? '' : ` ${menuItemDisabled}`}`}
+          disabled={!canUndoPayment || running}
+          title={canUndoPayment ? undefined : t('financial.list.undo.payment.needPaid')}
+          onClick={(e) => {
+            props.onUndoPayment()
+            closeDetails(e)
+          }}
+        >
+          <span className={itemCol}>
+            {t('financial.list.undo.payment.action')}
+            <span className={itemHint}>{t('financial.list.undo.payment.actionHint')}</span>
+          </span>
+        </button>
+
+        {/* Desfazer transmissão — Transmitido → Aprovado (spec 119). Abre o modal de motivo. */}
+        <button
+          type="button"
+          className={`${menuItem} ${menuItemBorder}${canUndoTransmission && !running ? '' : ` ${menuItemDisabled}`}`}
+          disabled={!canUndoTransmission || running}
+          title={canUndoTransmission ? undefined : t('financial.list.undo.transmission.needTransmitted')}
+          onClick={(e) => {
+            props.onUndoTransmission()
+            closeDetails(e)
+          }}
+        >
+          <span className={itemCol}>
+            {t('financial.list.undo.transmission.action')}
+            <span className={itemHint}>{t('financial.list.undo.transmission.actionHint')}</span>
           </span>
         </button>
 

@@ -15,6 +15,8 @@ import type {
   PayableCountsInput,
   PayableCounts,
   RecentPayment,
+  UndoPayableInput,
+  DocumentDetail,
 } from '#modules/financial/server/domain/document.io.ts'
 import type {
   PreviewRemittanceInput,
@@ -131,6 +133,27 @@ export const domainMessage = (error: HttpError): string | null => {
 
 export const createCoreApiFinancialClient = (baseUrl: string): FinancialClient => {
   const docs = `${baseUrl}/documents`
+
+  // Spec 119 / core-api#61: os dois desfazimentos têm a mesma forma — POST por título, `{ version, reason }`.
+  const undoPayable = async (
+    action: 'undo-manual-payment' | 'undo-transmission',
+    input: UndoPayableInput,
+    token: string,
+  ): Promise<Result<DocumentDetail, FinancialFailure>> => {
+    const r = await resultFetch<unknown>(
+      `${docs}/${input.documentId}/payables/${input.payableId}/${action}`,
+      {
+        method: 'POST',
+        body: { version: input.version, reason: input.reason },
+        token,
+      },
+    )
+    if (isErr(r)) return err({ error: mapHttpError(r.error), message: domainMessage(r.error) })
+    const model = detailToModel(r.value)
+    if (isErr(model)) return err({ error: model.error, message: null })
+    return model
+  }
+
   return {
     list: async (input, token): Promise<Result<DocumentListResponse, FinancialError>> => {
       const r = await resultFetch<unknown>(`${docs}?${buildListQuery(input)}`, { token })
@@ -386,5 +409,9 @@ export const createCoreApiFinancialClient = (baseUrl: string): FinancialClient =
       if (isErr(r)) return err(mapHttpError(r.error))
       return detailToModel(r.value)
     },
+    // Spec 119 / core-api#61: desfazer baixa e transmissão de UM título. Mesmo molde do `undoApproval`:
+    // a mensagem do core-api viaja junto, porque todas as recusas são 409 e só ela as distingue.
+    undoManualPayment: async (input, token) => undoPayable('undo-manual-payment', input, token),
+    undoTransmission: async (input, token) => undoPayable('undo-transmission', input, token),
   }
 }

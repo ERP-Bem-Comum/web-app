@@ -50,6 +50,9 @@ const TIMELINE_EVENT_TYPES: ReadonlySet<string> = new Set<TimelineEventType>([
   'PayableManuallyPaid',
   'PayableReconciled',
   'ReconciliationUndone',
+  // Spec 119 / core-api#61 — sem estas duas o mapper as descartaria em silêncio (drift seguro).
+  'ManualPaymentUndone',
+  'TransmissionUndone',
 ])
 
 // ── Erro: slug do core-api → FinancialError ─────────────────────────────────────
@@ -242,6 +245,7 @@ export const timelineToModel = (raw: unknown): Result<readonly DocumentTimelineE
       targetId: e.target.id,
       occurredAt: e.occurredAt,
       actor: e.actor,
+      reason: e.reason ?? null,
       changes: e.changes.map((c) => ({ field: c.field, before: c.before, after: c.after })),
     })
   }
