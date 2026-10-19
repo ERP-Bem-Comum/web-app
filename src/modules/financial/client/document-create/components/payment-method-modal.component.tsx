@@ -36,6 +36,8 @@ const t = createTranslator(ptBR)
 export type PaymentMethodModalProps = Readonly<{
   open: boolean
   selected: PaymentMethod | ''
+  /** spec 125: formas indisponíveis (Aprovado → não volta para código de barras). Ausente = todas. */
+  blocked?: ReadonlySet<PaymentMethod>
   onSelect: (method: PaymentMethod) => void
   onClose: () => void
 }>
@@ -80,6 +82,12 @@ export function PaymentMethodModal(props: PaymentMethodModalProps): ReactNode {
                 type="button"
                 className={`${typeCard} ${m.method === props.selected ? typeCardSelected : ''}`}
                 aria-pressed={m.method === props.selected}
+                disabled={props.blocked?.has(m.method) === true}
+                title={
+                  props.blocked?.has(m.method) === true
+                    ? t('financial.edit.approved.barcodeMethodBlocked')
+                    : undefined
+                }
                 onClick={() => {
                   props.onSelect(m.method)
                 }}

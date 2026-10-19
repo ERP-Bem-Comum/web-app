@@ -909,6 +909,8 @@ export const ptBR: Catalog = {
     'Os dados bancários podem ser alterados, mas não apagados. Preencha banco, agência e conta.',
   'partners.collaborators.form.pixRemovalBlocked':
     'A chave PIX pode ser alterada, mas não apagada. Preencha a chave.',
+  'partners.collaborators.form.territoryRemovalBlocked':
+    'O território pode ser alterado, mas não apagado. Preencha a UF ou o município.',
   'partners.collaborators.form.save': 'Salvar',
   'partners.collaborators.form.cancel': 'Cancelar',
   'partners.collaborators.form.saving': 'Salvando…',
@@ -1137,6 +1139,14 @@ export const ptBR: Catalog = {
   'financial.timeline.field.description': 'Descrição',
   'financial.timeline.field.paymentMethod': 'Forma de pagamento',
   'financial.timeline.field.status': 'Status',
+  // spec 125: categorização e complemento entram no Histórico (antes eram descartados).
+  'financial.timeline.field.paymentDetail': 'Complemento do pagamento',
+  'financial.timeline.field.programRef': 'Programa',
+  'financial.timeline.field.budgetPlanRef': 'Plano orçamentário',
+  'financial.timeline.field.costCenterRef': 'Centro de custo',
+  'financial.timeline.field.categoryRef': 'Categoria',
+  'financial.timeline.field.subcategoryRef': 'Subcategoria',
+  'financial.timeline.value.unresolved': 'não identificado',
   'financial.detail.loading': 'Carregando…',
   'financial.detail.section.composicao': 'Composição Financeira',
   'financial.detail.section.titulos': 'Títulos Gerados',
@@ -1165,12 +1175,20 @@ export const ptBR: Catalog = {
   'financial.detail.file.empty': 'Nenhum arquivo anexado',
   'financial.detail.file.soon': 'Disponível ao anexar o documento',
   'financial.detail.file.attached': 'Arquivo anexado', // #568: comprovante-fonte presente (OCR)
-  'financial.detail.edit': 'Editar pagamento',
+  'financial.detail.edit': 'Editar documento',
   'financial.detail.editSoon': 'Edição do documento — em breve',
   'financial.create.hero.placeholder': 'Selecione o fornecedor',
   'financial.create.hero.change': 'Alterar fornecedor',
   'financial.create.submit': 'Salvar Documento',
   'financial.edit.title': 'Editar Documento',
+  // spec 125 — editar documento Aprovado (continua Aprovado).
+  'financial.edit.approved.awaitingBackend':
+    'A alteração de forma de pagamento e de categorização em documento Aprovado ainda não está disponível. Por enquanto, só a descrição pode ser salva.',
+  'financial.edit.approved.methodAlreadyChanged':
+    'A forma de pagamento já foi alterada uma vez após a aprovação. Para mudar de novo, faça a baixa manual.',
+  'financial.edit.approved.barcodeLocked': 'O código de barras não pode ser alterado depois da aprovação.',
+  'financial.edit.approved.barcodeMethodBlocked':
+    'Depois da aprovação não é possível voltar para uma forma paga por código de barras.',
   'financial.create.editSubmit': 'Salvar alterações',
   'financial.create.discard': 'Descartar',
   'financial.create.backToList': 'Voltar',
@@ -2877,6 +2895,13 @@ export const ptBR: Catalog = {
   'reports.equipe.filters.status': 'Status',
   'reports.equipe.filters.situacaoCadastral': 'Situação Cadastral',
   'reports.equipe.filters.idade': 'Idade',
+  'reports.equipe.filters.geracao': 'Geração',
+  'reports.equipe.generation.BOOMER': 'Baby Boomer',
+  'reports.equipe.generation.GEN_X': 'Geração X',
+  'reports.equipe.generation.MILLENNIAL': 'Millennial (Geração Y)',
+  'reports.equipe.generation.GEN_Z': 'Geração Z',
+  'reports.equipe.generation.OUTROS': 'Outras gerações',
+  'reports.equipe.generation.NA': 'N/A',
   'reports.equipe.filters.vinculo': 'Vínculo Empregatício',
   'reports.equipe.filters.filtrar': 'Filtrar',
 

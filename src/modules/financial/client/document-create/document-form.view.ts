@@ -616,6 +616,10 @@ export type FieldLocks = Readonly<{
   dueDate: boolean
   description: boolean
   retentions: boolean
+  // spec 125: travas próprias (antes a categorização pegava carona na do fornecedor e o complemento não
+  // tinha trava) — no Aprovado elas abrem com fornecedor/valor travados.
+  categorization: boolean // Programa · Plano · Centro · Categoria · Subcategoria
+  paymentComplement: boolean // código de barras / cartão / câmbio / texto livre
 }>
 
 /** Criação: nada travado. */
@@ -630,6 +634,8 @@ export const NO_LOCKS: FieldLocks = {
   dueDate: false,
   description: false,
   retentions: false,
+  categorization: false,
+  paymentComplement: false,
 }
 
 /** Travas no modo edição conforme o status (só "Aberto" libera os campos ajustáveis). */
@@ -644,15 +650,117 @@ export const editLocksFor = (status: DocumentStatus): FieldLocks => {
     retentions: true,
     issueDate: true, // #163 — emissão não é ajustável (o PATCH não a aceita)
     competencia: true, // #197 — competência não é ajustável (mesma regra do issueDate)
-    // Ajustáveis — liberados apenas em "Aberto".
+    // O ajuste do Aberto não recategoriza (o PATCH não aceita a taxonomia).
+    categorization: true,
+    // Ajustáveis — liberados apenas em "Aberto". (#284: complemento editável no ajuste.)
     grossValue: !open,
     dueDate: !open,
     description: !open,
+    paymentComplement: !open,
   }
 }
 
 /** Status editável (só "Aberto" pode ser ajustado pelo core-api). */
 export const isEditableStatus = (status: DocumentStatus): boolean => status === 'Aberto'
+
+// ── Modo EDITAR APROVADO (spec 125) ─────────────────────────────────────────────
+// Decisões da P.O. (14/10): o documento CONTINUA Aprovado. Abrem só descrição, forma de pagamento (+
+// complemento) e categorização; fornecedor, emissão, valor, vencimento e impostos seguem travados.
+// · A forma muda UMA vez depois de aprovado (a troca serve à remessa; mudar de novo = baixa manual).
+// · Código de barras (Boleto/Guia) não se edita — exceto a Guia lançada SEM código, que pode recebê-lo.
+// · Voltar para uma forma de código de barras é bloqueado (pediria um código novo).
+// O backend ainda não aceita forma nem categorização no Aprovado (core-api#1057): até lá só a descrição salva.
+
+/** Formas pagas por código de barras — o código delas não se edita depois de aprovado. */
+const BARCODE_METHODS: ReadonlySet<PaymentMethod> = new Set<PaymentMethod>(['Boleto', 'GuiaRecolhimento'])
+export const isBarcodeMethod = (m: PaymentMethod | ''): boolean => m !== '' && BARCODE_METHODS.has(m)
+
+export const isApprovedEditableStatus = (status: DocumentStatus): boolean => status === 'Aprovado'
+
+export type ApprovedEditContext = Readonly<{
+  /** Forma e complemento GRAVADOS (o que a aprovação viu). */
+  originalMethod: PaymentMethod | null
+  originalDetail: string | null
+  /** A forma já foi trocada uma vez depois de aprovado (vem do core-api#1057; até lá, `false`). */
+  methodAlreadyChanged: boolean
+}>
+
+/** Complemento travado? Mesma forma de barras → só a Guia ainda SEM código destrava; forma nova → livre. */
+const approvedComplementLocked = (ctx: ApprovedEditContext, current: PaymentMethod | ''): boolean => {
+  if (current !== (ctx.originalMethod ?? '')) return false
+  if (!isBarcodeMethod(current)) return false
+  const empty = (ctx.originalDetail ?? '').trim() === ''
+  return !(current === 'GuiaRecolhimento' && empty)
+}
+
+/** Travas do Aprovado — dependem da forma ATUAL do form (a trava do complemento muda com a troca). */
+export const approvedEditLocksFor = (ctx: ApprovedEditContext, current: PaymentMethod | ''): FieldLocks => ({
+  type: true,
+  numberSeries: true,
+  supplier: true,
+  grossValue: true,
+  issueDate: true,
+  competencia: true,
+  dueDate: true, // tem ação própria ("Alterar vencimento") na lista
+  retentions: true,
+  description: false,
+  categorization: false,
+  paymentMethod: ctx.methodAlreadyChanged,
+  paymentComplement: approvedComplementLocked(ctx, current),
+})
+
+/** Formas que NÃO podem ser escolhidas no Aprovado: as de código de barras, salvo a própria forma gravada. */
+export const approvedBlockedMethods = (ctx: ApprovedEditContext): ReadonlySet<PaymentMethod> =>
+  new Set(PAYMENT_METHODS.filter((m) => isBarcodeMethod(m) && m !== ctx.originalMethod))
+
+/** Por que o complemento/forma está travado (tag i18n) — "disabled precisa parecer disabled". */
+export const approvedLockReasonTag = (
+  ctx: ApprovedEditContext,
+  current: PaymentMethod | '',
+): Readonly<{ paymentMethod: string | null; paymentComplement: string | null }> => ({
+  paymentMethod: ctx.methodAlreadyChanged ? 'financial.edit.approved.methodAlreadyChanged' : null,
+  paymentComplement: approvedComplementLocked(ctx, current) ? 'financial.edit.approved.barcodeLocked' : null,
+})
+
+const norm = (s: string | null | undefined): string => (s ?? '').trim()
+
+/** O que mudou em relação ao gravado — decide o que salvar e o que ainda espera o backend. PURA. */
+export type ApprovedEditChanges = Readonly<{
+  description: boolean
+  paymentMethod: boolean
+  paymentDetail: boolean
+  taxonomy: boolean
+}>
+
+export const approvedEditChanges = (fields: DocumentFormFields, d: DocumentDetail): ApprovedEditChanges => ({
+  description: norm(fields.description) !== norm(d.description),
+  paymentMethod: fields.paymentMethod !== (d.paymentMethod ?? ''),
+  paymentDetail: norm(fields.paymentComplement) !== norm(d.paymentDetail),
+  taxonomy:
+    norm(fields.programRef) !== norm(d.programRef) ||
+    norm(fields.planoOrcamentario) !== norm(d.budgetPlanRef) ||
+    norm(fields.costCenterRef) !== norm(d.costCenterRef) ||
+    norm(fields.categoryRef) !== norm(d.categoryRef) ||
+    norm(fields.subcategoryRef) !== norm(d.subcategoryRef),
+})
+
+/** Mudou algo que o core-api ainda não aceita no Aprovado (forma/complemento/categorização — #1057)? */
+export const approvedEditAwaitsBackend = (c: ApprovedEditChanges): boolean =>
+  c.paymentMethod || c.paymentDetail || c.taxonomy
+
+/**
+ * Salvar do Aprovado. Hoje só a DESCRIÇÃO tem rota (o caminho leve do PATCH aceita Aprovado e mantém o
+ * status). Forma/complemento/categorização → `null` até o core-api#1057: o PATCH descartaria esses campos em
+ * silêncio, e o complemento iria só ao documento (a remessa lê o do título). Nada mudou → `null`.
+ */
+export const buildApprovedAdjustInput = (
+  fields: DocumentFormFields,
+  d: DocumentDetail,
+): AdjustDocumentInput | null => {
+  const changes = approvedEditChanges(fields, d)
+  if (approvedEditAwaitsBackend(changes) || !changes.description) return null
+  return { id: d.id, version: d.version, description: trimToUndefined(fields.description) ?? null }
+}
 
 /** Soma (centavos) das retenções existentes do documento (filhos) — p/ validar líquido > 0 ao mudar bruto. */
 const retentionSumFromDetail = (d: DocumentDetail): number =>
@@ -679,6 +787,7 @@ export const hydrateFieldsFromDetail = (d: DocumentDetail): DocumentFormFields =
     inss: retVal('INSS'),
     pis: retVal('CSRF'),
   }
+  const keepsTaxonomy = d.status !== 'Rascunho'
   return {
     type: d.type ?? '',
     documentNumber: d.documentNumber ?? '',
@@ -695,15 +804,17 @@ export const hydrateFieldsFromDetail = (d: DocumentDetail): DocumentFormFields =
     accessKey: '', // não exposto no detalhe (core-api#115/#95)
     paymentComplement: d.paymentDetail ?? '', // #273 — o detalhe expõe o complemento da forma de pagamento
     contractRef: '', // o GET /:id não expõe o contrato vinculado (core-api#95) → vazio na hidratação
-    programRef: '', // o GET /:id não expõe a categorização (core-api#95) → vazio na hidratação
-    categoryRef: '',
-    subcategoryRef: '',
-    costCenterRef: '',
+    // spec 125: o GET /:id JÁ devolve a categorização (#95/#147) → edição/consulta abrem PREENCHIDAS. O
+    // Rascunho segue vazio: lá a herança do contrato preenche a cascata e sobrescreveria a do documento.
+    programRef: keepsTaxonomy ? (d.programRef ?? '') : '',
+    categoryRef: keepsTaxonomy ? (d.categoryRef ?? '') : '',
+    subcategoryRef: keepsTaxonomy ? (d.subcategoryRef ?? '') : '',
+    costCenterRef: keepsTaxonomy ? (d.costCenterRef ?? '') : '',
     approverRef: '',
     contaDebitoRef: '', // o GET /:id não expõe a conta-débito (core-api#95) → vazio na hidratação
     centroCusto: '',
     categoria: '',
-    planoOrcamentario: '',
+    planoOrcamentario: keepsTaxonomy ? (d.budgetPlanRef ?? '') : '',
     retentions,
     // Reforma Tributária não vem no GET de detalhe hoje (enriquecimento = core-api#95) e é imutável no
     // ajuste → hidrata vazia. (Quando o detalhe expuser registeredTaxes, mapear aqui.)
