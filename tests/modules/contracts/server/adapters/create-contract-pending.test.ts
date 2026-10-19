@@ -45,3 +45,29 @@ describe('US1 — create nasce Pendente (sem documento/assinatura)', () => {
     assert.equal('signedAt' in parsed, false)
   })
 })
+
+// Spec 118 (core-api#1024): o número informado vai no corpo SÓ quando presente; ausente, o backend gera.
+describe('create — número do contrato informado (spec 118)', () => {
+  const captureBody = async (payload: CreateContractInput): Promise<Record<string, unknown>> => {
+    let captured: string | null = null
+    globalThis.fetch = ((_url: string | URL | Request, init?: RequestInit): Promise<Response> => {
+      captured = typeof init?.body === 'string' ? init.body : null
+      return Promise.resolve(
+        new Response(JSON.stringify({}), { status: 200, headers: { 'content-type': 'application/json' } }),
+      )
+    }) as typeof globalThis.fetch
+    await createCoreApiContractsClient(BASE).create(payload, 'tok')
+    if (captured === null) throw new Error('corpo da requisição não capturado')
+    return JSON.parse(captured) as Record<string, unknown>
+  }
+
+  it('sem número: o corpo NÃO leva sequentialNumber (o core-api gera)', async () => {
+    const body = await captureBody(input)
+    assert.equal('sequentialNumber' in body, false)
+  })
+
+  it('com número: o corpo leva sequentialNumber sem prefixo', async () => {
+    const body = await captureBody({ ...input, sequentialNumber: '0123/2024' })
+    assert.equal(body.sequentialNumber, '0123/2024')
+  })
+})
