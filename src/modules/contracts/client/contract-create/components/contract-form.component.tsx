@@ -6,6 +6,7 @@ import type {
   SelectedPartner,
   ContractFormController,
 } from './contract-form.controller.ts'
+import { maskContractNumber } from './contract-form.controller.ts'
 import { formatDateOrDash, contractorInitials } from '#modules/contracts/client/domain/format.ts'
 import { formatMask, unmask } from '#shared/ui/index.ts'
 import { normalizeCnpj, maskCnpj, maskCpf } from '#shared/document/cnpj.ts'
@@ -83,6 +84,9 @@ import {
   searchDropdownEmpty,
   searchDropdownNewPartner,
   errorAlert,
+  fieldHint,
+  fieldHintError,
+  numberRow,
 } from '../page/contract-create.css.ts'
 
 const t = createTranslator(ptBR)
@@ -146,7 +150,8 @@ interface Props {
   onCreateNewPartner: () => void
   documentUploaded: boolean
   // Ano corrente para o número provisório (CT 0001/AAAA) — vem da view/controller, não do render (C1).
-  currentYear: number
+  /** Número do contrato preenchido fora do formato (spec 118). */
+  contractNumberInvalid: boolean
   // Opções reais de Programa (D8 — UUID→sigla), vindas da ViewModel (query de programas no binding).
   programOptions: readonly { readonly value: string; readonly label: string }[]
   // #502/S3: Centro de Custo / Categoria / Subcategoria vêm da ÁRVORE do plano selecionado (value = ref UUID);
@@ -192,7 +197,7 @@ export function ContractForm({
   onPartnerSearchClose,
   onCreateNewPartner,
   documentUploaded,
-  currentYear,
+  contractNumberInvalid,
   programOptions,
 }: Props): ReactNode {
   const togglePartnerSearch = (): void => {
@@ -223,8 +228,13 @@ export function ContractForm({
         </button>
         <h1 className={topbarTitle}>
           {state.classification === 'Contract' ? 'Novo Contrato' : 'Nova Ordem de Serviço'}
+          {/* Spec 118: o número só existe depois de salvar — vazio, o topo diz "número a definir" em vez de
+              inventar um provisório (ADR-0013); preenchido, mostra o número informado com o prefixo. */}
           <span className={topbarMeta}>
-            {state.classification === 'Contract' ? 'CT' : 'OS'} 0001/{currentYear}
+            {state.classification === 'Contract' ? 'CT' : 'OS'}{' '}
+            {state.contractNumber.trim() !== '' && !contractNumberInvalid
+              ? state.contractNumber.trim()
+              : `· ${t('contracts.create.numberPending')}`}
           </span>
         </h1>
       </div>
@@ -357,6 +367,35 @@ export function ContractForm({
           {/* Dados do Contrato */}
           <div className={section}>
             <div className={sectionTitle}>{t('contracts.create.section.contractData')}</div>
+            {/* Spec 118: número informável na criação. Opcional — vazio, o sistema gera. */}
+            <div className={`${grid4Contract} ${numberRow}`}>
+              <div className={field}>
+                <label className={fieldLabel} htmlFor="contract-number">
+                  {t('contracts.create.field.number')}
+                </label>
+                <input
+                  id="contract-number"
+                  className={`${input} ${validationAttempted && contractNumberInvalid ? inputError : ''}`}
+                  inputMode="numeric"
+                  placeholder="0123/2024"
+                  aria-describedby="contract-number-hint"
+                  aria-invalid={validationAttempted && contractNumberInvalid}
+                  value={state.contractNumber}
+                  onChange={(e) => {
+                    onUpdate('contractNumber', maskContractNumber(e.target.value))
+                  }}
+                />
+                {validationAttempted && contractNumberInvalid ? (
+                  <span id="contract-number-hint" className={fieldHintError}>
+                    {t('contracts.create.field.numberInvalid')}
+                  </span>
+                ) : (
+                  <span id="contract-number-hint" className={fieldHint}>
+                    {t('contracts.create.field.numberHint')}
+                  </span>
+                )}
+              </div>
+            </div>
             <div className={grid4Contract}>
               <div className={field}>
                 <label className={fieldLabel}>{t('contracts.create.field.classification')}</label>

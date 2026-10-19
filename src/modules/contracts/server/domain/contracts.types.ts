@@ -13,7 +13,8 @@
 // Vive no domínio (puro); adapters e client-data REEXPORTAM daqui (boundary: domain não importa nada
 // de fora). Antes havia 3 cópias divergentes (domain/errors, adapters/shared, client/repository).
 export type ContractsError =
-  | 'invalid-code' // código/sequentialNumber inválido
+  | 'invalid-code' // código/sequentialNumber inválido (inclui o 422 ContractSequentialNumberInvalidFormat)
+  | 'contract-number-duplicated' // 409: número de contrato informado já existe (spec 118, core-api#1024)
   | 'invalid-value' // valor <= 0 ou teto de OS excedido
   | 'invalid-period' // período de vigência inválido
   | 'missing-contractor' // contratante obrigatório não informado
@@ -169,6 +170,9 @@ export interface ListContractsInput {
 }
 
 export interface CreateContractInput {
+  // Spec 118 (core-api#1024): número informado pela usuária (`NNN/AAAA` ou `NNNN/AAAA`, sem prefixo).
+  // Ausente = o core-api gera o próximo número livre do ano, como antes.
+  sequentialNumber?: string
   title: string
   objective: string
   originalValueCents: number
