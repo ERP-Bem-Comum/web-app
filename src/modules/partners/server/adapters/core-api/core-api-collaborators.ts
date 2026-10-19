@@ -30,6 +30,8 @@ import {
 
 const SLUG_TO_ERROR: Partial<Record<string, PartnersError>> = {
   'collaborator-import-malformed': 'collaborator-import-malformed',
+  // 409 — trocar RG/nascimento/raça já gravados (core-api#1070); não é "registro duplicado".
+  'collaborator-personal-data-immutable': 'collaborator-personal-data-immutable',
   unauthorized: 'unauthorized',
   forbidden: 'forbidden',
 }

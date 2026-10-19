@@ -386,6 +386,8 @@ export const ptBR: Catalog = {
   'partners.error.unauthorized': 'Sua sessão expirou. Entre novamente.',
   'partners.error.forbidden': 'Você não tem permissão para esta ação.',
   'partners.error.conflict': 'Já existe um registro com estes dados.',
+  'partners.error.collaborator-personal-data-immutable':
+    'RG, data de nascimento ou raça/cor já foram registrados e não podem ser alterados. Recarregue a página.',
   'partners.error.connectivity': 'Falha de conexão. Tente novamente.',
   'partners.error.server': 'Ocorreu um erro inesperado.',
   'partners.error.invalid-service-category': 'Categoria de serviço inválida.',
@@ -905,6 +907,7 @@ export const ptBR: Catalog = {
   'partners.collaborators.form.email': 'Email',
   'partners.collaborators.form.cpf': 'CPF',
   'partners.collaborators.form.cpfLocked': 'O CPF não pode ser alterado depois do cadastro.',
+  'partners.collaborators.form.personalLocked': 'Já registrado — não pode ser alterado.',
   'partners.collaborators.form.occupationArea': 'Área de Atuação',
   'partners.collaborators.form.role': 'Função',
   'partners.collaborators.form.startOfContract': 'Início de Contrato',

@@ -50,6 +50,7 @@ import {
   BR_UF,
   type CollaboratorDetailFormController,
   type CollaboratorDetailFormState,
+  type LockedPersonalFields,
 } from './collaborator-detail-form.controller.ts'
 
 const t = createTranslator(ptBR)
@@ -59,6 +60,13 @@ export type CollaboratorDetailContentProps = Readonly<{
   editing: boolean
   showComplete: boolean
   preTitle: string
+  /**
+   * Quais dados pessoais já estão GRAVADOS (spec 124): travam no modo Editar — dado gravado não muda (P.O.,
+   * 12/10), como o CPF. O que ainda FALTA segue editável e é preenchido pelo PUT (P.O., 19/10;
+   * core-api#1070). Vem do detalhe carregado, nunca do form (senão travaria ao digitar). Opcional: ausente =
+   * nada travado.
+   */
+  lockedPersonal?: LockedPersonalFields
 }>
 
 // Wrapper de <select> "brand": appearance:none + chevron desenhado (o mock remove a seta nativa).
@@ -104,6 +112,7 @@ export function CollaboratorDetailContent({
   editing,
   showComplete,
   preTitle,
+  lockedPersonal,
 }: CollaboratorDetailContentProps): ReactNode {
   const isInvalid = (key: string): boolean => c.errors[key] === true
   const invalidMsg = (key: string): string | null =>
@@ -159,7 +168,7 @@ export function CollaboratorDetailContent({
     key: keyof CollaboratorDetailFormState,
     label: string,
     options: readonly Readonly<{ value: string; label: string }>[],
-    opts?: { readOnly?: boolean; errorKey?: string },
+    opts?: { readOnly?: boolean; lockedHint?: string; errorKey?: string },
   ): ReactNode => {
     const disabled = opts?.readOnly === true ? true : !editing
     const invalid = opts?.errorKey !== undefined && isInvalid(opts.errorKey)
@@ -185,12 +194,21 @@ export function CollaboratorDetailContent({
             </option>
           ))}
         </SelectControl>
+        {editing && opts?.readOnly === true && opts.lockedHint !== undefined ? (
+          <span className={hint}>{opts.lockedHint}</span>
+        ) : null}
         {opts?.errorKey !== undefined && invalidMsg(opts.errorKey) !== null ? (
           <span className={fieldError}>{invalidMsg(opts.errorKey)}</span>
         ) : null}
       </div>
     )
   }
+
+  // Dado pessoal já gravado (spec 124): mesmo tratamento do CPF — desativado e dizendo o porquê. Vazio segue livre.
+  const immutable = (locked: boolean | undefined) =>
+    locked === true
+      ? { readOnly: true, lockedHint: t('partners.collaborators.form.personalLocked') }
+      : undefined
 
   const ufOptions = BR_UF.map((u) => ({ value: u.sigla, label: `${u.sigla} — ${u.nome}` }))
   const areaOptions = OCCUPATION_AREAS.map((a) => ({
@@ -383,11 +401,19 @@ export function CollaboratorDetailContent({
             </div>
             <div className={sectionBody}>
               <div className={grid}>
-                {sel('race', t('partners.collaborators.detail.field.race'), raceOptions)}
+                {sel(
+                  'race',
+                  t('partners.collaborators.detail.field.race'),
+                  raceOptions,
+                  immutable(lockedPersonal?.race),
+                )}
                 {sel('maritalStatus', t('partners.collaborators.detail.field.maritalStatus'), maritalOptions)}
-                {txt('rg', t('partners.collaborators.detail.field.rg'))}
+                {txt('rg', t('partners.collaborators.detail.field.rg'), immutable(lockedPersonal?.rg))}
                 {txt('completeAddress', t('partners.collaborators.detail.field.completeAddress'))}
-                {txt('dateOfBirth', t('partners.collaborators.detail.field.dateOfBirth'), { type: 'date' })}
+                {txt('dateOfBirth', t('partners.collaborators.detail.field.dateOfBirth'), {
+                  type: 'date',
+                  ...immutable(lockedPersonal?.dateOfBirth),
+                })}
                 {txt('telephone', t('partners.collaborators.detail.field.telephone'), { mask: 'phone' })}
                 {sel('education', t('partners.collaborators.detail.field.education'), educationOptions)}
                 {sel(

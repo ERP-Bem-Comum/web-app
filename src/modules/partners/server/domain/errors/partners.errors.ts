@@ -16,6 +16,7 @@ export type PartnersError =
   | 'collaborator-import-malformed' // CSV malformado
   | 'invalid-registration-transition' // situação cadastral só avança Pré → Cadastrado
   | 'deactivation-reason-required' // desativar colaborador exige motivo
+  | 'collaborator-personal-data-immutable' // 409 — RG/nascimento/raça já gravados não mudam (core-api#1070)
   // autocadastro (#040) — rota pública token-based da 2ª fase do cadastro
   | 'autocadastro-invalid' // token desconhecido/expirado/usado (404) — anti-enumeração
   | 'autocadastro-cpf-mismatch' // 400 collaborator-autocadastro-cpf-mismatch — token preservado

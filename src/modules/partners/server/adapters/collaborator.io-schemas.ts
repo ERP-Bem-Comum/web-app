@@ -98,8 +98,12 @@ export const CompleteCollaboratorRegistrationInputSchema = z.object({
 // Edição dos dados cadastrais. PUT /collaborators/:id. Banco/PIX (spec 120, core-api#1029) e território
 // (spec 121, core-api#1053) seguem no corpo com a mesma regra: `null` MANTÉM o gravado; objeto valida e
 // substitui. Esvaziar não existe pelo PUT.
+// RG, nascimento e raça (spec 124, core-api#1070): o PUT preenche o que está vazio; trocar o gravado → 409.
 export const UpdateCollaboratorInputSchema = CreateCollaboratorInputSchema.extend({
   id: z.string().trim().min(1).max(64),
+  rg: z.string().trim().max(20).optional(),
+  dateOfBirth: z.iso.date().optional(),
+  race: z.string().trim().max(60).optional(),
 })
 
 export const DeactivateCollaboratorInputSchema = z.object({
