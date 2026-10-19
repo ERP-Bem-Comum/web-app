@@ -9,7 +9,8 @@ import { Link, useNavigate } from '@tanstack/react-router'
 
 import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
-import { SearchIcon } from '#shared/ui/icons/index.ts'
+import { CalendarDaysIcon, SearchIcon } from '#shared/ui/icons/index.ts'
+import { trigger } from '../components/export-dropdown.css.ts'
 
 import { useContasAPagar } from '../contas-a-pagar.binding.ts'
 import { useDocumentDetail } from '../document-detail.binding.ts'
@@ -196,6 +197,12 @@ export function ContasAPagarPage(): ReactNode {
   //    Excluir/Vencimento são transições do documento (Aprovar cascateia pai→filhos), agregadas por doc
   //    (dedup). A baixa (Marcar como pago) é por título, independente. Backend valida transição inválida. ──
   const titleTargets = deriveTitleActionTargets(rows, selected)
+  // Cabeçalho do "Alterar status": "1 documento • Transmitido" — documentos distintos e os status da seleção.
+  const selectedRows = rows.filter((r) => selected.has(r.id))
+  const selectedDocs = new Set(selectedRows.map((r) => r.documentId)).size
+  const selectionSummary = `${String(selectedDocs)} ${t(
+    selectedDocs === 1 ? 'financial.list.status.summaryOne' : 'financial.list.status.summaryMany',
+  )} • ${[...new Set(selectedRows.map((r) => r.status))].join(', ')}`
 
   // VAN (core-api#728): PRÉ-VOO do lote, disparado pelo item CNAB do "Exportar". A origem é a MESMA do
   // CSV/PDF (`exportRows`: a seleção, ou o que está na tela quando não há seleção) — o operador não
@@ -558,18 +565,21 @@ export function ContasAPagarPage(): ReactNode {
                 Aprovar/Reabrir/Excluir/Vencimento agregam por documento (Aprovar cascateia pai→filhos);
                 Marcar como pago é por título. Sem busca extra ao documento. */}
             {/* Alterar vencimento de 1+ títulos Aberto (abre o modal); aplica via PATCH por documento. */}
+            {/* Mesmo molde dos botões "Alterar status" e "Exportar" (base visual da P.O., 19/10). */}
             <button
               type="button"
-              className={selClear}
+              className={trigger}
               disabled={titleTargets.dueEditable.length === 0 || dueEdit.running}
               title={titleTargets.dueEditable.length === 0 ? t('financial.list.dueDate.needOpen') : undefined}
               onClick={() => {
                 setDueOpen(true)
               }}
             >
+              <CalendarDaysIcon size={16} />
               {t('financial.list.dueDate.bulk')}
             </button>
             <StatusActions
+              summary={selectionSummary}
               canApprove={titleTargets.approve.length > 0}
               canReopen={titleTargets.reopen.length > 0}
               canDelete={titleTargets.deletable.length > 0}

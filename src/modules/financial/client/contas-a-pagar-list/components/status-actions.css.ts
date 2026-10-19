@@ -77,3 +77,44 @@ export const statusItemHint = style({
   color: vars.color.institutional.ink5,
   selectors: { [`${statusItem}:disabled &`]: { opacity: 0.7 } },
 })
+
+// Cabeçalho do menu (base visual da P.O., 19/10): título + resumo da seleção ("1 documento • Transmitido").
+export const statusHeader = style({
+  display: 'flex',
+  alignItems: 'center',
+  gap: vars.space.sm,
+  paddingInline: vars.space.sm,
+  paddingBlock: vars.space.sm,
+  marginBlockEnd: vars.space.xs,
+  borderBlockEnd: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
+  color: vars.color.institutional.ink2,
+})
+export const statusHeaderTitle = style({
+  fontFamily: vars.font.family.body,
+  fontSize: vars.font.size.sm,
+  fontWeight: vars.font.weight.semibold,
+  color: vars.color.institutional.ink2,
+})
+export const statusHeaderSub = style({
+  fontFamily: vars.font.family.body,
+  fontSize: vars.font.size.xs,
+  color: vars.color.institutional.ink5,
+})
+export const statusHeaderText = style({ display: 'flex', flexDirection: 'column', gap: '0.125rem' })
+
+// Item com ícone à esquerda e texto à direita.
+export const statusItemRow = style({ display: 'flex', alignItems: 'flex-start', gap: vars.space.sm })
+export const statusItemIcon = style({
+  display: 'inline-flex',
+  paddingBlockStart: '0.125rem',
+  color: vars.color.institutional.ink3,
+  selectors: { [`${statusItem}:disabled &`]: { color: vars.color.institutional.ink5 } },
+})
+export const statusItemText = style({ display: 'flex', flexDirection: 'column', gap: '0.125rem' })
+export const statusItemNote = style({
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: vars.space.xs,
+  fontSize: vars.font.size.xs,
+  color: vars.color.institutional.ink4,
+})

@@ -9,9 +9,19 @@ import type { MouseEvent, ReactNode } from 'react'
 
 import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
-import { CalendarCheckIcon } from '#shared/ui/icons/index.ts'
+import {
+  CheckIcon,
+  ChevronDownIcon,
+  CreditCardIcon,
+  EditIcon,
+  InfoIcon,
+  RefreshIcon,
+  SendIcon,
+  TrashIcon,
+  UndoIcon,
+} from '#shared/ui/icons/index.ts'
 
-import { wrapper, trigger } from './export-dropdown.css.ts'
+import { wrapper, trigger, triggerChevron } from './export-dropdown.css.ts'
 import {
   statusMenu,
   statusGroup,
@@ -20,6 +30,14 @@ import {
   statusItemLabel,
   statusItemLabelDanger,
   statusItemHint,
+  statusHeader,
+  statusHeaderTitle,
+  statusHeaderSub,
+  statusHeaderText,
+  statusItemRow,
+  statusItemIcon,
+  statusItemText,
+  statusItemNote,
 } from './status-actions.css.ts'
 
 const t = createTranslator(ptBR)
@@ -30,6 +48,8 @@ const closeDetails = (e: MouseEvent<HTMLButtonElement>): void => {
 }
 
 export type StatusActionsProps = Readonly<{
+  // Resumo da seleção no cabeçalho do menu ("1 documento • Transmitido") — texto pronto, vem da page.
+  summary: string
   // Aprovar (Aberto→Aprovado) e Voltar p/ edição (Aprovado→Aberto) — habilitados conforme a seleção.
   canApprove: boolean
   canReopen: boolean
@@ -50,6 +70,8 @@ export type StatusActionsProps = Readonly<{
 }>
 
 type ItemProps = Readonly<{
+  icon: ReactNode
+  noteTag?: string // linha extra de aviso (ex.: "Não libera uma nova remessa")
   enabled: boolean
   running: boolean
   labelTag: string
@@ -72,12 +94,23 @@ function Item(props: ItemProps): ReactNode {
         closeDetails(e)
       }}
     >
-      <span
-        className={`${statusItemLabel}${props.danger === true && active ? ` ${statusItemLabelDanger}` : ''}`}
-      >
-        {t(props.labelTag)}
+      <span className={statusItemRow}>
+        <span className={statusItemIcon}>{props.icon}</span>
+        <span className={statusItemText}>
+          <span
+            className={`${statusItemLabel}${props.danger === true && active ? ` ${statusItemLabelDanger}` : ''}`}
+          >
+            {t(props.labelTag)}
+          </span>
+          <span className={statusItemHint}>{t(props.hintTag)}</span>
+          {props.noteTag !== undefined ? (
+            <span className={statusItemNote}>
+              <InfoIcon size={12} />
+              {t(props.noteTag)}
+            </span>
+          ) : null}
+        </span>
       </span>
-      <span className={statusItemHint}>{t(props.hintTag)}</span>
     </button>
   )
 }
@@ -91,17 +124,28 @@ export function StatusActions(props: StatusActionsProps): ReactNode {
         aria-label={t('financial.list.status.change')}
       >
         <span className={trigger}>
-          <CalendarCheckIcon />
+          <RefreshIcon />
           {t('financial.list.status.change')}
+          <span className={triggerChevron}>
+            <ChevronDownIcon size={14} />
+          </span>
         </span>
       </summary>
 
       <div className={statusMenu}>
+        <div className={statusHeader}>
+          <RefreshIcon size={18} />
+          <span className={statusHeaderText}>
+            <span className={statusHeaderTitle}>{t('financial.list.status.change')}</span>
+            <span className={statusHeaderSub}>{props.summary}</span>
+          </span>
+        </div>
         <div className={statusGroup} role="group" aria-label={t('financial.list.status.group.approval')}>
           <span className={statusGroupLabel}>{t('financial.list.status.group.approval')}</span>
           <Item
             enabled={props.canApprove}
             running={running}
+            icon={<CheckIcon />}
             labelTag="financial.list.status.approve"
             hintTag="financial.list.status.approveHint"
             disabledTitleTag="financial.list.status.needOpen"
@@ -110,6 +154,7 @@ export function StatusActions(props: StatusActionsProps): ReactNode {
           <Item
             enabled={props.canReopen}
             running={running}
+            icon={<EditIcon size={16} />}
             labelTag="financial.list.status.reopen"
             hintTag="financial.list.status.reopenHint"
             disabledTitleTag="financial.list.status.needApproved"
@@ -122,6 +167,7 @@ export function StatusActions(props: StatusActionsProps): ReactNode {
           <Item
             enabled={props.canPay}
             running={running}
+            icon={<CreditCardIcon />}
             labelTag="financial.list.status.pay"
             hintTag="financial.list.status.payHint"
             disabledTitleTag="financial.list.status.needApprovedToPay"
@@ -134,6 +180,7 @@ export function StatusActions(props: StatusActionsProps): ReactNode {
           <Item
             enabled={props.canUndoPayment}
             running={running}
+            icon={<UndoIcon />}
             labelTag="financial.list.undo.payment.action"
             hintTag="financial.list.undo.payment.actionHint"
             disabledTitleTag="financial.list.undo.payment.needPaid"
@@ -142,9 +189,11 @@ export function StatusActions(props: StatusActionsProps): ReactNode {
           <Item
             enabled={props.canUndoTransmission}
             running={running}
+            icon={<SendIcon />}
             labelTag="financial.list.undo.transmission.action"
             hintTag="financial.list.undo.transmission.actionHint"
             disabledTitleTag="financial.list.undo.transmission.needTransmitted"
+            noteTag="financial.list.undo.transmission.note"
             onClick={props.onUndoTransmission}
           />
         </div>
@@ -153,6 +202,7 @@ export function StatusActions(props: StatusActionsProps): ReactNode {
           <Item
             enabled={props.canDelete}
             running={running}
+            icon={<TrashIcon size={16} />}
             labelTag="financial.list.delete.action"
             hintTag="financial.list.delete.actionHint"
             disabledTitleTag="financial.list.delete.needOpen"

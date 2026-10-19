@@ -18,9 +18,9 @@ export const trigger = style({
   borderRadius: vars.radius.md,
   border: `${vars.borderWidth.thin} solid color-mix(in srgb, ${vars.color.institutional.paperRule} 55%, ${vars.color.institutional.paperWarm})`,
   background: vars.color.surface.default,
-  color: vars.color.institutional.ink3,
+  color: vars.color.institutional.ink2,
   fontSize: vars.font.size.sm,
-  fontWeight: vars.font.weight.medium,
+  fontWeight: vars.font.weight.semibold,
   fontFamily: vars.font.family.body,
   whiteSpace: 'nowrap',
   flexShrink: 0,
@@ -38,7 +38,7 @@ export const menu = style({
   borderRadius: vars.radius.lg,
   boxShadow: vars.shadow.cardElevated,
   border: `${vars.borderWidth.thin} solid ${vars.color.border.subtle}`,
-  minInlineSize: '8.75rem',
+  minInlineSize: '12rem',
   overflow: 'hidden',
 })
 
@@ -82,4 +82,12 @@ export const itemCol = style({
 export const itemHint = style({
   fontSize: vars.font.size.xs,
   color: vars.color.institutional.ink5,
+})
+
+// Spec 119 (base visual da P.O., 19/10): os botões da barra de seleção seguem o MESMO molde — "Alterar
+// vencimento", "Alterar status" e "Exportar". O chevron indica que o botão abre menu.
+export const triggerChevron = style({
+  display: 'inline-flex',
+  color: vars.color.institutional.ink4,
+  selectors: { 'details[open] &': { transform: 'rotate(180deg)' } },
 })

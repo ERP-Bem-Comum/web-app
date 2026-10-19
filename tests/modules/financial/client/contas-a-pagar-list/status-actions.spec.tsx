@@ -17,6 +17,7 @@ afterEach(() => {
 })
 
 const props = (over: Partial<StatusActionsProps> = {}): StatusActionsProps => ({
+  summary: '1 documento • Pago',
   canApprove: false,
   canReopen: false,
   canDelete: false,
