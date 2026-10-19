@@ -49,6 +49,7 @@ export interface CompleteCollaboratorRegistrationInput {
   rg?: string
   dateOfBirth?: string
   genderIdentity?: string
+  genderIdentityDescription?: string // core-api#1054; só com genderIdentity = 'OUTRO'
   race?: string
   education?: string
   foodCategory?: string
@@ -77,7 +78,14 @@ export interface CompleteCollaboratorRegistrationInput {
 
 // Banco/PIX (spec 120, core-api#1029) e território (spec 121, core-api#1053) entram no PUT: `null` MANTÉM
 // o que está gravado (não remove); objeto valida e substitui.
-export type UpdateCollaboratorInput = CreateCollaboratorInput & { id: string }
+// RG, nascimento e raça (spec 124, core-api#1070): preenchidos UMA vez — ausente mantém, vazio grava,
+// igual mantém, diferente do gravado é recusado (409).
+export type UpdateCollaboratorInput = CreateCollaboratorInput & {
+  id: string
+  rg?: string
+  dateOfBirth?: string
+  race?: string
+}
 
 export interface DeactivateCollaboratorInput {
   id: string
@@ -124,6 +132,7 @@ export type CollaboratorDetail = CollaboratorListItem &
     emergencyContactName?: string
     emergencyContactTelephone?: string
     genderIdentity?: string
+    genderIdentityDescription?: string // core-api#1054; só com genderIdentity = 'OUTRO'
     race?: string
     allergies?: string
     foodCategory?: string

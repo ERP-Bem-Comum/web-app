@@ -133,15 +133,15 @@ O Controller gerencia o estado transiente de exibição dos filtros avançados.
 
 ## Decisões de Domínio (divergências corrigidas vs. spec v1)
 
-| Decisão | Motivação | Status |
-|---|---|---|
-| `Vigente` → `Em Andamento` | Alinhamento com linguagem do P.O. e v1 | ✅ Implementado |
-| `Encerrado` → `Finalizado` | Idem | ✅ Implementado |
-| Remover `Rascunho` de `AditivoStatus` | Decisão do P.O. (2026-06-02) | ✅ Implementado |
-| `currentValue` exibido como **Valor Atual** | Backend já entrega; não calculamos no client | ✅ Implementado |
-| **Saldo** = placeholder `"—"` | Módulo Financeiro ainda não integrado; evita cálculo incorreto | ✅ Implementado |
-| Filtros **server-side** (não client-side) | Performance com grandes volumes; dual-state eliminado | ✅ Implementado |
-| `startDate` em aditivos | Mapeado do backend (PR #15) | ✅ Implementado |
+| Decisão                                     | Motivação                                                      | Status          |
+| ------------------------------------------- | -------------------------------------------------------------- | --------------- |
+| `Vigente` → `Em Andamento`                  | Alinhamento com linguagem do P.O. e v1                         | ✅ Implementado |
+| `Encerrado` → `Finalizado`                  | Idem                                                           | ✅ Implementado |
+| Remover `Rascunho` de `AditivoStatus`       | Decisão do P.O. (2026-06-02)                                   | ✅ Implementado |
+| `currentValue` exibido como **Valor Atual** | Backend já entrega; não calculamos no client                   | ✅ Implementado |
+| **Saldo** = placeholder `"—"`               | Módulo Financeiro ainda não integrado; evita cálculo incorreto | ✅ Implementado |
+| Filtros **server-side** (não client-side)   | Performance com grandes volumes; dual-state eliminado          | ✅ Implementado |
+| `startDate` em aditivos                     | Mapeado do backend (PR #15)                                    | ✅ Implementado |
 
 ## Regras que esta feature demonstra (e o lint cobra)
 
@@ -193,12 +193,12 @@ Os seguintes campos ainda **não são persistidos** pelo core-api; o frontend os
 > nunca dado falso. Backlog espelhado no core-api em `handbook/po-feedback/0001-gap-api-v2-contracts.md`,
 > **ADR-0032** e `specs/001-partners-http-gaps/`.
 
-| # | O backend precisa fazer | Bloqueia o quê no front | Status front |
-|---|---|---|---|
-| 1 | **Vínculo de parceiro no contrato** — `contractor:{type,id}` no `POST /api/v2/contracts`; coluna no agregado/tabela; snapshot no `GET /:id` (+ `ActView`) | Associar contrato ↔ contratado (hoje o contrato fica "solto") | ✅ pronto — busca de parceiro via **agregador**; só falta para onde enviar o vínculo |
-| 2 | ~~**`PATCH /api/v2/contracts/:id`**~~ **ENTREGUE pelo core-api** (metadados: `title/objective/observations/email/telephone`; valor/período seguem imutáveis via aditivo) | Editar contato/observações do contrato | 🟢 **ligado** — `update()` consome o PATCH real; detalhe lê `observations/email/telephone` (2026-06-07) |
-| 3 | ~~**Agregador `GET /api/v1/partners`**~~ **ENTREGUE pelo core-api** (busca unificada) | Otimizar o seletor de contratado | 🟢 **ligado** — fan-out de 4 GETs substituído por **1 chamada** ao agregador (2026-06-07) |
-| 4 | ~~**Export CSV** de `financiers`/`acts`/`collaborators`~~ **ENTREGUE pelo core-api** | Exportar parceiros | 🟢 **ligado** — `exportPartnersFn` (passthrough `text/csv`) no módulo **partners** para os 4 tipos (2026-06-07) |
+| #   | O backend precisa fazer                                                                                                                                                  | Bloqueia o quê no front                                       | Status front                                                                                                    |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| 1   | **Vínculo de parceiro no contrato** — `contractor:{type,id}` no `POST /api/v2/contracts`; coluna no agregado/tabela; snapshot no `GET /:id` (+ `ActView`)                | Associar contrato ↔ contratado (hoje o contrato fica "solto") | ✅ pronto — busca de parceiro via **agregador**; só falta para onde enviar o vínculo                            |
+| 2   | ~~**`PATCH /api/v2/contracts/:id`**~~ **ENTREGUE pelo core-api** (metadados: `title/objective/observations/email/telephone`; valor/período seguem imutáveis via aditivo) | Editar contato/observações do contrato                        | 🟢 **ligado** — `update()` consome o PATCH real; detalhe lê `observations/email/telephone` (2026-06-07)         |
+| 3   | ~~**Agregador `GET /api/v1/partners`**~~ **ENTREGUE pelo core-api** (busca unificada)                                                                                    | Otimizar o seletor de contratado                              | 🟢 **ligado** — fan-out de 4 GETs substituído por **1 chamada** ao agregador (2026-06-07)                       |
+| 4   | ~~**Export CSV** de `financiers`/`acts`/`collaborators`~~ **ENTREGUE pelo core-api**                                                                                     | Exportar parceiros                                            | 🟢 **ligado** — `exportPartnersFn` (passthrough `text/csv`) no módulo **partners** para os 4 tipos (2026-06-07) |
 
 ## Como rodar / validar
 
@@ -253,14 +253,14 @@ pnpm typecheck && pnpm lint && pnpm build
 
 Alterações visuais aplicadas seguindo a identidade da v1 (paleta institucional: azul `#396496`, verde `#1f7d55`, fundos creme `#faf7f2`, bordas `#e5ded4`):
 
-| Alteração | Onde | Detalhe |
-|---|---|---|
-| **Títulos de sections** (main + aside) | `sectionTitle`, `asideLabel` | Azul `#396496` → marrom-escuro `#332e29` (`ink2`) — mesmo tom do título "Novo Contrato" da topbar |
-| **Títulos do modal** | `modalTitle` | Já estava em `ink2`; mantido |
-| **Labels do modal** | `summaryCardLabel`, `modalStatusLabel` | Cinza intencional (`ink5`), não alterado |
-| **Contratado selecionado** | `partnerSelectedWrap`, `partnerCardBody` | Layout flex row: dados à esquerda, botão "Trocar" à direita |
-| **Botão "Trocar"** | `partnerSwapCompact` | Caixa compacta (`1.625rem` altura, padding menor, fonte `0.75rem`), posicionado à direita dos dados |
-| **Card removido** | — | Container `partnerCard` removido; dados aparecem sem background/borda |
+| Alteração                              | Onde                                     | Detalhe                                                                                             |
+| -------------------------------------- | ---------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| **Títulos de sections** (main + aside) | `sectionTitle`, `asideLabel`             | Azul `#396496` → marrom-escuro `#332e29` (`ink2`) — mesmo tom do título "Novo Contrato" da topbar   |
+| **Títulos do modal**                   | `modalTitle`                             | Já estava em `ink2`; mantido                                                                        |
+| **Labels do modal**                    | `summaryCardLabel`                       | Cinza intencional (`ink5`), não alterado                                                            |
+| **Contratado selecionado**             | `partnerSelectedWrap`, `partnerCardBody` | Layout flex row: dados à esquerda, botão "Trocar" à direita                                         |
+| **Botão "Trocar"**                     | `partnerSwapCompact`                     | Caixa compacta (`1.625rem` altura, padding menor, fonte `0.75rem`), posicionado à direita dos dados |
+| **Card removido**                      | —                                        | Container `partnerCard` removido; dados aparecem sem background/borda                               |
 
 #### Correções de bugs na criação de contrato
 
@@ -324,13 +324,13 @@ expõe retornam o erro-como-valor `'not-implemented'` (mapeado para a tag i18n
 
 #### Problemas conhecidos / Workarounds
 
-| Problema | Workaround atual | Resolução futura |
-|---|---|---|
-| `Invalid server function ID` (cache Vite) | Limpar `node_modules/.vite`, `.vanilla-cache`, `.tanstack`; reiniciar `pnpm dev` | Normalizar após atualizações de server functions |
-| Core-api offline em dev → erro de conectividade | Dev fallback retorna mock quando sem sessão | Rodar `docker compose up -d` para stack completa |
-| `supplierId` etc. não persistidos pelo backend | Enviados na requisição, mas backend ignora | Aguardar PR do backend |
-| Criação de contrato com sessão ativa pode falhar | Logout + retry ativa o dev fallback | Implementar mock condicional por flag de env |
+| Problema                                         | Workaround atual                                                                 | Resolução futura                                 |
+| ------------------------------------------------ | -------------------------------------------------------------------------------- | ------------------------------------------------ |
+| `Invalid server function ID` (cache Vite)        | Limpar `node_modules/.vite`, `.vanilla-cache`, `.tanstack`; reiniciar `pnpm dev` | Normalizar após atualizações de server functions |
+| Core-api offline em dev → erro de conectividade  | Dev fallback retorna mock quando sem sessão                                      | Rodar `docker compose up -d` para stack completa |
+| `supplierId` etc. não persistidos pelo backend   | Enviados na requisição, mas backend ignora                                       | Aguardar PR do backend                           |
+| Criação de contrato com sessão ativa pode falhar | Logout + retry ativa o dev fallback                                              | Implementar mock condicional por flag de env     |
 
 ---
 
-*Última atualização: 2026-06-02 por Kimi Code (sessão de estilização + correções críticas)*
+_Última atualização: 2026-06-02 por Kimi Code (sessão de estilização + correções críticas)_

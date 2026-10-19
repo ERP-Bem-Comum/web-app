@@ -60,6 +60,7 @@ export const CoreApiCollaboratorDetailSchema = CoreApiCollaboratorItemSchema.ext
   emergencyContactName: z.string().trim().nullish(),
   emergencyContactTelephone: z.string().trim().nullish(),
   genderIdentity: z.string().trim().nullish(),
+  genderIdentityDescription: z.string().trim().nullish(), // core-api#1054
   race: z.string().trim().nullish(),
   allergies: z.string().trim().nullish(),
   foodCategory: z.string().trim().nullish(),

@@ -11,7 +11,7 @@ import { partnersErrorTag } from '#modules/partners/client/data/helpers/partners
 import { collaboratorRepository } from '#modules/partners/client/data/repository/collaborator.repository.instance.ts'
 import type {
   CollaboratorDetail,
-  CollaboratorWriteInput,
+  CollaboratorUpdateInput,
   CollaboratorCompleteInput,
   CollaboratorExportFile,
 } from '#modules/partners/client/data/model/collaborator.model.ts'
@@ -27,7 +27,7 @@ export type { CollaboratorDetail } from '#modules/partners/client/data/model/col
 
 export type SaveCollaboratorArgs = Readonly<{
   id: string
-  pre: CollaboratorWriteInput
+  pre: CollaboratorUpdateInput
   complete: CollaboratorCompleteInput
   includeComplete: boolean
 }>

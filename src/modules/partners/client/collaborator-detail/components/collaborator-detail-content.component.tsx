@@ -24,6 +24,7 @@ import {
   grid,
   colSpanFull,
   field,
+  fieldHighlight,
   fieldLabel,
   control,
   input,
@@ -38,6 +39,8 @@ import {
 import {
   OCCUPATION_AREAS,
   EMPLOYMENT_RELATIONSHIPS,
+  GENDER_IDENTITY_OPTIONS,
+  GENDER_IDENTITY_OTHER,
   RACES,
   EDUCATION_LEVELS,
   EDUCATION_LEVEL_OPTIONS,
@@ -49,6 +52,7 @@ import {
   BR_UF,
   type CollaboratorDetailFormController,
   type CollaboratorDetailFormState,
+  type LockedPersonalFields,
 } from './collaborator-detail-form.controller.ts'
 
 const t = createTranslator(ptBR)
@@ -58,6 +62,13 @@ export type CollaboratorDetailContentProps = Readonly<{
   editing: boolean
   showComplete: boolean
   preTitle: string
+  /**
+   * Quais dados pessoais já estão GRAVADOS (spec 124): travam no modo Editar — dado gravado não muda (P.O.,
+   * 12/10), como o CPF. O que ainda FALTA segue editável e é preenchido pelo PUT (P.O., 19/10;
+   * core-api#1070). Vem do detalhe carregado, nunca do form (senão travaria ao digitar). Opcional: ausente =
+   * nada travado.
+   */
+  lockedPersonal?: LockedPersonalFields
 }>
 
 // Wrapper de <select> "brand": appearance:none + chevron desenhado (o mock remove a seta nativa).
@@ -103,6 +114,7 @@ export function CollaboratorDetailContent({
   editing,
   showComplete,
   preTitle,
+  lockedPersonal,
 }: CollaboratorDetailContentProps): ReactNode {
   const isInvalid = (key: string): boolean => c.errors[key] === true
   const invalidMsg = (key: string): string | null =>
@@ -121,12 +133,14 @@ export function CollaboratorDetailContent({
       /** Explicação mostrada no modo Editar quando o campo fica travado (o porquê, não só o cinza). */
       lockedHint?: string
       errorKey?: string
+      /** Campo que acabou de aparecer: halo que some sozinho em ~3s (só no Editar, quando o usuário o abriu). */
+      highlight?: boolean
     },
   ): ReactNode => {
     const disabled = opts?.readOnly === true ? true : !editing
     const display = opts?.mask !== undefined ? formatMask(opts.mask, c.state[key]) : c.state[key]
     return (
-      <div className={field}>
+      <div className={opts?.highlight === true && editing ? `${field} ${fieldHighlight}` : field}>
         <label htmlFor={`cd-${key}`} className={fieldLabel}>
           {label}
         </label>
@@ -156,7 +170,7 @@ export function CollaboratorDetailContent({
     key: keyof CollaboratorDetailFormState,
     label: string,
     options: readonly Readonly<{ value: string; label: string }>[],
-    opts?: { readOnly?: boolean; errorKey?: string },
+    opts?: { readOnly?: boolean; lockedHint?: string; errorKey?: string },
   ): ReactNode => {
     const disabled = opts?.readOnly === true ? true : !editing
     const invalid = opts?.errorKey !== undefined && isInvalid(opts.errorKey)
@@ -182,12 +196,21 @@ export function CollaboratorDetailContent({
             </option>
           ))}
         </SelectControl>
+        {editing && opts?.readOnly === true && opts.lockedHint !== undefined ? (
+          <span className={hint}>{opts.lockedHint}</span>
+        ) : null}
         {opts?.errorKey !== undefined && invalidMsg(opts.errorKey) !== null ? (
           <span className={fieldError}>{invalidMsg(opts.errorKey)}</span>
         ) : null}
       </div>
     )
   }
+
+  // Dado pessoal já gravado (spec 124): mesmo tratamento do CPF — desativado e dizendo o porquê. Vazio segue livre.
+  const immutable = (locked: boolean | undefined) =>
+    locked === true
+      ? { readOnly: true, lockedHint: t('partners.collaborators.form.personalLocked') }
+      : undefined
 
   const ufOptions = BR_UF.map((u) => ({ value: u.sigla, label: `${u.sigla} — ${u.nome}` }))
   const areaOptions = OCCUPATION_AREAS.map((a) => ({
@@ -217,10 +240,11 @@ export function CollaboratorDetailContent({
     label: t(`partners.collaborators.education.${v}`),
   }))
   const foodOptions = FOOD_CATEGORIES.map((v) => ({ value: v, label: t(`partners.collaborators.food.${v}`) }))
-  const sexOptions = [
-    { value: 'F', label: t('partners.collaborators.detail.sex.F') },
-    { value: 'M', label: t('partners.collaborators.detail.sex.M') },
-  ]
+  // Identidade de Gênero substitui o antigo "Sexo (F/M)" na tela (spec 122). Opções na redação do cliente.
+  const genderOptions = GENDER_IDENTITY_OPTIONS.map((v) => ({
+    value: v,
+    label: t(`partners.collaborators.gender.${v}`),
+  }))
   const maritalOptions = MARITAL_STATUSES.map((v) => ({
     value: v,
     label: t(`partners.collaborators.detail.marital.${v}`),
@@ -384,12 +408,19 @@ export function CollaboratorDetailContent({
             </div>
             <div className={sectionBody}>
               <div className={grid}>
-                {sel('sex', t('partners.collaborators.detail.field.sex'), sexOptions)}
-                {sel('race', t('partners.collaborators.detail.field.race'), raceOptions)}
+                {sel(
+                  'race',
+                  t('partners.collaborators.detail.field.race'),
+                  raceOptions,
+                  immutable(lockedPersonal?.race),
+                )}
                 {sel('maritalStatus', t('partners.collaborators.detail.field.maritalStatus'), maritalOptions)}
-                {txt('rg', t('partners.collaborators.detail.field.rg'))}
+                {txt('rg', t('partners.collaborators.detail.field.rg'), immutable(lockedPersonal?.rg))}
                 {txt('completeAddress', t('partners.collaborators.detail.field.completeAddress'))}
-                {txt('dateOfBirth', t('partners.collaborators.detail.field.dateOfBirth'), { type: 'date' })}
+                {txt('dateOfBirth', t('partners.collaborators.detail.field.dateOfBirth'), {
+                  type: 'date',
+                  ...immutable(lockedPersonal?.dateOfBirth),
+                })}
                 {txt('telephone', t('partners.collaborators.detail.field.telephone'), { mask: 'phone' })}
                 {sel('education', t('partners.collaborators.detail.field.education'), educationOptions)}
                 {sel(
@@ -401,6 +432,20 @@ export function CollaboratorDetailContent({
                   'publicSectorExperienceDuration',
                   t('partners.collaborators.detail.field.experienceDuration'),
                 )}
+                {/* Identidade de Gênero fica por ÚLTIMO (P.O., 16/10): o texto de "Outra" (core-api#1054)
+                    entra na vaga ao lado sem empurrar nenhum campo da seção, e chega com um destaque. */}
+                {sel(
+                  'genderIdentity',
+                  t('partners.collaborators.detail.field.genderIdentity'),
+                  genderOptions,
+                )}
+                {c.state.genderIdentity === GENDER_IDENTITY_OTHER
+                  ? txt(
+                      'genderIdentityDescription',
+                      t('partners.collaborators.detail.field.genderIdentityDescription'),
+                      { highlight: true },
+                    )
+                  : null}
               </div>
             </div>
           </section>
