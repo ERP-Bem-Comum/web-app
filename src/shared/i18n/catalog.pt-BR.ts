@@ -73,6 +73,7 @@ export const ptBR: Catalog = {
   'auth.error.reference-label': 'Código de referência:',
   // Contracts — Errors
   'contracts.error.invalid-code': 'Código do contrato inválido.',
+  'contracts.error.number-duplicated': 'Já existe um contrato com este número.',
   'contracts.error.invalid-value': 'Valor inválido ou excede o teto permitido.',
   'contracts.error.invalid-period': 'Período de vigência inválido.',
   'contracts.error.missing-contractor': 'Contratante obrigatório não informado.',
@@ -235,6 +236,10 @@ export const ptBR: Catalog = {
   'contracts.create.partnerNotFound': 'Nenhum contratado encontrado',
   'contracts.create.newPartner': 'Cadastrar novo parceiro',
   'contracts.create.field.classification': 'Classificação',
+  'contracts.create.field.number': 'Número do contrato',
+  'contracts.create.field.numberHint': 'Deixe vazio para gerar automaticamente',
+  'contracts.create.field.numberInvalid': 'Use o formato 0123/2024.',
+  'contracts.create.numberPending': 'número a definir',
   'contracts.create.field.classification.ct': 'Contrato',
   'contracts.create.field.classification.os': 'Ordem de Serviço',
   'contracts.create.field.contractModel': 'Modelo',
@@ -289,7 +294,8 @@ export const ptBR: Catalog = {
   'contracts.create.modal.title': 'Contrato criado com sucesso!',
   'contracts.create.modal.subtitle': 'O contrato {{code}} foi cadastrado.',
   'contracts.create.modal.button': 'Ir para detalhes',
-  'contracts.create.modal.finalizeTitle': 'Finalizar cadastro',
+  'contracts.create.modal.finalizeTitle': 'Concluir Novo Contrato',
+  'contracts.create.modal.finalizeTitleOS': 'Concluir Nova Ordem de Serviço',
   'contracts.create.modal.finalizeSubtitle': 'Revise os dados e anexe o documento assinado',
   'contracts.create.modal.summary': 'Resumo',
   'contracts.create.modal.statusPreview': 'Status Preview',
@@ -380,6 +386,8 @@ export const ptBR: Catalog = {
   'partners.error.unauthorized': 'Sua sessão expirou. Entre novamente.',
   'partners.error.forbidden': 'Você não tem permissão para esta ação.',
   'partners.error.conflict': 'Já existe um registro com estes dados.',
+  'partners.error.collaborator-personal-data-immutable':
+    'RG, data de nascimento ou raça/cor já foram registrados e não podem ser alterados. Recarregue a página.',
   'partners.error.connectivity': 'Falha de conexão. Tente novamente.',
   'partners.error.server': 'Ocorreu um erro inesperado.',
   'partners.error.invalid-service-category': 'Categoria de serviço inválida.',
@@ -780,7 +788,8 @@ export const ptBR: Catalog = {
   'partners.collaborators.detail.field.telephone': 'Celular',
   'partners.collaborators.detail.field.emergencyContactName': 'Nome contato de emergência',
   'partners.collaborators.detail.field.emergencyContactTelephone': 'Número contato de emergência',
-  'partners.collaborators.detail.field.genderIdentity': 'Identidade de gênero',
+  'partners.collaborators.detail.field.genderIdentity': 'Identidade de Gênero',
+  'partners.collaborators.detail.field.genderIdentityDescription': 'Qual identidade de gênero?',
   'partners.collaborators.detail.field.race': 'Raça/Cor',
   'partners.collaborators.detail.field.allergies': 'Alergias',
   'partners.collaborators.detail.field.foodCategory': 'Categoria alimentar',
@@ -863,7 +872,7 @@ export const ptBR: Catalog = {
   'partners.collaborators.paginator.next': 'Próxima',
   'partners.collaborators.paginator.page': 'Página',
   'partners.collaborators.paginator.of': 'de',
-  'partners.collaborators.area.PARC': 'Parcerias',
+  'partners.collaborators.area.PARC': 'PARC',
   'partners.collaborators.area.DDI': 'DDI',
   'partners.collaborators.area.DCE': 'DCE',
   'partners.collaborators.area.EPV': 'EPV',
@@ -897,12 +906,20 @@ export const ptBR: Catalog = {
   'partners.collaborators.form.name': 'Nome Completo',
   'partners.collaborators.form.email': 'Email',
   'partners.collaborators.form.cpf': 'CPF',
+  'partners.collaborators.form.cpfLocked': 'O CPF não pode ser alterado depois do cadastro.',
+  'partners.collaborators.form.personalLocked': 'Já registrado — não pode ser alterado.',
   'partners.collaborators.form.occupationArea': 'Área de Atuação',
   'partners.collaborators.form.role': 'Função',
   'partners.collaborators.form.startOfContract': 'Início de Contrato',
   'partners.collaborators.form.employmentRelationship': 'Vínculo Empregatício',
   'partners.collaborators.form.select': 'Selecione…',
   'partners.collaborators.form.invalid': 'Verifique este campo.',
+  'partners.collaborators.form.bankRemovalBlocked':
+    'Os dados bancários podem ser alterados, mas não apagados. Preencha banco, agência e conta.',
+  'partners.collaborators.form.pixRemovalBlocked':
+    'A chave PIX pode ser alterada, mas não apagada. Preencha a chave.',
+  'partners.collaborators.form.territoryRemovalBlocked':
+    'O território pode ser alterado, mas não apagado. Preencha a UF ou o município.',
   'partners.collaborators.form.save': 'Salvar',
   'partners.collaborators.form.cancel': 'Cancelar',
   'partners.collaborators.form.saving': 'Salvando…',
@@ -1131,6 +1148,14 @@ export const ptBR: Catalog = {
   'financial.timeline.field.description': 'Descrição',
   'financial.timeline.field.paymentMethod': 'Forma de pagamento',
   'financial.timeline.field.status': 'Status',
+  // spec 125: categorização e complemento entram no Histórico (antes eram descartados).
+  'financial.timeline.field.paymentDetail': 'Complemento do pagamento',
+  'financial.timeline.field.programRef': 'Programa',
+  'financial.timeline.field.budgetPlanRef': 'Plano orçamentário',
+  'financial.timeline.field.costCenterRef': 'Centro de custo',
+  'financial.timeline.field.categoryRef': 'Categoria',
+  'financial.timeline.field.subcategoryRef': 'Subcategoria',
+  'financial.timeline.value.unresolved': 'não identificado',
   'financial.detail.loading': 'Carregando…',
   'financial.detail.section.composicao': 'Composição Financeira',
   'financial.detail.section.titulos': 'Títulos Gerados',
@@ -1159,12 +1184,20 @@ export const ptBR: Catalog = {
   'financial.detail.file.empty': 'Nenhum arquivo anexado',
   'financial.detail.file.soon': 'Disponível ao anexar o documento',
   'financial.detail.file.attached': 'Arquivo anexado', // #568: comprovante-fonte presente (OCR)
-  'financial.detail.edit': 'Editar pagamento',
+  'financial.detail.edit': 'Editar documento',
   'financial.detail.editSoon': 'Edição do documento — em breve',
   'financial.create.hero.placeholder': 'Selecione o fornecedor',
   'financial.create.hero.change': 'Alterar fornecedor',
   'financial.create.submit': 'Salvar Documento',
   'financial.edit.title': 'Editar Documento',
+  // spec 125 — editar documento Aprovado (continua Aprovado).
+  'financial.edit.approved.awaitingBackend':
+    'A alteração de forma de pagamento e de categorização em documento Aprovado ainda não está disponível. Por enquanto, só a descrição pode ser salva.',
+  'financial.edit.approved.methodAlreadyChanged':
+    'A forma de pagamento já foi alterada uma vez após a aprovação. Para mudar de novo, faça a baixa manual.',
+  'financial.edit.approved.barcodeLocked': 'O código de barras não pode ser alterado depois da aprovação.',
+  'financial.edit.approved.barcodeMethodBlocked':
+    'Depois da aprovação não é possível voltar para uma forma paga por código de barras.',
   'financial.create.editSubmit': 'Salvar alterações',
   'financial.create.discard': 'Descartar',
   'financial.create.backToList': 'Voltar',
@@ -2842,8 +2875,8 @@ export const ptBR: Catalog = {
   'reports.realizadoXPlanejado.monthTitle.nov': 'Nov',
   'reports.realizadoXPlanejado.monthTitle.dec': 'Dez',
 
-  // ── Relatório "Equipe ABC" (front-first; dados sintéticos/anonimizados — LGPD) ──
-  'reports.equipe.title': 'Relatório Equipe ABC',
+  // ── Relatório "Equipe Bem Comum" (front-first; dados sintéticos/anonimizados — LGPD) ──
+  'reports.equipe.title': 'Relatório Equipe Bem Comum',
   'reports.equipe.back': 'Voltar',
   'reports.equipe.empty': 'Nenhum colaborador para exibir.',
   // Estados da fonte real (#114, endpoint LGPD-safe): carregando + erro + gráficos demográficos indisponíveis.
@@ -2871,6 +2904,21 @@ export const ptBR: Catalog = {
   'reports.equipe.filters.status': 'Status',
   'reports.equipe.filters.situacaoCadastral': 'Situação Cadastral',
   'reports.equipe.filters.idade': 'Idade',
+  'reports.equipe.filters.geracao': 'Geração',
+  'reports.equipe.generation.BOOMER': 'Baby Boomer',
+  'reports.equipe.generation.GEN_X': 'Geração X',
+  'reports.equipe.generation.MILLENNIAL': 'Millennial (Geração Y)',
+  'reports.equipe.generation.GEN_Z': 'Geração Z',
+  'reports.equipe.generation.OUTROS': 'Outras gerações',
+  'reports.equipe.generation.NA': 'N/A',
+  // Opções do FILTRO de Geração com o período (spec 127). Anos = recortes Pew do core-api
+  // (`partners/public-api/generation.ts`, `generationIdOf`) — mudou lá, muda aqui.
+  'reports.equipe.filters.generationOption.BOOMER': 'Baby Boomer (1946–1964)',
+  'reports.equipe.filters.generationOption.GEN_X': 'Geração X (1965–1980)',
+  'reports.equipe.filters.generationOption.MILLENNIAL': 'Millennial / Geração Y (1981–1996)',
+  'reports.equipe.filters.generationOption.GEN_Z': 'Geração Z (1997–2012)',
+  'reports.equipe.filters.generationOption.OUTROS': 'Outras gerações (até 1945 ou após 2012)',
+  'reports.equipe.filters.generationOption.NA': 'N/A (sem data de nascimento)',
   'reports.equipe.filters.vinculo': 'Vínculo Empregatício',
   'reports.equipe.filters.filtrar': 'Filtrar',
 

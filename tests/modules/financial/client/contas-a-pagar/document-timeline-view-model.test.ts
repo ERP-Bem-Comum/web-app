@@ -11,6 +11,7 @@ import {
   resolveTimelineTitle,
   deriveTimelineRows,
   deriveReconciledTitleRows,
+  buildTimelineValueResolver,
 } from '../../../../../src/modules/financial/client/contas-a-pagar-list/document-timeline.view-model.ts'
 import type { TimelineTargetPayable } from '../../../../../src/modules/financial/client/contas-a-pagar-list/document-timeline.view-model.ts'
 import type { DocumentTimelineEntry } from '../../../../../src/modules/financial/client/data/model/document.model.ts'
@@ -129,5 +130,78 @@ describe('deriveTimelineRows', () => {
     const rows = deriveTimelineRows([...entries].reverse()) // entra ascendente
     assert.equal(rows[0]?.eventType, 'DocumentSaved') // 19:40 (mais recente) no topo
     assert.equal(rows[1]?.eventType, 'DocumentDraftSaved') // 19:20 abaixo
+  })
+})
+
+// ── spec 125: categorização, complemento e forma de pagamento no Histórico ──────
+describe('deriveTimelineRows — campos resolvidos (spec 125)', () => {
+  const catalog: Readonly<Record<string, string>> = {
+    'financial.timeline.value.unresolved': 'não identificado',
+    'financial.paymentMethod.PIX': 'PIX',
+    'financial.paymentMethod.Boleto': 'Boleto',
+  }
+  const t = (k: string): string => catalog[k] ?? k
+  const resolve = buildTimelineValueResolver(
+    {
+      costCenter: (r) => (r === 'cc-1' ? 'Administrativo' : null),
+      categoryNode: (r) =>
+        r === 'cat-1'
+          ? { name: 'Serviços', parentId: null }
+          : r === 'sub-1'
+            ? { name: 'Consultoria', parentId: 'cat-1' }
+            : null,
+      program: (r) => (r === 'prog-1' ? 'PARC' : null),
+      budgetPlan: (r) => (r === 'plan-1' ? '2026 PARC 1.0' : null),
+    },
+    t,
+  )
+  const entry: DocumentTimelineEntry = {
+    eventType: 'DocumentSaved',
+    targetKind: 'Document',
+    targetId: 'd1',
+    occurredAt: '2026-10-14T12:00:00.000Z',
+    isSystem: false,
+    actorName: 'Ana',
+    changes: [
+      { field: 'paymentMethod', before: 'Boleto', after: 'PIX' },
+      { field: 'paymentDetail', before: '34191.79001', after: null },
+      { field: 'categoryRef', before: 'cat-old', after: 'cat-1' },
+      { field: 'subcategoryRef', before: null, after: 'sub-1' },
+      { field: 'costCenterRef', before: 'cc-1', after: 'cc-1' },
+      { field: 'programRef', before: 'prog-1', after: 'prog-1' },
+      { field: 'budgetPlanRef', before: 'plan-1', after: 'plan-1' },
+    ],
+  }
+
+  it('categorização e complemento entram (antes eram descartados)', () => {
+    for (const f of [
+      'paymentDetail',
+      'programRef',
+      'budgetPlanRef',
+      'costCenterRef',
+      'categoryRef',
+      'subcategoryRef',
+    ]) {
+      assert.equal(isTimelineFieldKnown(f), true, f)
+    }
+  })
+  it('traduz forma e ids em nomes; ref que não resolve → "não identificado", nunca o UUID', () => {
+    const [row] = deriveTimelineRows([entry], resolve)
+    const byField = new Map(row?.changes.map((c) => [c.fieldRaw, c]))
+    assert.equal(byField.get('paymentMethod')?.before, 'Boleto')
+    assert.equal(byField.get('paymentMethod')?.after, 'PIX')
+    assert.equal(byField.get('paymentDetail')?.before, '34191.79001')
+    assert.equal(byField.get('paymentDetail')?.after, '—')
+    assert.equal(byField.get('categoryRef')?.before, 'não identificado')
+    assert.equal(byField.get('categoryRef')?.after, 'Serviços')
+    assert.equal(byField.get('subcategoryRef')?.before, '—')
+    assert.equal(byField.get('subcategoryRef')?.after, 'Consultoria')
+    assert.equal(byField.get('costCenterRef')?.after, 'Administrativo')
+    assert.equal(byField.get('programRef')?.after, 'PARC')
+    assert.equal(byField.get('budgetPlanRef')?.after, '2026 PARC 1.0')
+  })
+  it('sem resolver → valor cru (compatível com quem não passa o resolver)', () => {
+    const [row] = deriveTimelineRows([entry])
+    assert.equal(row?.changes.find((c) => c.fieldRaw === 'categoryRef')?.after, 'cat-1')
   })
 })

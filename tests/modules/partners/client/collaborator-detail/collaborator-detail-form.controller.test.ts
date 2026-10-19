@@ -12,6 +12,10 @@ import {
   buildCompleteInput,
   computeHasCompleteData,
   stateFromDetail,
+  buildPaymentTarget,
+  validatePaymentTarget,
+  buildTerritory,
+  validateTerritory,
   type CollaboratorDetailFormState,
 } from '#modules/partners/client/collaborator-detail/components/collaborator-detail-form.controller.ts'
 import type { CollaboratorDetail } from '#modules/partners/client/data/model/collaborator.model.ts'
@@ -32,6 +36,7 @@ const emptyState: CollaboratorDetailFormState = {
   emergencyContactName: '',
   emergencyContactTelephone: '',
   genderIdentity: '',
+  genderIdentityDescription: '',
   race: '',
   allergies: '',
   foodCategory: '',
@@ -233,5 +238,161 @@ describe('stateFromDetail — hidratação a partir do detalhe', () => {
     assert.equal(out.hasChildren, true)
     assert.deepEqual(out.childrenAges, [3, 7])
     assert.equal(out.childrenCount, 2)
+  })
+})
+
+// ── Spec 120 — dados bancários e PIX editáveis no detalhe ─────────────────────────────────────────
+
+const detailBase: CollaboratorDetail = {
+  id: 'c-1',
+  name: 'Ana',
+  email: 'ana@x.org',
+  occupationArea: 'PARC',
+  role: 'Dev',
+  registration: 'pre-registration',
+  activation: 'active',
+  contractCount: 0,
+  cpf: '52998224725',
+  startOfContract: '2024-01-01T00:00:00.000Z',
+  employmentRelationship: 'CLT',
+  territory: null,
+  bankAccount: null,
+  pixKey: null,
+}
+const withBank: CollaboratorDetail = {
+  ...detailBase,
+  bankAccount: { bank: '237', agency: '1234', accountNumber: '5678', checkDigit: '9' },
+  pixKey: { keyType: 'email', key: 'ana@x.org' },
+}
+const filledBank = { bank: '001', agency: '4321', accountNumber: '98765', checkDigit: '1' }
+
+describe('stateFromDetail — banco legado (spec 120)', () => {
+  it('texto "237 - Bradesco" abre como o código 237', () => {
+    const s = stateFromDetail({
+      ...withBank,
+      bankAccount: { bank: '237 - Bradesco', agency: '1234', accountNumber: '5678', checkDigit: '9' },
+    })
+    assert.equal(s.bank, '237')
+  })
+  it('nome sem código fica como está (o seletor mostra "não reconhecido")', () => {
+    const s = stateFromDetail({
+      ...withBank,
+      bankAccount: { bank: 'Bradesco', agency: '1234', accountNumber: '5678', checkDigit: '9' },
+    })
+    assert.equal(s.bank, 'Bradesco')
+  })
+})
+
+describe('buildPaymentTarget — corpo do PUT (spec 120)', () => {
+  it('grupo vazio → null nos dois (o core-api mantém o gravado)', () => {
+    assert.deepEqual(buildPaymentTarget(emptyState), { bankAccount: null, pixKey: null })
+  })
+  it('grupo preenchido → objetos, com trim', () => {
+    const r = buildPaymentTarget({
+      ...emptyState,
+      ...filledBank,
+      accountNumber: ' 98765 ',
+      pixKeyType: 'cpf',
+      pixKey: '52998224725',
+    })
+    assert.deepEqual(r.bankAccount, { ...filledBank, accountNumber: '98765' })
+    assert.deepEqual(r.pixKey, { keyType: 'cpf', key: '52998224725' })
+  })
+  it('tipo de chave escolhido sem chave → pixKey null', () => {
+    assert.equal(buildPaymentTarget({ ...emptyState, pixKeyType: 'email' }).pixKey, null)
+  })
+})
+
+describe('validatePaymentTarget — antes do salvar (spec 120)', () => {
+  it('sem dado bancário e sem nada gravado → ok', () => {
+    assert.deepEqual(validatePaymentTarget(emptyState, detailBase), {})
+  })
+  it('grupo completo → ok', () => {
+    assert.deepEqual(
+      validatePaymentTarget(
+        { ...emptyState, ...filledBank, pixKey: 'ana@x.org', pixKeyType: 'email' },
+        detailBase,
+      ),
+      {},
+    )
+  })
+  it('banco parcial (só o banco) → marca agência e conta', () => {
+    const e = validatePaymentTarget({ ...emptyState, bank: '001' }, detailBase)
+    assert.equal(e['bankAccount.agency'], true)
+    assert.equal(e['bankAccount.accountNumber'], true)
+    assert.equal(e['bankAccount.bank'], undefined)
+  })
+  it('agência com 3 dígitos → inválida (core-api exige 4 + DV opcional)', () => {
+    const e = validatePaymentTarget({ ...emptyState, ...filledBank, agency: '123' }, detailBase)
+    assert.equal(e['bankAccount.agency'], true)
+  })
+  it('agência legada com hífen "1234-5" → ok', () => {
+    const e = validatePaymentTarget({ ...emptyState, ...filledBank, agency: '1234-5' }, detailBase)
+    assert.deepEqual(e, {})
+  })
+  it('esvaziar banco/PIX já gravados → bloqueia (null manteria o gravado e a tela mentiria)', () => {
+    const e = validatePaymentTarget(emptyState, withBank)
+    assert.equal(e['bankAccount.removal'], true)
+    assert.equal(e['pixKey.removal'], true)
+  })
+  it('trocar o banco já gravado → ok', () => {
+    const s = { ...stateFromDetail(withBank), bank: '001', accountNumber: '11111' }
+    assert.deepEqual(validatePaymentTarget(s, withBank), {})
+  })
+})
+
+// ── Spec 121 — território editável no detalhe (core-api#1053) ────────────────────────────────────
+
+const withTerritory: CollaboratorDetail = {
+  ...detailBase,
+  territory: { uf: 'CE', municipality: 'Fortaleza' },
+}
+
+describe('buildTerritory — corpo do PUT (spec 121)', () => {
+  it('UF e município vazios → null (o core-api mantém o gravado)', () => {
+    assert.equal(buildTerritory({ ...emptyState, uf: '', municipality: '   ' }), null)
+  })
+  it('os dois preenchidos → objeto, com trim', () => {
+    assert.deepEqual(buildTerritory({ ...emptyState, uf: 'SP', municipality: '  São Paulo ' }), {
+      uf: 'SP',
+      municipality: 'São Paulo',
+    })
+  })
+  it('só um preenchido → o outro vai null (substitui parcialmente)', () => {
+    assert.deepEqual(buildTerritory({ ...emptyState, uf: 'RJ', municipality: '' }), {
+      uf: 'RJ',
+      municipality: null,
+    })
+    assert.deepEqual(buildTerritory({ ...emptyState, uf: '', municipality: 'Sobral' }), {
+      uf: null,
+      municipality: 'Sobral',
+    })
+  })
+  it('hidratado do detalhe e sem mudança → reenvia o mesmo território', () => {
+    assert.deepEqual(buildTerritory(stateFromDetail(withTerritory)), withTerritory.territory)
+  })
+})
+
+describe('validateTerritory — antes do salvar (spec 121)', () => {
+  it('sem território gravado e nada preenchido → ok', () => {
+    assert.deepEqual(validateTerritory(emptyState, detailBase), {})
+  })
+  it('preencher território onde não havia → ok', () => {
+    assert.deepEqual(validateTerritory({ ...emptyState, uf: 'BA' }, detailBase), {})
+  })
+  it('trocar UF/município gravados → ok', () => {
+    assert.deepEqual(validateTerritory({ ...emptyState, uf: 'SP', municipality: '' }, withTerritory), {})
+  })
+  it('esvaziar território já gravado → bloqueia (null manteria o gravado e a tela mentiria)', () => {
+    const e = validateTerritory(emptyState, withTerritory)
+    assert.equal(e['territory.removal'], true)
+    assert.equal(e['territory.uf'], true)
+    assert.equal(e['territory.municipality'], true)
+  })
+  it('gravado só com campos vazios conta como sem território → ok', () => {
+    assert.deepEqual(
+      validateTerritory(emptyState, { ...detailBase, territory: { uf: null, municipality: null } }),
+      {},
+    )
   })
 })

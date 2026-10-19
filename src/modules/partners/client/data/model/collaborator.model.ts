@@ -21,7 +21,7 @@ export type RegistrationStatus = 'pre-registration' | 'complete'
 export type ActivationStatus = 'active' | 'inactive'
 // Reuso (DRY) dos tipos/validações de payment-target do Fornecedor (#40).
 export type { BankAccount, PixKey, PixKeyType }
-export { PIX_KEY_TYPES, isPixKeyType }
+export { PIX_KEY_TYPES, isPixKeyType, BankAccountFormSchema, PixKeyFormSchema }
 
 export const OCCUPATION_AREAS = ['PARC', 'DDI', 'DCE', 'EPV'] as const
 export type OccupationArea = (typeof OCCUPATION_AREAS)[number]
@@ -74,6 +74,21 @@ export const GENDER_IDENTITIES = [
   'NAO_BINARIO',
   'OUTRO',
 ] as const
+export type GenderIdentity = (typeof GENDER_IDENTITIES)[number]
+/**
+ * Opções do SELETOR de Identidade de Gênero (spec 122), na ordem e na redação definidas pelo cliente.
+ * TRAVESTI fica fora do seletor (decisão da P.O., 12/10) mas segue em `GENDER_IDENTITIES`, que espelha o
+ * enum do core-api — assim um valor gravado ainda é exibido e contado nos relatórios.
+ */
+export const GENDER_IDENTITY_OPTIONS = [
+  'MULHER_CIS',
+  'HOMEM_CIS',
+  'MULHER_TRANS',
+  'HOMEM_TRANS',
+  'NAO_BINARIO',
+  'OUTRO',
+  'PREFIRO_NAO_RESPONDER',
+] as const satisfies readonly GenderIdentity[]
 export const RACES = ['AMARELO', 'BRANCO', 'PARDO', 'INDIGENA', 'PRETO', 'PREFIRO_NAO_RESPONDER'] as const
 export const EDUCATION_LEVELS = [
   'EDUCACAO_INFANTIL',
@@ -84,6 +99,34 @@ export const EDUCATION_LEVELS = [
   'MESTRADO',
   'DOUTORADO',
 ] as const
+export type EducationLevel = (typeof EDUCATION_LEVELS)[number]
+/**
+ * Opções do SELETOR de Escolaridade (spec 126). EDUCACAO_INFANTIL fica fora (decisão da P.O., 19/10/2026) mas
+ * segue em `EDUCATION_LEVELS`, que espelha o enum do core-api e é a lista canônica do gráfico de Escolaridade
+ * do Equipe — tirar de lá descartaria do gráfico quem já tem o valor gravado.
+ */
+export const EDUCATION_LEVEL_OPTIONS = [
+  'ENSINO_FUNDAMENTAL',
+  'ENSINO_MEDIO',
+  'ENSINO_SUPERIOR',
+  'POS_GRADUACAO',
+  'MESTRADO',
+  'DOUTORADO',
+] as const satisfies readonly EducationLevel[]
+
+/**
+ * Opções de um seletor que esconde valores do enum: se o valor ATUAL é um dos escondidos (gravado antes da
+ * opção sair), ele entra no fim da lista — senão o <select> mostraria "Selecione..." e o dado pareceria
+ * faltando. Valor fora do enum inteiro não entra (não é dado válido).
+ */
+export const selectableWithCurrent = <V extends string>(
+  options: readonly V[],
+  all: readonly V[],
+  current: string,
+): readonly V[] => {
+  const hidden = all.find((v) => v === current && !options.includes(v))
+  return hidden === undefined ? options : [...options, hidden]
+}
 export const FOOD_CATEGORIES = [
   'ONIVORO',
   'VEGANO',
@@ -133,6 +176,7 @@ export type CollaboratorDetail = CollaboratorListItem &
     emergencyContactName?: string
     emergencyContactTelephone?: string
     genderIdentity?: string
+    genderIdentityDescription?: string
     race?: string
     allergies?: string
     foodCategory?: string
@@ -154,8 +198,8 @@ export type CollaboratorDetail = CollaboratorListItem &
     leaveRenewalDuration?: string
     publicSectorExperienceDuration?: string
     territory: Territory | null // #42
-    bankAccount: BankAccount | null // #40 — create-only; exibido read-only no detalhe
-    pixKey: PixKey | null // #40 — create-only; exibido read-only no detalhe
+    bankAccount: BankAccount | null // #40; editável no detalhe (spec 120)
+    pixKey: PixKey | null // #40; editável no detalhe (spec 120)
   }>
 
 export type CollaboratorListResponse = Readonly<{
@@ -191,9 +235,21 @@ export type CollaboratorWriteInput = Readonly<{
   startOfContract: string
   employmentRelationship: EmploymentRelationship
   territory: Territory | null
-  bankAccount: BankAccount | null // #40 — create-only (a borda de update faz strip)
-  pixKey: PixKey | null // #40 — create-only (a borda de update faz strip)
+  // #40. No PUT (spec 120): `null` MANTÉM o que está gravado (não remove); objeto substitui.
+  bankAccount: BankAccount | null
+  pixKey: PixKey | null
 }>
+
+/**
+ * Edição (PUT): o pré-cadastro + RG, nascimento e raça (spec 124, core-api#1070). Preenchidos UMA vez:
+ * ausente mantém o gravado, valor com o campo vazio grava, igual ao gravado mantém, diferente é recusado.
+ */
+export type CollaboratorUpdateInput = CollaboratorWriteInput &
+  Readonly<{
+    rg?: string
+    dateOfBirth?: string
+    race?: string
+  }>
 
 /** Cadastro completo (dados pessoais; todos opcionais). `id` identifica o colaborador. */
 export type CollaboratorCompleteInput = Readonly<{
@@ -201,6 +257,7 @@ export type CollaboratorCompleteInput = Readonly<{
   rg?: string
   dateOfBirth?: string
   genderIdentity?: string
+  genderIdentityDescription?: string
   race?: string
   education?: string
   foodCategory?: string

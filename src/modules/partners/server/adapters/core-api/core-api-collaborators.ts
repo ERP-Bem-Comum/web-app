@@ -30,6 +30,8 @@ import {
 
 const SLUG_TO_ERROR: Partial<Record<string, PartnersError>> = {
   'collaborator-import-malformed': 'collaborator-import-malformed',
+  // 409 — trocar RG/nascimento/raça já gravados (core-api#1070); não é "registro duplicado".
+  'collaborator-personal-data-immutable': 'collaborator-personal-data-immutable',
   unauthorized: 'unauthorized',
   forbidden: 'forbidden',
 }
@@ -108,6 +110,7 @@ const detailToModel = (raw: unknown): Result<CollaboratorDetail, PartnersError> 
     emergencyContactName: u(c.emergencyContactName),
     emergencyContactTelephone: u(c.emergencyContactTelephone),
     genderIdentity: u(c.genderIdentity),
+    genderIdentityDescription: u(c.genderIdentityDescription),
     race: u(c.race),
     allergies: u(c.allergies),
     foodCategory: u(c.foodCategory),
@@ -129,8 +132,8 @@ const detailToModel = (raw: unknown): Result<CollaboratorDetail, PartnersError> 
     leaveRenewalDuration: u(c.leaveRenewalDuration),
     publicSectorExperienceDuration: u(c.publicSectorExperienceDuration),
     territory: c.territory, // #42
-    bankAccount: c.bankAccount, // #40 — create-only; read-only no detalhe
-    pixKey: c.pixKey, // #40 — create-only; read-only no detalhe
+    bankAccount: c.bankAccount, // #40; editável no detalhe (spec 120)
+    pixKey: c.pixKey, // #40; editável no detalhe (spec 120)
   })
 }
 

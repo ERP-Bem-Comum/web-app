@@ -68,6 +68,7 @@ export const CompleteCollaboratorRegistrationInputSchema = z.object({
   rg: z.string().trim().max(20).optional(),
   dateOfBirth: z.iso.date().optional(),
   genderIdentity: z.string().trim().max(60).optional(),
+  genderIdentityDescription: z.string().trim().max(120).optional(), // core-api#1054 (max 120)
   race: z.string().trim().max(60).optional(),
   education: z.string().trim().max(80).optional(),
   foodCategory: z.string().trim().max(60).optional(),
@@ -94,13 +95,15 @@ export const CompleteCollaboratorRegistrationInputSchema = z.object({
   publicSectorExperienceDuration: z.string().trim().max(120).optional(),
 })
 
-// Edição dos dados cadastrais. PUT /collaborators/:id — OMITE território (#42) e banco/PIX (#40).
-export const UpdateCollaboratorInputSchema = CreateCollaboratorInputSchema.omit({
-  territory: true,
-  bankAccount: true,
-  pixKey: true,
-}).extend({
+// Edição dos dados cadastrais. PUT /collaborators/:id. Banco/PIX (spec 120, core-api#1029) e território
+// (spec 121, core-api#1053) seguem no corpo com a mesma regra: `null` MANTÉM o gravado; objeto valida e
+// substitui. Esvaziar não existe pelo PUT.
+// RG, nascimento e raça (spec 124, core-api#1070): o PUT preenche o que está vazio; trocar o gravado → 409.
+export const UpdateCollaboratorInputSchema = CreateCollaboratorInputSchema.extend({
   id: z.string().trim().min(1).max(64),
+  rg: z.string().trim().max(20).optional(),
+  dateOfBirth: z.iso.date().optional(),
+  race: z.string().trim().max(60).optional(),
 })
 
 export const DeactivateCollaboratorInputSchema = z.object({

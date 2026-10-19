@@ -1,5 +1,5 @@
 /**
- * Binding do relatório "Equipe ABC" — ADAPTER React (§XI). Lê a equipe REAL do core-api (via
+ * Binding do relatório "Equipe Bem Comum" — ADAPTER React (§XI). Lê a equipe REAL do core-api (via
  * `reportsRepository.getTeam`) e entrega as linhas já adaptadas pelo view-model puro (`toTeamRows`). A View
  * consome o `state` (união discriminada §IV: loading | error | ready).
  *
@@ -55,7 +55,7 @@ const EMPTY_AREAS: ReadonlyMap<string, string> = new Map()
  * ── Por que buscar isto separado ──
  * O `/reports/team` NÃO carrega a área: a projeção do core-api grava `program: null` de propósito
  * (`collaborator-projection.ts` — "`program` não existe no modelo Collaborator"). Como todo dado do
- * Equipe ABC sai de Colaboradores, o front cruza pelo `id` em vez de esperar um campo novo no backend.
+ * Equipe Bem Comum sai de Colaboradores, o front cruza pelo `id` em vez de esperar um campo novo no backend.
  *
  * ── Por que mora AQUI e não num `*.query.ts` ──
  * Chamada cross-módulo passa pela `public-api` (boundary §I), e o lint só libera esse import a partir de

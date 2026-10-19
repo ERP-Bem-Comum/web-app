@@ -32,7 +32,10 @@ import {
   type CollaboratorExportHistoryCommand,
   type CollaboratorDetail,
 } from '../collaborator-detail.binding.ts'
-import { useCollaboratorDetailFormController } from '../components/collaborator-detail-form.controller.ts'
+import {
+  lockedPersonalFrom,
+  useCollaboratorDetailFormController,
+} from '../components/collaborator-detail-form.controller.ts'
 import { CollaboratorDetailContent } from '../components/collaborator-detail-content.component.tsx'
 import { PartnersConfirmDialog } from '#modules/partners/client/shared/partners-confirm-dialog.component.tsx'
 import { downloadCsvFile } from '#modules/partners/client/shared/download-file.ts'
@@ -210,6 +213,7 @@ function DetailReady({
               editing={editing}
               showComplete={showComplete}
               preTitle={preTitle}
+              lockedPersonal={lockedPersonalFrom(collaborator)}
             />
           </div>
         </div>
@@ -233,7 +237,8 @@ function DetailReady({
                   className={btnPrimary}
                   disabled={saveCommand.running}
                   onClick={() => {
-                    setConfirmingEdit(true)
+                    // Banco/PIX parcial ou inválido barra antes da confirmação (spec 120).
+                    if (c.validate(collaborator)) setConfirmingEdit(true)
                   }}
                 >
                   {saveCommand.running
@@ -270,8 +275,8 @@ function DetailReady({
             pre: c.buildPre(),
             complete: c.buildComplete(collaborator.id),
             // `completeRegistration` é 1x só (o domínio rejeita já-completo → 'collaborator-already-complete'
-            // → conflito "Já existe um registro"). Num colaborador JÁ cadastrado, só o `update` (cadastrais)
-            // roda; os pessoais (data de nascimento etc.) dependem de o backend expor edição pós-cadastro.
+            // → conflito "Já existe um registro"). Num colaborador JÁ cadastrado, só o `update` roda: leva os
+            // cadastrais + RG/nascimento/raça (preenche o que falta, core-api#1070); os demais pessoais = #438.
             includeComplete: c.hasCompleteData() && collaborator.registration !== 'complete',
           })
           setConfirmingEdit(false)

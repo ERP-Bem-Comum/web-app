@@ -60,6 +60,7 @@ export const CoreApiCollaboratorDetailSchema = CoreApiCollaboratorItemSchema.ext
   emergencyContactName: z.string().trim().nullish(),
   emergencyContactTelephone: z.string().trim().nullish(),
   genderIdentity: z.string().trim().nullish(),
+  genderIdentityDescription: z.string().trim().nullish(), // core-api#1054
   race: z.string().trim().nullish(),
   allergies: z.string().trim().nullish(),
   foodCategory: z.string().trim().nullish(),
@@ -85,7 +86,7 @@ export const CoreApiCollaboratorDetailSchema = CoreApiCollaboratorItemSchema.ext
     .object({ uf: z.string().trim().nullable(), municipality: z.string().trim().nullable() })
     .nullable()
     .catch(null),
-  // Banco/PIX (#40) — create-only; lidos no detalhe. `.catch(null)` tolera ausência/legado.
+  // Banco/PIX (#40) — lidos no detalhe, editáveis no PUT (spec 120). `.catch(null)` tolera ausência/legado.
   bankAccount: BankAccountDtoSchema.nullable().catch(null),
   pixKey: PixKeyDtoSchema.nullable().catch(null),
 })
