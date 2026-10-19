@@ -47,6 +47,7 @@ import {
   BR_UF,
   type CollaboratorDetailFormController,
   type CollaboratorDetailFormState,
+  type LockedPersonalFields,
 } from './collaborator-detail-form.controller.ts'
 
 const t = createTranslator(ptBR)
@@ -57,11 +58,12 @@ export type CollaboratorDetailContentProps = Readonly<{
   showComplete: boolean
   preTitle: string
   /**
-   * Colaborador já CADASTRADO (spec 124): data de nascimento, RG e raça/cor travam no modo Editar — dado que
-   * não muda depois do cadastro (P.O., 12/10), como o CPF. No pré-cadastro seguem editáveis: é ali que o
-   * operador completa o cadastro. Opcional (default `false`) para não exigir o flag de quem só exibe.
+   * Quais dados pessoais já estão GRAVADOS (spec 124): travam no modo Editar — dado gravado não muda (P.O.,
+   * 12/10), como o CPF. O que ainda FALTA segue editável e é preenchido pelo PUT (P.O., 19/10;
+   * core-api#1070). Vem do detalhe carregado, nunca do form (senão travaria ao digitar). Opcional: ausente =
+   * nada travado.
    */
-  registrationComplete?: boolean
+  lockedPersonal?: LockedPersonalFields
 }>
 
 // Wrapper de <select> "brand": appearance:none + chevron desenhado (o mock remove a seta nativa).
@@ -107,7 +109,7 @@ export function CollaboratorDetailContent({
   editing,
   showComplete,
   preTitle,
-  registrationComplete = false,
+  lockedPersonal,
 }: CollaboratorDetailContentProps): ReactNode {
   const isInvalid = (key: string): boolean => c.errors[key] === true
   const invalidMsg = (key: string): string | null =>
@@ -197,10 +199,11 @@ export function CollaboratorDetailContent({
     )
   }
 
-  // Imutáveis depois do cadastro (spec 124): mesmo tratamento do CPF — desativado e dizendo o porquê.
-  const immutable = registrationComplete
-    ? { readOnly: true, lockedHint: t('partners.collaborators.form.personalLocked') }
-    : undefined
+  // Dado pessoal já gravado (spec 124): mesmo tratamento do CPF — desativado e dizendo o porquê. Vazio segue livre.
+  const immutable = (locked: boolean | undefined) =>
+    locked === true
+      ? { readOnly: true, lockedHint: t('partners.collaborators.form.personalLocked') }
+      : undefined
 
   const ufOptions = BR_UF.map((u) => ({ value: u.sigla, label: `${u.sigla} — ${u.nome}` }))
   const areaOptions = OCCUPATION_AREAS.map((a) => ({
@@ -393,13 +396,18 @@ export function CollaboratorDetailContent({
             <div className={sectionBody}>
               <div className={grid}>
                 {sel('sex', t('partners.collaborators.detail.field.sex'), sexOptions)}
-                {sel('race', t('partners.collaborators.detail.field.race'), raceOptions, immutable)}
+                {sel(
+                  'race',
+                  t('partners.collaborators.detail.field.race'),
+                  raceOptions,
+                  immutable(lockedPersonal?.race),
+                )}
                 {sel('maritalStatus', t('partners.collaborators.detail.field.maritalStatus'), maritalOptions)}
-                {txt('rg', t('partners.collaborators.detail.field.rg'), immutable)}
+                {txt('rg', t('partners.collaborators.detail.field.rg'), immutable(lockedPersonal?.rg))}
                 {txt('completeAddress', t('partners.collaborators.detail.field.completeAddress'))}
                 {txt('dateOfBirth', t('partners.collaborators.detail.field.dateOfBirth'), {
                   type: 'date',
-                  ...immutable,
+                  ...immutable(lockedPersonal?.dateOfBirth),
                 })}
                 {txt('telephone', t('partners.collaborators.detail.field.telephone'), { mask: 'phone' })}
                 {sel('education', t('partners.collaborators.detail.field.education'), educationOptions)}

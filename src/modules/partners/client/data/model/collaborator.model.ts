@@ -196,6 +196,17 @@ export type CollaboratorWriteInput = Readonly<{
   pixKey: PixKey | null
 }>
 
+/**
+ * Edição (PUT): o pré-cadastro + RG, nascimento e raça (spec 124, core-api#1070). Preenchidos UMA vez:
+ * ausente mantém o gravado, valor com o campo vazio grava, igual ao gravado mantém, diferente é recusado.
+ */
+export type CollaboratorUpdateInput = CollaboratorWriteInput &
+  Readonly<{
+    rg?: string
+    dateOfBirth?: string
+    race?: string
+  }>
+
 /** Cadastro completo (dados pessoais; todos opcionais). `id` identifica o colaborador. */
 export type CollaboratorCompleteInput = Readonly<{
   id: string

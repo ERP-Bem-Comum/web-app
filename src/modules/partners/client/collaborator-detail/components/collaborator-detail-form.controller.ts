@@ -27,7 +27,7 @@ import {
   type PixKey,
   type Territory,
   type CollaboratorDetail,
-  type CollaboratorWriteInput,
+  type CollaboratorUpdateInput,
   type CollaboratorCompleteInput,
   type OccupationArea,
   type EmploymentRelationship,
@@ -39,6 +39,7 @@ import {
   parseChildrenAges,
   formatChildrenAges,
   boolToTri,
+  blank,
   buildCompleteFields,
   computeHasCompleteData as computeHasCompleteFields,
   type CollaboratorCompleteFieldsState,
@@ -153,6 +154,18 @@ export const buildCompleteInput = (
 /** Há algum dado de perfil (2ª etapa) preenchido? (PURO — testável sem React). Delega ao núcleo puro. */
 export const computeHasCompleteData = (f: CollaboratorDetailFormState): boolean => computeHasCompleteFields(f)
 
+/** RG, nascimento e raça já gravados → travados no Editar (spec 124). O que falta segue livre. */
+export type LockedPersonalFields = Readonly<{ rg: boolean; dateOfBirth: boolean; race: boolean }>
+
+const stored = (v: string | undefined): boolean => v !== undefined && v.trim() !== ''
+
+/** Trava por campo a partir do GRAVADO (PURO). Nunca do form: travaria ao digitar o primeiro caractere. */
+export const lockedPersonalFrom = (detail: CollaboratorDetail): LockedPersonalFields => ({
+  rg: stored(detail.rg),
+  dateOfBirth: stored(detail.dateOfBirth),
+  race: stored(detail.race),
+})
+
 /** Hidratação PURA do estado do form a partir do detalhe carregado (testável sem React). */
 export const stateFromDetail = (detail: CollaboratorDetail): CollaboratorDetailFormState => fromDetail(detail)
 
@@ -263,7 +276,7 @@ export interface CollaboratorDetailFormController {
   readonly reset: (detail: CollaboratorDetail) => void
   /** Valida banco/PIX e território contra o detalhe ATUAL (o gravado); marca os erros e diz se pode salvar. */
   readonly validate: (current: CollaboratorDetail) => boolean
-  readonly buildPre: () => CollaboratorWriteInput
+  readonly buildPre: () => CollaboratorUpdateInput
   readonly buildComplete: (id: string) => CollaboratorCompleteInput
   readonly hasCompleteData: () => boolean
 }
@@ -293,7 +306,7 @@ export function useCollaboratorDetailFormController(
   )
 
   const buildPre = useCallback(
-    (): CollaboratorWriteInput => ({
+    (): CollaboratorUpdateInput => ({
       name: state.name.trim(),
       email: state.email.trim(),
       cpf: state.cpf.trim(),
@@ -306,6 +319,11 @@ export function useCollaboratorDetailFormController(
       // `null` mantém o gravado.
       territory: buildTerritory(state),
       ...buildPaymentTarget(state),
+      // RG, nascimento e raça (spec 124, core-api#1070): vão sempre — o backend preenche o que está vazio
+      // e trata o valor igual ao gravado como "mantém"; vazio → ausente → mantém.
+      rg: blank(state.rg),
+      dateOfBirth: blank(state.dateOfBirth),
+      race: blank(state.race),
     }),
     [state],
   )
