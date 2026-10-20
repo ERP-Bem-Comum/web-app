@@ -83,6 +83,10 @@ export function DocumentTimeline({ state, payables, documentType }: DocumentTime
               ))}
             </div>
           ) : null}
+          {/* Spec 119: o porquê do desfazimento — é o que a auditoria procura depois. */}
+          {row.reason !== null ? (
+            <div className={timelineActor}>{`${t('financial.timeline.reason')}: ${row.reason}`}</div>
+          ) : null}
           <div className={timelineActor}>
             {row.isSystem ? t('financial.timeline.system') : (row.actorName ?? '—')}
           </div>

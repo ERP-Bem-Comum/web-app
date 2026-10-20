@@ -1143,6 +1143,9 @@ export const ptBR: Catalog = {
   'financial.timeline.event.draft': 'Rascunho criado',
   'financial.timeline.event.reconciled': 'Conciliado',
   'financial.timeline.event.reconciliationUndone': 'Conciliação desfeita',
+  // Spec 119 / core-api#61 — desfazimentos no Histórico, com o motivo.
+  'financial.timeline.event.paymentUndone': 'Baixa desfeita',
+  'financial.timeline.reason': 'Motivo',
   'financial.timeline.field.dueDate': 'Vencimento',
   'financial.timeline.field.grossValue': 'Valor',
   'financial.timeline.field.description': 'Descrição',
@@ -2024,7 +2027,7 @@ export const ptBR: Catalog = {
   'financial.list.selection.sumGrossLabel': 'Soma (bruto):',
   'financial.list.selection.sumLabel': 'Soma (líquido):',
   // Mudar Status (chrome — transições pendentes no backend)
-  'financial.list.status.change': 'Mudar Status',
+  'financial.list.status.change': 'Alterar status',
   'financial.list.status.soon': 'Indisponível no v1 — pendente no backend',
   'financial.list.status.needOpen': 'Selecione documentos em "Aberto" para aprovar',
   'financial.list.status.needApproved': 'Selecione documentos "Aprovado" para voltar à edição',
@@ -2033,13 +2036,13 @@ export const ptBR: Catalog = {
   // se resolvem repetindo, e repetir é o que a frase mandava fazer.
   'financial.list.status.bulkError': 'Nem todos os documentos foram alterados:',
   'financial.list.status.approve': 'Aprovar',
-  'financial.list.status.approveHint': 'aprova o documento',
+  'financial.list.status.approveHint': 'Aprova o documento',
   'financial.list.status.reopen': 'Voltar para edição',
-  'financial.list.status.reopenHint': 'retorna para Aberto',
+  'financial.list.status.reopenHint': 'Retorna para Aberto',
   'financial.list.status.submit': 'Enviar para aprovação',
   'financial.list.status.submitHint': 'Rascunho → Aberto',
   'financial.list.status.pay': 'Marcar como pago',
-  'financial.list.status.payHint': 'registra a baixa',
+  'financial.list.status.payHint': 'Registra a baixa',
   'financial.list.status.needApprovedToPay': 'Selecione títulos "Aprovado" para dar baixa',
   'financial.list.status.bulkPayError': 'Algumas baixas não foram concluídas (atualize e tente de novo)',
   'financial.list.search': 'Buscar por fornecedor, número, CNPJ…',
@@ -2082,8 +2085,8 @@ export const ptBR: Catalog = {
     '{n} título(s) não tiveram o vencimento alterado: a lista está desatualizada. Atualize a página e refaça a seleção.',
   'financial.list.dueDate.errorPartialServer':
     '{n} título(s) não tiveram o vencimento alterado por falha temporária do servidor. Os demais foram alterados — clique em Aplicar de novo só para os que faltaram.',
-  'financial.list.delete.action': 'Excluir',
-  'financial.list.delete.actionHint': 'apaga o documento definitivamente',
+  'financial.list.delete.action': 'Excluir documento',
+  'financial.list.delete.actionHint': 'Exclusão definitiva',
   'financial.list.delete.needOpen': 'Só documentos em Rascunho ou Aberto podem ser excluídos.',
   'financial.list.delete.title': 'Excluir documento(s)?',
   'financial.list.delete.bodyOne': 'Esta ação é definitiva e não pode ser desfeita.',
@@ -2108,6 +2111,34 @@ export const ptBR: Catalog = {
   'financial.list.dueDate.modalCancel': 'Cancelar',
   'financial.list.dueDate.modalApply': 'Aplicar',
   // Baixa de Pagamento (baixa manual #224/#232) — modal de data de pagamento (a ação na linha é "Marcar como pago").
+  // Spec 119 / core-api#61 — desfazer baixa (Alterar status) e alerta do Voltar para edição.
+  'financial.list.status.group.approval': 'Aprovação',
+  'financial.list.status.summaryOne': 'documento',
+  'financial.list.status.summaryMany': 'documentos',
+  'financial.list.status.group.payment': 'Pagamento',
+  'financial.list.status.group.correction': 'Correções',
+  'financial.list.undo.payment.action': 'Desfazer baixa',
+  'financial.list.undo.payment.actionHint': 'Retorna ao status anterior',
+  'financial.list.undo.payment.needPaid':
+    'Selecione títulos com status Pago. Conciliado: desfaça a conciliação antes.',
+  'financial.list.undo.payment.modalTitle': 'Desfazer baixa',
+  'financial.list.undo.payment.modalBodyOne':
+    'Este título volta ao status anterior à baixa, e a data de pagamento é removida:',
+  'financial.list.undo.payment.modalBodyMany':
+    'títulos voltam ao status anterior à baixa, e a data de pagamento é removida:',
+  'financial.list.undo.payment.apply': 'Desfazer baixa',
+  'financial.list.undo.paidOn': 'pago em',
+  'financial.list.undo.reasonLabel': 'Motivo',
+  'financial.list.undo.reasonPlaceholder': 'Motivo (obrigatório) — fica registrado no Histórico do documento',
+  'financial.list.undo.cancel': 'Cancelar',
+  'financial.list.undo.bulkError': 'Não foi possível desfazer alguns títulos:',
+  'financial.list.reopenWarning.title': 'Voltar para edição — atenção',
+  'financial.list.reopenWarning.risk':
+    'Este documento já teve baixa desfeita. O pagamento pode ter acontecido no banco.',
+  'financial.list.reopenWarning.advice':
+    'Confira o extrato bancário antes de corrigir e relançar. Voltar para edição é uma operação fora da rotina — use só para erro grave de lançamento.',
+  'financial.list.reopenWarning.cancel': 'Cancelar',
+  'financial.list.reopenWarning.confirm': 'Voltar para edição mesmo assim',
   'financial.list.pay.modalTitle': 'Baixa de Pagamento',
   'financial.list.pay.dateLabel': 'Data de pagamento',
   'financial.list.pay.modalBodyOne': 'Informe a data de pagamento (saída bancária) do título selecionado.',

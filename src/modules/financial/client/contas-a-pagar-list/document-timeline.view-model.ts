@@ -34,6 +34,9 @@ export const timelineEventPresentation = (type: TimelineEventType): TimelineEven
       return { labelTag: 'financial.timeline.event.reconciled', tone: 'reconciled' }
     case 'ReconciliationUndone':
       return { labelTag: 'financial.timeline.event.reconciliationUndone', tone: 'open' } // desfaz → volta a Pago
+    // Spec 119: baixa desfeita — tom "approved" (o título volta a Aprovado/Transmitido, nunca a Aberto).
+    case 'ManualPaymentUndone':
+      return { labelTag: 'financial.timeline.event.paymentUndone', tone: 'approved' }
   }
 }
 
@@ -193,6 +196,7 @@ export type TimelineRow = Readonly<{
   dateLabel: string // "—" quando a data não é conhecida (nó sintetizado do status)
   isSystem: boolean // true → a View mostra "Sistema"
   actorName: string | null // humano não-resolvido (isSystem=false) → a View mostra "—"
+  reason: string | null // spec 119: o porquê do marco (desfazimentos); null → a View não mostra a linha
   changes: readonly TimelineChangeRow[]
 }>
 
@@ -218,6 +222,7 @@ export const deriveReconciledTitleRows = (
       dateLabel: '—', // data real vem no core-api#406
       isSystem: false,
       actorName: null, // "—" na View (autor não conhecido sem o evento real)
+      reason: null,
       changes: [],
     }))
 }
@@ -247,6 +252,7 @@ export const deriveTimelineRows = (
     dateLabel: formatTimelineDate(e.occurredAt),
     isSystem: e.isSystem,
     actorName: e.actorName,
+    reason: e.reason,
     // Só campos conhecidos entram; valores já formatados (data/dinheiro/status/texto).
     changes: e.changes.reduce<TimelineChangeRow[]>((acc, c) => {
       const cfg = FIELD_CONFIG[c.field]

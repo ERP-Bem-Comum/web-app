@@ -846,3 +846,104 @@ export function InfoIcon({ size = 14 }: IconProps): ReactNode {
     </svg>
   )
 }
+
+// Spec 119 — menu "Alterar status" (base visual da P.O., 19/10). Traço lucide, mesmo molde dos demais.
+export function RefreshIcon({ size = 16 }: IconProps): ReactNode {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+      <path d="M3 3v5h5" />
+      <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16" />
+      <path d="M16 16h5v5" />
+    </svg>
+  )
+}
+
+// Spec 119 — menu "Alterar status" (base visual da P.O., 19/10). Traço lucide, mesmo molde dos demais.
+export function CreditCardIcon({ size = 16 }: IconProps): ReactNode {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <rect x="2" y="5" width="20" height="14" rx="2" />
+      <line x1="2" y1="10" x2="22" y2="10" />
+    </svg>
+  )
+}
+
+// Spec 119 — menu "Alterar status" (base visual da P.O., 19/10). Traço lucide, mesmo molde dos demais.
+export function UndoIcon({ size = 16 }: IconProps): ReactNode {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M9 14 4 9l5-5" />
+      <path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11" />
+    </svg>
+  )
+}
+
+// Spec 119 — menu "Alterar status" (base visual da P.O., 19/10). Traço lucide, mesmo molde dos demais.
+export function SendIcon({ size = 16 }: IconProps): ReactNode {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="m22 2-7 20-4-9-9-4Z" />
+      <path d="M22 2 11 13" />
+    </svg>
+  )
+}
+
+// Spec 119 — menu "Alterar status" (base visual da P.O., 19/10). Traço lucide, mesmo molde dos demais.
+export function CheckIcon({ size = 16 }: IconProps): ReactNode {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M20 6 9 17l-5-5" />
+    </svg>
+  )
+}

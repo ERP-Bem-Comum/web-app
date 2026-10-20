@@ -142,6 +142,7 @@ export type TimelineEventType =
   | 'PayableManuallyPaid'
   | 'PayableReconciled' // conciliação (agregado separado) — entra na trilha via core-api#406
   | 'ReconciliationUndone'
+  | 'ManualPaymentUndone' // spec 119 / core-api#61: baixa desfeita (Pago → anterior), com motivo
 export interface TimelineChange {
   field: string
   before: string | null
@@ -154,6 +155,7 @@ export interface DocumentTimelineEvent {
   targetId: string
   occurredAt: string // ISO-8601 com offset
   actor: string | null
+  reason: string | null // spec 119: motivo do marco (null na maioria)
   changes: readonly TimelineChange[]
 }
 // Entrada ENRIQUECIDA (o BFF resolve o nome do autor). `isSystem` = ação automática (actor era null);
@@ -165,6 +167,7 @@ export interface DocumentTimelineEntry {
   occurredAt: string
   isSystem: boolean
   actorName: string | null
+  reason: string | null
   changes: readonly TimelineChange[]
 }
 
@@ -176,6 +179,15 @@ export interface ManualPaymentInput {
   version: number
   paidAt?: string
   reason?: string
+}
+
+// Spec 119 / core-api#61: desfazer a baixa (Pago → status anterior) de UM título. `reason` é obrigatório (vai ao Histórico). `version` segue o contrato da baixa —
+// a pré-condição real é o status do título, checada no core-api.
+export interface UndoPayableInput {
+  documentId: string
+  payableId: string
+  version: number
+  reason: string
 }
 
 // Cancelar (DELETE /documents/:id) — só em Aberto; hard-delete. `version` = optimistic lock (corpo).
