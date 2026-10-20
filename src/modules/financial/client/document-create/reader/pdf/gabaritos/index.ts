@@ -1,16 +1,20 @@
 /**
  * Registro central de gabaritos de PDF. O motor testa na ordem e usa o primeiro que "detectar" (mais
- * específico primeiro): DANFE (produto) → FILU (SP) → DANFSe v2 (Fortaleza) → DANFSe v1 (nacional).
+ * específico primeiro): DANFE (produto) → FILU (SP) → DANFSe v2 (nacional) → DANFSe v2 (Fortaleza) →
+ * DANFSe v1 (nacional). As duas DANFSe v2 são modelos DIFERENTES com o mesmo cabeçalho; a nacional se distingue
+ * pelo rótulo IRRF na "TRIBUTAÇÃO FEDERAL" (Fortaleza escreve IRPF) e vem antes.
  */
 import type { Gabarito } from '../gabarito-engine.ts'
 import { gabaritoDanfe } from './danfe.gabarito.ts'
 import { gabaritoFiluSp } from './filu-sp.gabarito.ts'
+import { gabaritoDanfseV2Nacional } from './danfse-v2-nacional.gabarito.ts'
 import { gabaritoDanfseV2 } from './danfse-v2.gabarito.ts'
 import { gabaritoDanfse } from './danfse.gabarito.ts'
 
 export const GABARITOS: readonly Gabarito[] = [
   gabaritoDanfe,
   gabaritoFiluSp,
+  gabaritoDanfseV2Nacional,
   gabaritoDanfseV2,
   gabaritoDanfse,
 ]

@@ -159,3 +159,161 @@ describe('readPdfLines — DANFSe v2.0 (Fortaleza, modelo novo): descrição vem
     assert.equal(r?.description, 'CONSULTORIA FINANCEIRA A EMPRESAS/CONSULTORIA FINANCEIRA A EMPRESAS')
   })
 })
+
+// DANFSe v2.0 — layout NACIONAL (Emissor Nacional; ex.: Sorocaba). Mesmo cabeçalho "DANFSe v2.0" do de
+// Fortaleza, modelo diferente: "IRRF" (não "IRPF"), descrição ABAIXO do rótulo e, ACIMA dele, a descrição do
+// código de tributação. Valores alinhados (x) ao rótulo — colunas em 12/156/301/446, como no PDF real.
+const danfseV2NacionalRows: readonly (readonly { str: string; x: number }[])[] = [
+  [
+    { str: 'DANFSe v2.0', x: 270 },
+    { str: 'Município: CIDADE - SP', x: 446 },
+  ],
+  [{ str: 'CHAVE DE ACESSO DA NFS-e', x: 12 }],
+  [{ str: '12345678901234567890123456789012345678901234567890', x: 12 }],
+  [
+    { str: 'NÚMERO DA NFS-e', x: 12 },
+    { str: 'COMPETÊNCIA DA NFS-e', x: 156 },
+    { str: 'DATA E HORA DA EMISSÃO DA NFS-e', x: 301 },
+  ],
+  [
+    { str: '77', x: 12 },
+    { str: '01/08/2026', x: 156 },
+    { str: '03/08/2026 09:00:00', x: 301 },
+  ],
+  [
+    { str: 'NÚMERO DA DPS', x: 12 },
+    { str: 'SÉRIE DA DPS', x: 156 },
+  ],
+  [
+    { str: '77', x: 12 },
+    { str: '1', x: 156 },
+  ],
+  [{ str: 'EMITENTE DA NFS-e', x: 12 }],
+  [
+    { str: 'PRESTADOR / FORNECEDOR', x: 12 },
+    { str: 'CNPJ / CPF / NIF', x: 156 },
+  ],
+  [{ str: '64.894.238/0001-90', x: 156 }],
+  [
+    { str: 'TOMADOR / ADQUIRENTE', x: 12 },
+    { str: 'CNPJ / CPF / NIF', x: 156 },
+  ],
+  [{ str: '30.275.386/0001-05', x: 156 }],
+  [
+    { str: 'SERVIÇO PRESTADO', x: 12 },
+    { str: 'Código de Tributação Nacional/Municipal', x: 156 },
+  ],
+  [{ str: '01.05.01 / 002', x: 156 }],
+  [{ str: 'DESCRIÇÃO DO CÓDIGO DE TRIBUTAÇÃO MUNICIPAL', x: 12 }],
+  [{ str: 'Descrição do Serviço', x: 12 }],
+  [{ str: 'Suporte técnico mensal', x: 12 }],
+  [{ str: 'conforme contrato 012/2026.', x: 12 }],
+  [
+    { str: 'TRIBUTAÇÃO MUNICIPAL (ISSQN)', x: 12 },
+    { str: 'Tipo de Tributação do ISSQN', x: 156 },
+  ],
+  [
+    { str: 'BC ISSQN', x: 12 },
+    { str: 'Alíquota Aplicada', x: 156 },
+    { str: 'Retenção do ISSQN', x: 301 },
+    { str: 'ISSQN Apurado', x: 446 },
+  ],
+  [
+    { str: 'R$ 2.000,00', x: 12 },
+    { str: '5,00 %', x: 156 },
+    { str: 'Retido', x: 301 },
+    { str: 'R$ 100,00', x: 446 },
+  ],
+  [
+    { str: 'TRIBUTAÇÃO FEDERAL (EXCETO CBS)', x: 12 },
+    { str: 'IRRF', x: 156 },
+    { str: 'Contribuição Previdenciária - Retida', x: 301 },
+    { str: 'Contribuições Sociais - Retidas', x: 446 },
+  ],
+  [
+    { str: 'R$ 30,00', x: 156 },
+    { str: '-', x: 301 },
+    { str: 'R$ 93,00', x: 446 },
+  ],
+  // PIS/COFINS "Débito Apuração Própria" — tributo do prestador, NÃO retenção.
+  [
+    { str: 'PIS - Débito Apuração Própria', x: 12 },
+    { str: 'COFINS - Débito Apuração Própria', x: 156 },
+  ],
+  [
+    { str: 'R$ 13,00', x: 12 },
+    { str: 'R$ 60,00', x: 156 },
+  ],
+  // IBS/CBS com alíquota PREENCHIDA: "0,10 %" não é token de coluna — a leitura por posição não desloca.
+  [
+    { str: 'Alíq. Efetiva Municipal - IBS', x: 12 },
+    { str: 'Valor Apurado Municipal - IBS', x: 156 },
+    { str: 'Alíq. Efetiva Estadual - IBS', x: 301 },
+    { str: 'Valor Apurado Estadual - IBS', x: 446 },
+  ],
+  [
+    { str: '0,10 %', x: 12 },
+    { str: 'R$ 2,00', x: 156 },
+    { str: '0,00 %', x: 301 },
+    { str: 'R$ 0,00', x: 446 },
+  ],
+  [
+    { str: 'Valor Total Apurado - IBS', x: 12 },
+    { str: 'Alíquota - CBS', x: 156 },
+    { str: 'Alíquota Efetiva - CBS', x: 301 },
+    { str: 'Valor Total Apurado - CBS', x: 446 },
+  ],
+  [
+    { str: 'R$ 2,00', x: 12 },
+    { str: '0,90 %', x: 156 },
+    { str: '0,90 %', x: 301 },
+    { str: 'R$ 18,00', x: 446 },
+  ],
+  [
+    { str: 'VALOR TOTAL DA NFS-e', x: 12 },
+    { str: 'VALOR DA OPERAÇÃO / SERVIÇO', x: 156 },
+    { str: 'Desconto Incondicionado', x: 301 },
+    { str: 'Desconto Condicionado', x: 446 },
+  ],
+  [
+    { str: 'R$ 2.000,00', x: 156 },
+    { str: '-', x: 301 },
+    { str: '-', x: 446 },
+  ],
+]
+
+describe('readPdfLines — DANFSe v2.0 layout NACIONAL (modelo diferente do de Fortaleza)', () => {
+  const r = readPdfLines(groupLines(itemsFromRows(danfseV2NacionalRows)))
+
+  it('identifica o modelo e lê identificação, fornecedor e valor', () => {
+    assert.ok(r !== null)
+    assert.equal(r.kind, 'NFS-e')
+    assert.equal(r.number, '77')
+    assert.equal(r.series, '1')
+    assert.equal(r.competence, '08/2026')
+    assert.equal(r.issueDate, '2026-08-03')
+    assert.equal(r.grossValue, 2000)
+    assert.equal(r.accessKey, '12345678901234567890123456789012345678901234567890')
+    assert.equal(r.supplier.taxId, '64.894.238/0001-90')
+  })
+
+  it('descrição = texto ABAIXO do rótulo, não a descrição do código de tributação (linha acima)', () => {
+    assert.equal(r?.description, 'Suporte técnico mensal conforme contrato 012/2026.')
+  })
+
+  it('retenções pelo rótulo IRRF; PIS/COFINS de apuração própria não entram', () => {
+    assert.deepEqual(r?.retentions, { iss: 100, irrf: 30, inss: 0, pis: 0, cofins: 0, csll: 93 })
+  })
+
+  it('IBS/CBS lidos pela posição: alíquota preenchida não desloca o valor', () => {
+    assert.deepEqual(r?.reformaTributaria, { cbs: 18, ibsMunicipal: 2, ibsEstadual: 0 })
+  })
+
+  it('descrição vazia (rótulo seguido da seção TRIBUTAÇÃO) → null, não o bloco de tributação', () => {
+    const semDescricao = danfseV2NacionalRows.filter(
+      (row) => !['Suporte técnico mensal', 'conforme contrato 012/2026.'].includes(row[0]?.str ?? ''),
+    )
+    const v = readPdfLines(groupLines(itemsFromRows(semDescricao)))
+    assert.equal(v?.description, null)
+  })
+})
