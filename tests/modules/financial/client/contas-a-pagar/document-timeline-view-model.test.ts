@@ -135,6 +135,67 @@ describe('deriveTimelineRows', () => {
   })
 })
 
+// ── core-api#823 / #406: remessa e conciliação no Histórico ──────────────────────
+describe('deriveTimelineRows — remessa e conciliação', () => {
+  const payableEntry = (
+    eventType: DocumentTimelineEntry['eventType'],
+    changes: DocumentTimelineEntry['changes'],
+    reason: string | null = null,
+  ): DocumentTimelineEntry => ({
+    eventType,
+    targetKind: 'Payable',
+    targetId: 'pai',
+    occurredAt: '2026-10-19T12:00:00.000Z',
+    isSystem: false,
+    actorName: 'Maria Silva',
+    reason,
+    changes,
+  })
+
+  it('geração da remessa: rótulo/tom próprios, status e em qual remessa o título saiu', () => {
+    const [row] = deriveTimelineRows([
+      payableEntry('PayableTransmitted', [
+        { field: 'status', before: 'Approved', after: 'Transmitted' },
+        { field: 'remittanceNsa', before: null, after: '42' },
+        { field: 'remittanceYourNumber', before: null, after: 'ABC0001' },
+      ]),
+    ])
+    assert.deepEqual(row?.presentation, {
+      labelTag: 'financial.timeline.event.transmitted',
+      tone: 'transmitted',
+    })
+    assert.deepEqual(
+      row?.changes.map((c) => [c.labelTag, c.before, c.after]),
+      [
+        ['financial.timeline.field.status', 'Aprovado', 'Transmitido'],
+        ['financial.timeline.field.remittanceNsa', '—', '42'],
+        ['financial.timeline.field.remittanceYourNumber', '—', 'ABC0001'],
+      ],
+    )
+  })
+
+  it('conciliação parcial e desfazer conciliação (com motivo) traduzem o status', () => {
+    const rows = deriveTimelineRows([
+      payableEntry('PayableReconciled', [{ field: 'status', before: 'Paid', after: 'PartiallyReconciled' }]),
+      payableEntry(
+        'ReconciliationUndone',
+        [{ field: 'status', before: 'PartiallyReconciled', after: 'Paid' }],
+        'Extrato errado',
+      ),
+    ])
+    assert.equal(rows[0]?.changes[0]?.after, 'Parcialmente conciliado')
+    assert.equal(rows[1]?.presentation.labelTag, 'financial.timeline.event.reconciliationUndone')
+    assert.equal(rows[1]?.changes[0]?.before, 'Parcialmente conciliado')
+    assert.equal(rows[1]?.reason, 'Extrato errado')
+  })
+
+  it('conciliação que não muda o status (2º parcial) vem sem changes → nó sem pílulas', () => {
+    const [row] = deriveTimelineRows([payableEntry('PayableReconciled', [])])
+    assert.equal(row?.presentation.labelTag, 'financial.timeline.event.reconciled')
+    assert.equal(row?.changes.length, 0)
+  })
+})
+
 // ── spec 125: categorização, complemento e forma de pagamento no Histórico ──────
 describe('deriveTimelineRows — campos resolvidos (spec 125)', () => {
   const catalog: Readonly<Record<string, string>> = {

@@ -1095,6 +1095,7 @@ const timelineDotBase = {
 export const timelineDot = styleVariants({
   paid: { ...timelineDotBase, background: vars.color.status.activeText }, // verde
   approved: { ...timelineDotBase, background: vars.color.status.approvedText }, // azul
+  transmitted: { ...timelineDotBase, background: vars.color.status.finishedText }, // azul escuro
   reconciled: { ...timelineDotBase, background: vars.color.status.reconciledText }, // roxo
   open: { ...timelineDotBase, background: vars.color.status.pendingText }, // âmbar
   draft: { ...timelineDotBase, background: vars.color.status.cancelledText }, // cinza

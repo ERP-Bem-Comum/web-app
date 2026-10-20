@@ -143,6 +143,7 @@ export type TimelineEventType =
   | 'PayableReconciled' // conciliação (agregado separado) — entra na trilha via core-api#406
   | 'ReconciliationUndone'
   | 'ManualPaymentUndone' // spec 119 / core-api#61: baixa desfeita (Pago → anterior), com motivo
+  | 'PayableTransmitted' // core-api#823: título saiu numa remessa (NSA + seu número nos changes)
 export interface TimelineChange {
   field: string
   before: string | null

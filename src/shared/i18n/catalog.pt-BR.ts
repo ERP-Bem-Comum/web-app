@@ -1145,6 +1145,10 @@ export const ptBR: Catalog = {
   'financial.timeline.event.reconciliationUndone': 'Conciliação desfeita',
   // Spec 119 / core-api#61 — desfazimentos no Histórico, com o motivo.
   'financial.timeline.event.paymentUndone': 'Baixa desfeita',
+  // core-api#823 — geração da remessa no Histórico.
+  'financial.timeline.event.transmitted': 'Transmitido em remessa',
+  'financial.timeline.field.remittanceNsa': 'Remessa (NSA)',
+  'financial.timeline.field.remittanceYourNumber': 'Seu número',
   'financial.timeline.reason': 'Motivo',
   'financial.timeline.field.dueDate': 'Vencimento',
   'financial.timeline.field.grossValue': 'Valor',

@@ -9,8 +9,9 @@ import type {
 import type { CategorizationResolvers } from './contas-a-pagar.view-model.ts'
 
 // Tom do nó = COR DO STATUS que o evento representa (paridade com os pills de status do grid):
-// paid=verde (active) · approved=azul · reconciled=roxo · open=âmbar (pending) · draft=cinza (cancelled).
-export type TimelineTone = 'paid' | 'approved' | 'reconciled' | 'open' | 'draft'
+// paid=verde (active) · approved=azul · transmitted=azul escuro (finished) · reconciled=roxo · open=âmbar
+// (pending) · draft=cinza (cancelled).
+export type TimelineTone = 'paid' | 'approved' | 'transmitted' | 'reconciled' | 'open' | 'draft'
 
 export type TimelineEventPresentation = Readonly<{
   labelTag: string
@@ -37,6 +38,9 @@ export const timelineEventPresentation = (type: TimelineEventType): TimelineEven
     // Spec 119: baixa desfeita — tom "approved" (o título volta a Aprovado/Transmitido, nunca a Aberto).
     case 'ManualPaymentUndone':
       return { labelTag: 'financial.timeline.event.paymentUndone', tone: 'approved' }
+    // core-api#823: o título saiu numa remessa — o NSA e o seu número vêm nos changes.
+    case 'PayableTransmitted':
+      return { labelTag: 'financial.timeline.event.transmitted', tone: 'transmitted' }
   }
 }
 
@@ -82,6 +86,9 @@ const FIELD_CONFIG: Readonly<Record<string, { labelTag: string; kind: ChangeKind
   costCenterRef: { labelTag: 'financial.timeline.field.costCenterRef', kind: 'resolved' },
   categoryRef: { labelTag: 'financial.timeline.field.categoryRef', kind: 'resolved' },
   subcategoryRef: { labelTag: 'financial.timeline.field.subcategoryRef', kind: 'resolved' },
+  // core-api#823: em qual remessa o título saiu — é o que o operador procura quando o banco diverge.
+  remittanceNsa: { labelTag: 'financial.timeline.field.remittanceNsa', kind: 'text' },
+  remittanceYourNumber: { labelTag: 'financial.timeline.field.remittanceYourNumber', kind: 'text' },
 }
 
 /**
@@ -128,6 +135,7 @@ const STATUS_PT: Readonly<Record<string, string>> = {
   Transmitted: 'Transmitido',
   Refused: 'Recusado',
   Paid: 'Pago',
+  PartiallyReconciled: 'Parcialmente conciliado',
   Reconciled: 'Conciliado',
 }
 // timeZone UTC: o vencimento é uma DATA de calendário (meia-noite UTC) — sem UTC, o fuso local a joga p/ o
@@ -201,9 +209,9 @@ export type TimelineRow = Readonly<{
 }>
 
 // Nó de "Conciliado" SINTETIZADO a partir do status atual do título (o detalhe já expõe `status` por título).
-// Ponte honesta enquanto o core-api#406 não grava o evento na trilha: o status É real; a DATA não é conhecida
-// aqui (→ "—"). Suprimido para um título que JÁ tenha o evento real (`PayableReconciled`) — evita duplicar
-// quando o #406 subir. Fica no TOPO (conciliação é a etapa terminal, após Pago).
+// O core-api#406 grava o evento na trilha só dali em diante — conciliação feita ANTES não tem registro, e
+// este nó a mantém visível: o status É real; a DATA não é conhecida (→ "—"). Suprimido para um título que já
+// tenha o evento real (`PayableReconciled`). Fica no TOPO (conciliação é a etapa terminal, após Pago).
 export const deriveReconciledTitleRows = (
   payables: readonly TimelineTargetPayable[],
   existingRows: readonly TimelineRow[],
@@ -219,7 +227,7 @@ export const deriveReconciledTitleRows = (
       presentation: timelineEventPresentation('PayableReconciled'),
       targetKind: 'Payable' as const,
       targetId: p.id,
-      dateLabel: '—', // data real vem no core-api#406
+      dateLabel: '—', // conciliação anterior ao core-api#406: sem registro de data
       isSystem: false,
       actorName: null, // "—" na View (autor não conhecido sem o evento real)
       reason: null,

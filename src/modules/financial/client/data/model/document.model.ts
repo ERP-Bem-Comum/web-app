@@ -126,6 +126,7 @@ export type TimelineEventType =
   | 'PayableReconciled' // conciliação (agregado separado) — entra na trilha via core-api#406
   | 'ReconciliationUndone'
   | 'ManualPaymentUndone' // spec 119: baixa desfeita, com motivo
+  | 'PayableTransmitted' // core-api#823: título saiu numa remessa
 export type TimelineChange = Readonly<{ field: string; before: string | null; after: string | null }>
 export type DocumentTimelineEntry = Readonly<{
   eventType: TimelineEventType
