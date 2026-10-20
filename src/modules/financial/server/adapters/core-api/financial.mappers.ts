@@ -52,6 +52,8 @@ const TIMELINE_EVENT_TYPES: ReadonlySet<string> = new Set<TimelineEventType>([
   'ReconciliationUndone',
   // Spec 119 / core-api#61 — sem esta o mapper a descartaria em silêncio (drift seguro).
   'ManualPaymentUndone',
+  // core-api#823 — geração da remessa (Aprovado → Transmitido), com NSA e seu número.
+  'PayableTransmitted',
 ])
 
 // ── Erro: slug do core-api → FinancialError ─────────────────────────────────────
