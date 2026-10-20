@@ -60,7 +60,10 @@ export const gabaritoDanfseV2Nacional: Gabarito = {
       tipo: 'texto',
       estrategia: {
         mode: 'regex',
-        padrao: /Descri[çc][ãa]o\s*do\s*Servi[çc]o\s*\n([\s\S]*?)(?=\n[^\n]*TRIBUTA[ÇC][ÃA]O)/i,
+        // A trava `(?!…TRIBUTAÇÃO)`: descrição vazia (rótulo seguido direto da seção) → sem captura, em vez de
+        // engolir o bloco de tributação até a PRÓXIMA seção.
+        padrao:
+          /Descri[çc][ãa]o\s*do\s*Servi[çc]o\s*\n(?![^\n]*TRIBUTA[ÇC][ÃA]O)([\s\S]*?)(?=\n[^\n]*TRIBUTA[ÇC][ÃA]O)/i,
       },
     },
 

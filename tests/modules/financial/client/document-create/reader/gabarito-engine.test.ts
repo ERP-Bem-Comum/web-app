@@ -308,4 +308,12 @@ describe('readPdfLines — DANFSe v2.0 layout NACIONAL (modelo diferente do de F
   it('IBS/CBS lidos pela posição: alíquota preenchida não desloca o valor', () => {
     assert.deepEqual(r?.reformaTributaria, { cbs: 18, ibsMunicipal: 2, ibsEstadual: 0 })
   })
+
+  it('descrição vazia (rótulo seguido da seção TRIBUTAÇÃO) → null, não o bloco de tributação', () => {
+    const semDescricao = danfseV2NacionalRows.filter(
+      (row) => !['Suporte técnico mensal', 'conforme contrato 012/2026.'].includes(row[0]?.str ?? ''),
+    )
+    const v = readPdfLines(groupLines(itemsFromRows(semDescricao)))
+    assert.equal(v?.description, null)
+  })
 })
