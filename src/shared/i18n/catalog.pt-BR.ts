@@ -2342,6 +2342,10 @@ export const ptBR: Catalog = {
   'financial.list.chip.conciliado': 'Conciliado',
 
   // ── Visões salvas (saved views, #351) — snapshot nomeado de filtros (preferência de UI) ──
+  'financial.list.columns.button': 'Colunas',
+  'financial.list.columns.close': 'Fechar seletor de colunas',
+  'financial.list.columns.locked': 'fixa',
+  'financial.list.columns.showAll': 'Mostrar todas',
   'financial.list.savedViews.button': 'Visões',
   'financial.list.savedViews.nameLabel': 'Nome da visão',
   'financial.list.savedViews.namePlaceholder': 'Nome da visão…',
