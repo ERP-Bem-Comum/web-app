@@ -1,5 +1,5 @@
 /**
- * EquipeDetailModal — modal "brand" de DETALHE do colaborador (relatório Equipe ABC). View BURRA (§XI):
+ * EquipeDetailModal — modal "brand" de DETALHE do colaborador (relatório Equipe Bem Comum). View BURRA (§XI):
  * recebe o colaborador selecionado + rótulos i18n e apenas apresenta os 9 campos ENXUTOS como lista
  * rótulo/valor. Fecha por Esc / clique no overlay / botão "Fechar"; "Editar" dispara `onEdit` (a navegação
  * ao módulo Colaboradores mora na View, nunca aqui). Só renderiza quando `member` não é null.

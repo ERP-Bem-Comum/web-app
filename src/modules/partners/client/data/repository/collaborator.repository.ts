@@ -10,6 +10,7 @@ import type {
   CollaboratorListInput,
   CollaboratorListResponse,
   CollaboratorWriteInput,
+  CollaboratorUpdateInput,
   CollaboratorCompleteInput,
   CollaboratorDeactivateInput,
   CollaboratorImportInput,
@@ -23,7 +24,7 @@ type GetFn = (opts: { data: { id: string } }) => Promise<FnResult<CollaboratorDe
 type CreateFn = (opts: { data: CollaboratorWriteInput }) => Promise<FnResult<CollaboratorDetail>>
 type CompleteFn = (opts: { data: CollaboratorCompleteInput }) => Promise<FnResult<CollaboratorDetail>>
 type UpdateFn = (opts: {
-  data: CollaboratorWriteInput & { id: string }
+  data: CollaboratorUpdateInput & { id: string }
 }) => Promise<FnResult<CollaboratorDetail>>
 type DeactivateFn = (opts: { data: CollaboratorDeactivateInput }) => Promise<FnResult<CollaboratorDetail>>
 type ReactivateFn = (opts: { data: { id: string } }) => Promise<FnResult<CollaboratorDetail>>
@@ -41,7 +42,7 @@ export type CollaboratorRepository = Readonly<{
     input: CollaboratorCompleteInput,
   ) => Promise<Result<CollaboratorDetail, PartnersError>>
   update: (
-    input: CollaboratorWriteInput & { id: string },
+    input: CollaboratorUpdateInput & { id: string },
   ) => Promise<Result<CollaboratorDetail, PartnersError>>
   deactivate: (input: CollaboratorDeactivateInput) => Promise<Result<CollaboratorDetail, PartnersError>>
   reactivate: (id: string) => Promise<Result<CollaboratorDetail, PartnersError>>

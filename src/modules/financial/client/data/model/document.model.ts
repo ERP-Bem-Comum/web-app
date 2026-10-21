@@ -125,6 +125,8 @@ export type TimelineEventType =
   | 'PayableManuallyPaid'
   | 'PayableReconciled' // conciliação (agregado separado) — entra na trilha via core-api#406
   | 'ReconciliationUndone'
+  | 'ManualPaymentUndone' // spec 119: baixa desfeita, com motivo
+  | 'PayableTransmitted' // core-api#823: título saiu numa remessa
 export type TimelineChange = Readonly<{ field: string; before: string | null; after: string | null }>
 export type DocumentTimelineEntry = Readonly<{
   eventType: TimelineEventType
@@ -133,6 +135,7 @@ export type DocumentTimelineEntry = Readonly<{
   occurredAt: string
   isSystem: boolean // ação automática (actor null); a View mostra "Sistema"
   actorName: string | null // null com isSystem=false = humano não-resolvido → a View mostra "—"
+  reason: string | null // spec 119: motivo do marco (desfazimentos); null na maioria
   changes: readonly TimelineChange[]
 }>
 
@@ -144,6 +147,14 @@ export type ManualPaymentInput = Readonly<{
   version: number
   paidAt?: string
   reason?: string
+}>
+
+// Spec 119 / core-api#61: desfazer a baixa de UM título. Motivo obrigatório.
+export type UndoPayableInput = Readonly<{
+  documentId: string
+  payableId: string
+  version: number
+  reason: string
 }>
 
 export type ListDocumentsInput = Readonly<{

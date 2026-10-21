@@ -108,6 +108,67 @@ morto — é uma chave, e há teste cobrindo os dois estados (`accounts-grid.spe
 **Para repor:** `naturalKeySlot: row.naturalKeySlot` no `set:` do upsert do core-api, e o literal da
 página vira `true`. Nada mais — nem a cadeia, nem os textos, nem os testes.
 
+## Saldo de abertura editável (core-api#999)
+
+Entrou junto porque é a **origem operacional** das duplicatas que a #995 trata: a conta migrada do
+legado veio com o saldo congelado, e não poder corrigi-lo foi o que levou o operador a criar contas
+novas para conseguir gerar remessa. O backend liberou; o front não tinha tela.
+
+Duas regras do contrato governam a implementação, e nenhuma é opcional:
+
+- **FR-006 — o par é coeso.** Saldo sem data (ou o contrário) volta `opening-balance-requires-date`.
+  Validado na tela, com mensagem própria, em vez de virar um 4xx genérico.
+- **FR-008 — mexer no saldo entra na trava do DADO BANCÁRIO.** Conta com extrato importado recusa com
+  `cedente-account-bank-data-locked`, porque o saldo de abertura é a premissa de todo saldo calculado
+  depois.
+
+### ⚠️ Por isso o submit só envia o par quando ele MUDOU
+
+O backend decide a trava por **presença**, não por valor: reenviar o mesmo saldo já dispara o
+`bank-data-locked`. Os campos abrem pré-preenchidos com o que está gravado (para corrigir, não
+redigitar), e o submit compara com o `target` antes de mandar.
+
+Sem essa comparação, abrir a edição e salvar **qualquer** campo — o apelido, por exemplo — passaria a
+falhar em toda conta com histórico.
+
+### A semeadura da data fatia a string, nunca `new Date(iso)`
+
+`new Date('2026-09-01')` é interpretado como UTC e, no fuso de Brasília, volta 31/08. A data andaria um
+dia para trás a cada abertura da edição, e o operador salvaria o retrocesso sem perceber. Há teste.
+
+### O texto dos imutáveis mudou junto
+
+Dizia _"CNPJ e saldo de abertura não podem ser alterados"_. Com os campos editáveis logo acima, a frase
+passaria a contradizer a tela. Sobrou o CNPJ, que segue imutável de verdade.
+
+## ⚠️ O PATCH da edição virou um DIFF — e sem isso nada acima funcionava
+
+Medido em tela pela P.O. (06/09): a conta **"Demonstrativa PG"** — **ativa**, com **9 remessas** e
+agência sem DV — recusava o **preenchimento do dígito** com _"Algo deu errado"_.
+
+A causa não era o dígito. O submit mandava `bankCode`, `agency`, `accountNumber`, `accountDigit` e
+`type` **sempre**, mudados ou não, e o backend decide a trava **FR-008 por PRESENÇA**:
+
+```ts
+wantsBankDataChange = input.bankCode !== undefined || input.agency !== undefined || …
+if (wantsBankDataChange && hasActivity) → 'cedente-account-bank-data-locked'
+```
+
+Então **toda** edição virava "alteração de dado bancário" e era recusada em qualquer conta com
+histórico — só o apelido, só o convênio, só o DV.
+
+**E o mais caro: isso anulava uma carve-out deliberada do core-api.** Lá, preencher um DV vazio
+explicitamente **não** é alterar dado bancário (_"PREENCHER o que está vazio não é alterar dado
+bancário — TROCAR um dígito já definido é"_). A permissão existia e o front não a alcançava, porque
+mandava `agency` junto.
+
+**Mandar só o que mudou não é economia de bytes — é o que faz a régua do backend valer.** Cada campo é
+comparado com o `target` antes de entrar no corpo.
+
+Há teste para os dois riscos: o de mandar demais (preencher só o DV leva **só** `agencyDigit`) e o de
+podar demais (mudar a conta leva `accountNumber` e `accountDigit`), porque uma poda errada faria a
+edição "salvar" sem gravar.
+
 ## Fora de escopo
 
 - **A conta excluída no seletor "Alterar conta".** O desenho da #995 (B5) previa que ela continuasse
@@ -123,5 +184,8 @@ página vira `true`. Nada mais — nem a cadeia, nem os textos, nem os testes.
   do excluir permanecendo aberto no erro, e `confirm` sem alvo como no-op.
 - `accounts-grid.spec.tsx` (+2) — o Excluir ausente com `canDelete` falso (e o Reabrir presente), e
   de volta com `canDelete` verdadeiro, mandando a linha certa. É o que prova que esconder é uma chave.
-- `edit-account.binding.spec.tsx` (+5) — convênio travado na ativa e destravado na encerrada, o setter
+- `edit-account.binding.spec.tsx` (+13) — o saldo pré-preenchido, a data **não** recuando um dia, o par
+  não viajando quando nada mudou, o par inteiro viajando quando o saldo muda, e o FR-006 recusado na
+  tela; o PATCH como diff (preencher só o DV, trocar só o apelido, e a poda não perdendo campo); mais
+  convênio travado na ativa e destravado na encerrada, o setter
   no-op quando travado, o **vazio viajando** na encerrada, e o vazio **não** viajando na ativa.

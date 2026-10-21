@@ -1,5 +1,5 @@
 /**
- * TeamMember — model do client p/ o relatório "Equipe ABC" (GET /reports/team, #114). Espelha o
+ * TeamMember — model do client p/ o relatório "Equipe Bem Comum" (GET /reports/team, #114). Espelha o
  * `TeamMember` do server (`reports.io.ts`): o BFF entrega a resposta completa; o client só consome
  * (server-state). LGPD-safe (9 colunas; sem idade/gênero/raça-cor). Arquivo NEUTRO da camada `client/data`
  * (boundary §I). `program`/`education`/`experienceInPublicSector` são nullable.
@@ -20,6 +20,8 @@ export type TeamMember = Readonly<{
   race: string | null
   /** Anos completos, derivados no core-api — `dateOfBirth` nunca cruza a borda (LGPD). */
   age: number | null
+  /** Código da geração ('BOOMER'…'GEN_Z', 'NA' sem nascimento), derivado no core-api (#1055). */
+  generation: string
 }>
 
 /**

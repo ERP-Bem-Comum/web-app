@@ -139,6 +139,9 @@ export const CoreApiTimelineEntrySchema = z.object({
   target: z.object({ kind: z.string().trim(), id: z.string().trim() }),
   occurredAt: z.string().trim(),
   actor: z.string().trim().nullable().catch(null),
+  // Spec 119 / core-api#61: motivo do marco (desfazimentos; baixa manual opcional). Tolerante: core-api
+  // anterior não manda o campo → null.
+  reason: z.string().trim().nullable().optional().catch(null),
   changes: z
     .array(
       z.object({

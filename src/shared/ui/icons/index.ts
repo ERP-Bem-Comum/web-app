@@ -42,4 +42,9 @@ export {
   EditIcon,
   TrashIcon,
   InfoIcon,
+  RefreshIcon,
+  CreditCardIcon,
+  UndoIcon,
+  SendIcon,
+  CheckIcon,
 } from './icons.tsx'

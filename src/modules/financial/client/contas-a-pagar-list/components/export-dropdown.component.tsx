@@ -6,12 +6,20 @@ import type { ReactNode, MouseEvent } from 'react'
 
 import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
-import { DownloadIcon, FileTextIcon, FileChartIcon } from '#shared/ui/icons/index.ts'
+import {
+  ChevronDownIcon,
+  DownloadIcon,
+  FileTextIcon,
+  FileChartIcon,
+  UploadIcon,
+} from '#shared/ui/icons/index.ts'
+import { statusHeader, statusHeaderTitle } from './status-actions.css.ts'
 
 import { buildDocumentsCsv, exportFileStamp, type GridRow } from '../contas-a-pagar.view-model.ts'
 import {
   wrapper,
   trigger,
+  triggerChevron,
   menu,
   menuItem,
   menuItemBorder,
@@ -58,10 +66,18 @@ export function ExportDropdown({
         <span className={trigger}>
           <DownloadIcon />
           {t('financial.list.export')}
+          <span className={triggerChevron}>
+            <ChevronDownIcon size={14} />
+          </span>
         </span>
       </summary>
 
       <div className={menu}>
+        {/* Cabeçalho no mesmo molde do "Alterar status" (base visual da P.O., 19/10). */}
+        <div className={statusHeader}>
+          <UploadIcon size={16} />
+          <span className={statusHeaderTitle}>{t('financial.list.export')}</span>
+        </div>
         <button
           type="button"
           className={menuItem}

@@ -1,5 +1,5 @@
 /**
- * Estilos da page "Equipe ABC" — identidade "brand", só-tokens (§X). Cobre: cabeçalho (voltar + título +
+ * Estilos da page "Equipe Bem Comum" — identidade "brand", só-tokens (§X). Cobre: cabeçalho (voltar + título +
  * Filtros/Exportar), filtros recolhíveis (grade de campos placeholder + Filtrar), a grade dos cartões de
  * gráfico (2-up onde cabe, "por Função" full-width) e o espaçamento até a tabela. Nenhum hex/px cru aqui —
  * tudo vem de `brand`/`vars`. Reaproveita o padrão do relatório Realizado × Planejado.

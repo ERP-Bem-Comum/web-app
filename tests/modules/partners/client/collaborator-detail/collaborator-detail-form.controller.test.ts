@@ -14,6 +14,8 @@ import {
   stateFromDetail,
   buildPaymentTarget,
   validatePaymentTarget,
+  buildTerritory,
+  validateTerritory,
   type CollaboratorDetailFormState,
 } from '#modules/partners/client/collaborator-detail/components/collaborator-detail-form.controller.ts'
 import type { CollaboratorDetail } from '#modules/partners/client/data/model/collaborator.model.ts'
@@ -34,6 +36,7 @@ const emptyState: CollaboratorDetailFormState = {
   emergencyContactName: '',
   emergencyContactTelephone: '',
   genderIdentity: '',
+  genderIdentityDescription: '',
   race: '',
   allergies: '',
   foodCategory: '',
@@ -335,5 +338,61 @@ describe('validatePaymentTarget — antes do salvar (spec 120)', () => {
   it('trocar o banco já gravado → ok', () => {
     const s = { ...stateFromDetail(withBank), bank: '001', accountNumber: '11111' }
     assert.deepEqual(validatePaymentTarget(s, withBank), {})
+  })
+})
+
+// ── Spec 121 — território editável no detalhe (core-api#1053) ────────────────────────────────────
+
+const withTerritory: CollaboratorDetail = {
+  ...detailBase,
+  territory: { uf: 'CE', municipality: 'Fortaleza' },
+}
+
+describe('buildTerritory — corpo do PUT (spec 121)', () => {
+  it('UF e município vazios → null (o core-api mantém o gravado)', () => {
+    assert.equal(buildTerritory({ ...emptyState, uf: '', municipality: '   ' }), null)
+  })
+  it('os dois preenchidos → objeto, com trim', () => {
+    assert.deepEqual(buildTerritory({ ...emptyState, uf: 'SP', municipality: '  São Paulo ' }), {
+      uf: 'SP',
+      municipality: 'São Paulo',
+    })
+  })
+  it('só um preenchido → o outro vai null (substitui parcialmente)', () => {
+    assert.deepEqual(buildTerritory({ ...emptyState, uf: 'RJ', municipality: '' }), {
+      uf: 'RJ',
+      municipality: null,
+    })
+    assert.deepEqual(buildTerritory({ ...emptyState, uf: '', municipality: 'Sobral' }), {
+      uf: null,
+      municipality: 'Sobral',
+    })
+  })
+  it('hidratado do detalhe e sem mudança → reenvia o mesmo território', () => {
+    assert.deepEqual(buildTerritory(stateFromDetail(withTerritory)), withTerritory.territory)
+  })
+})
+
+describe('validateTerritory — antes do salvar (spec 121)', () => {
+  it('sem território gravado e nada preenchido → ok', () => {
+    assert.deepEqual(validateTerritory(emptyState, detailBase), {})
+  })
+  it('preencher território onde não havia → ok', () => {
+    assert.deepEqual(validateTerritory({ ...emptyState, uf: 'BA' }, detailBase), {})
+  })
+  it('trocar UF/município gravados → ok', () => {
+    assert.deepEqual(validateTerritory({ ...emptyState, uf: 'SP', municipality: '' }, withTerritory), {})
+  })
+  it('esvaziar território já gravado → bloqueia (null manteria o gravado e a tela mentiria)', () => {
+    const e = validateTerritory(emptyState, withTerritory)
+    assert.equal(e['territory.removal'], true)
+    assert.equal(e['territory.uf'], true)
+    assert.equal(e['territory.municipality'], true)
+  })
+  it('gravado só com campos vazios conta como sem território → ok', () => {
+    assert.deepEqual(
+      validateTerritory(emptyState, { ...detailBase, territory: { uf: null, municipality: null } }),
+      {},
+    )
   })
 })

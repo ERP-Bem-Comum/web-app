@@ -7,6 +7,8 @@ export const contractsErrorTag = (e: ContractsError): string => {
   switch (e) {
     case 'invalid-code':
       return 'contracts.error.invalid-code'
+    case 'contract-number-duplicated':
+      return 'contracts.error.number-duplicated'
     case 'invalid-value':
       return 'contracts.error.invalid-value'
     case 'invalid-period':

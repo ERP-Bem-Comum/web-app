@@ -11,7 +11,9 @@ import { brand } from '#shared/ui/brand/grid-brand.values.ts'
 export const screen = style({
   display: 'flex',
   flexDirection: 'column',
-  minBlockSize: '100%',
+  // Altura EXATA da área de conteúdo (não mínima): o `content` do shell corta o que passa (overflow
+  // hidden), então quem rola é o grid, dentro do espaço que sobra (ver `gridWrap`).
+  blockSize: '100%',
   paddingBlockEnd: '5rem', // espaço p/ o bottombar fixo
 })
 
@@ -560,6 +562,26 @@ export const confirmDateInput = style({
   color: vars.color.institutional.ink2,
 })
 
+// Spec 119 — modal de desfazimento: o motivo (obrigatório) e a lista dos títulos que vão voltar.
+export const confirmTextarea = style([
+  confirmDateInput,
+  {
+    minBlockSize: `calc(${vars.space.xl} * 3)`,
+    resize: 'vertical',
+    lineHeight: 1.5,
+  },
+])
+export const confirmList = style({
+  marginBlock: vars.space.sm,
+  paddingInlineStart: vars.space.lg,
+  maxBlockSize: '12rem',
+  overflowY: 'auto',
+  fontFamily: vars.font.family.body,
+  fontSize: vars.font.size.xs,
+  lineHeight: 1.6,
+  color: vars.color.institutional.ink2,
+})
+
 // ── Grid (Figma 205-638) — enriquecido pela 012/#47: + Contrato, Forma, Emissão, Bruto ─────────────
 // Larguras balanceadas (espaço proporcional entre as colunas); Fornecedor é a flexível (minmax).
 // Ordem: checkbox · Tipo · Documento · Fornecedor · Contrato · Forma · Emissão · Venc · Bruto · Líquido ·
@@ -568,20 +590,32 @@ export const confirmDateInput = style({
 const GRID_COLS =
   '2.25rem 4.75rem 7rem minmax(15rem, 1.4fr) 6.5rem 8.5rem 6.5rem 6.5rem 6.5rem 7rem 7rem 7.5rem'
 
-// Wrapper rola na horizontal (como o grid largo do Figma) quando a viewport é estreita.
+// Largura mínima de UMA linha (header e rows): soma das tracks do GRID_COLS (85rem) + 11 gaps de 1rem +
+// o paddingInline da linha. Mantenha em sincronia com o GRID_COLS. A largura mínima mora na LINHA, não no
+// scroller: com ela no scroller (antes 88rem < ~99rem do conteúdo), a linha transbordava o próprio scroller
+// — o fundo do header acabava no meio (Bruto) e a rolagem horizontal se dividia entre o grid e a tela.
+const ROW_MIN_INLINE = `calc(96rem + 2 * ${vars.space.lg})`
+
+// Faixa do grid: ocupa TODA a altura que sobra na tela (entre a filter-bar e o rodapé fixo). A altura vem
+// do layout, não de uma conta fixa — com `calc(100dvh - 18rem)`, qualquer coisa a mais no topo (linha de
+// filtros ativos, chips que rolam, zoom) empurrava o fim do grid para baixo do rodapé: a última linha
+// ficava cortada e a barra horizontal, escondida.
 export const gridWrap = style({
   // paddingInline = 28px (brand.space.xxl): recuo da marca — alinha a tabela ao título e dá folga p/ a sombra.
   paddingInline: brand.space.xxl,
   paddingBlock: vars.space.md,
+  flex: 1,
   minBlockSize: 0, // permite o scroller interno encolher dentro do flex da tela
+  display: 'flex',
+  flexDirection: 'column',
 })
-// Scroller do grid (2 eixos), espelhando o grid de Contratos: rola na vertical (maxBlockSize) com header
-// sticky e na horizontal (minInlineSize > largura do container). Scrollbar fina/discreta da marca.
+// Scroller do grid (2 eixos), espelhando o grid de Contratos: rola na vertical com header sticky e na
+// horizontal quando a linha (ROW_MIN_INLINE) passa da largura disponível. As DUAS barras ficam dentro da
+// área visível: o scroller nunca é mais alto que a faixa nem mais largo que a tela. Com poucas linhas, ele
+// encolhe para o conteúdo (flex 0 1 auto), sem caixa vazia. Scrollbar fina/discreta da marca.
 export const grid = style({
-  minInlineSize: '88rem', // colunas folgadas (sem corte); abaixo disso rola na horizontal
-  // Reserva p/ o topo (header do shell + filter-bar) E o rodapé FIXO (3.5rem) + folga, p/ a última
-  // linha nunca ficar coberta pelo bottombar (antes 15rem deixava a borda inferior sob o rodapé).
-  maxBlockSize: 'calc(100dvh - 18rem)',
+  flex: '0 1 auto',
+  minBlockSize: 0,
   overflow: 'auto',
   // Borda clareada + profundidade (kit de grid) — mesmo tratamento do grid de Contratos.
   border: `${vars.borderWidth.thin} solid color-mix(in srgb, ${vars.color.institutional.paperRule} 55%, ${vars.color.institutional.paperWarm})`,
@@ -609,6 +643,7 @@ export const head = style({
   gridTemplateColumns: GRID_COLS,
   gap: '1rem', // 16px — mais respiro entre colunas (ex.: Líquido ↔ Status)
   alignItems: 'center',
+  minInlineSize: ROW_MIN_INLINE, // fundo e régua cobrem todas as colunas ao rolar na horizontal
   minBlockSize: '2.25rem', // 36px
   paddingInline: vars.space.lg,
   background: vars.color.institutional.paperWarm,
@@ -633,6 +668,7 @@ export const row = style({
   gridTemplateColumns: GRID_COLS,
   gap: '1rem', // 16px — alinhado ao header; mais respiro entre colunas
   alignItems: 'center',
+  minInlineSize: ROW_MIN_INLINE, // mesma largura do header (hover e régua até a última coluna)
   minBlockSize: '3.5rem', // 56px
   paddingInline: vars.space.lg,
   borderBlockEnd: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
@@ -1075,6 +1111,7 @@ const timelineDotBase = {
 export const timelineDot = styleVariants({
   paid: { ...timelineDotBase, background: vars.color.status.activeText }, // verde
   approved: { ...timelineDotBase, background: vars.color.status.approvedText }, // azul
+  transmitted: { ...timelineDotBase, background: vars.color.status.finishedText }, // azul escuro
   reconciled: { ...timelineDotBase, background: vars.color.status.reconciledText }, // roxo
   open: { ...timelineDotBase, background: vars.color.status.pendingText }, // âmbar
   draft: { ...timelineDotBase, background: vars.color.status.cancelledText }, // cinza

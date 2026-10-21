@@ -9,7 +9,8 @@ import { Link, useNavigate } from '@tanstack/react-router'
 
 import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
-import { SearchIcon } from '#shared/ui/icons/index.ts'
+import { CalendarDaysIcon, SearchIcon } from '#shared/ui/icons/index.ts'
+import { trigger } from '../components/export-dropdown.css.ts'
 
 import { useContasAPagar } from '../contas-a-pagar.binding.ts'
 import { useDocumentDetail } from '../document-detail.binding.ts'
@@ -44,6 +45,10 @@ import { DocumentDetailDrawer, type DrawerTab } from '../components/document-det
 import { DeleteConfirmModal } from '../components/delete-confirm.component.tsx'
 import { DueDateModal } from '../components/due-date-modal.component.tsx'
 import { PaymentDateModal } from '../components/payment-date-modal.component.tsx'
+import { UndoModal, type UndoKind } from '../components/undo-modal.component.tsx'
+import { ReopenWarningModal } from '../components/reopen-warning-modal.component.tsx'
+import { useBulkUndo } from '../bulk-undo.binding.ts'
+import { useReopenGuard } from '../reopen-guard.binding.ts'
 import { ExportDropdown } from '../components/export-dropdown.component.tsx'
 import { StatusActions } from '../components/status-actions.component.tsx'
 import { RemittancePreviewModal } from '../components/remittance-preview-modal.component.tsx'
@@ -192,6 +197,12 @@ export function ContasAPagarPage(): ReactNode {
   //    Excluir/Vencimento são transições do documento (Aprovar cascateia pai→filhos), agregadas por doc
   //    (dedup). A baixa (Marcar como pago) é por título, independente. Backend valida transição inválida. ──
   const titleTargets = deriveTitleActionTargets(rows, selected)
+  // Cabeçalho do "Alterar status": "1 documento • Transmitido" — documentos distintos e os status da seleção.
+  const selectedRows = rows.filter((r) => selected.has(r.id))
+  const selectedDocs = new Set(selectedRows.map((r) => r.documentId)).size
+  const selectionSummary = `${String(selectedDocs)} ${t(
+    selectedDocs === 1 ? 'financial.list.status.summaryOne' : 'financial.list.status.summaryMany',
+  )} • ${[...new Set(selectedRows.map((r) => r.status))].join(', ')}`
 
   // VAN (core-api#728): PRÉ-VOO do lote, disparado pelo item CNAB do "Exportar". A origem é a MESMA do
   // CSV/PDF (`exportRows`: a seleção, ou o que está na tela quando não há seleção) — o operador não
@@ -214,6 +225,25 @@ export function ContasAPagarPage(): ReactNode {
 
   // ── Mudar Status em massa: Aprovar (Aberto→Aprovado) · Voltar p/ edição (Aprovado→Aberto) ──
   const bulk = useBulkStatus(clearSelection)
+  // Spec 119: "Voltar para edição" passa pela guarda — documento que já teve baixa desfeita
+  // abre o alerta reforçado antes; os demais seguem direto, como sempre.
+  const reopenGuard = useReopenGuard((targets) => {
+    bulk.reopen(targets)
+  })
+
+  // ── Spec 119 / core-api#61: desfazer baixa (Pago → status anterior à baixa). O
+  //    modal abre ANTES (é a confirmação e o lugar do motivo); um motivo para o lote todo. ──
+  const [undoKind, setUndoKind] = useState<UndoKind | null>(null)
+  const [undoReason, setUndoReason] = useState('')
+  const undo = useBulkUndo(() => {
+    clearSelection()
+    setUndoKind(null)
+    setUndoReason('')
+  })
+  const undoTargets = undoKind === 'payment' ? titleTargets.undoPayment : []
+  const applyUndo = (): void => {
+    if (undoKind === 'payment') undo.undoPayment(undoTargets, undoReason.trim())
+  }
 
   // ── Alterar vencimento (1+) — modal com seletor de data; aplica a cada Aberto via PATCH. ──
   const [dueOpen, setDueOpen] = useState(false)
@@ -447,6 +477,25 @@ export function ContasAPagarPage(): ReactNode {
         }}
       />
 
+      <UndoModal
+        kind={undoKind}
+        targets={undoTargets}
+        reason={undoReason}
+        running={undo.running}
+        onReasonChange={setUndoReason}
+        onApply={applyUndo}
+        onCancel={() => {
+          setUndoKind(null)
+        }}
+      />
+
+      <ReopenWarningModal
+        targets={reopenGuard.pending}
+        running={bulk.running}
+        onConfirm={reopenGuard.confirm}
+        onCancel={reopenGuard.cancel}
+      />
+
       <RemittancePreviewModal
         open={remittance.open}
         running={remittance.running}
@@ -510,28 +559,35 @@ export function ContasAPagarPage(): ReactNode {
                 Aprovar/Reabrir/Excluir/Vencimento agregam por documento (Aprovar cascateia pai→filhos);
                 Marcar como pago é por título. Sem busca extra ao documento. */}
             {/* Alterar vencimento de 1+ títulos Aberto (abre o modal); aplica via PATCH por documento. */}
+            {/* Mesmo molde dos botões "Alterar status" e "Exportar" (base visual da P.O., 19/10). */}
             <button
               type="button"
-              className={selClear}
+              className={trigger}
               disabled={titleTargets.dueEditable.length === 0 || dueEdit.running}
               title={titleTargets.dueEditable.length === 0 ? t('financial.list.dueDate.needOpen') : undefined}
               onClick={() => {
                 setDueOpen(true)
               }}
             >
+              <CalendarDaysIcon size={16} />
               {t('financial.list.dueDate.bulk')}
             </button>
             <StatusActions
+              summary={selectionSummary}
               canApprove={titleTargets.approve.length > 0}
               canReopen={titleTargets.reopen.length > 0}
               canDelete={titleTargets.deletable.length > 0}
               canPay={payEligible.length > 0}
-              running={bulk.running || del.running || pay.running}
+              canUndoPayment={titleTargets.undoPayment.length > 0}
+              running={bulk.running || del.running || pay.running || undo.running || reopenGuard.checking}
               onApprove={() => {
                 bulk.approve(titleTargets.approve)
               }}
               onReopen={() => {
-                bulk.reopen(titleTargets.reopen)
+                reopenGuard.request(titleTargets.reopen)
+              }}
+              onUndoPayment={() => {
+                setUndoKind('payment')
               }}
               onDelete={() => {
                 setDeleteOpen(true)
@@ -549,6 +605,18 @@ export function ContasAPagarPage(): ReactNode {
                 {t(bulk.errorTag)}
                 {bulk.failures.map((f) => (
                   <span key={f.documentNumber} className={selErrorLine}>
+                    {`${f.documentNumber}: ${f.message ?? t(f.tag)}`}
+                  </span>
+                ))}
+              </span>
+            ) : null}
+            {/* Spec 119: uma linha por TÍTULO que falhou no desfazimento, com a mensagem do core-api — as
+                recusas são todas 409, e só o texto diz o que fazer (desfazer a conciliação, descartar a remessa). */}
+            {undo.errorTag !== null ? (
+              <span className={selError}>
+                {t(undo.errorTag)}
+                {undo.failures.map((f, i) => (
+                  <span key={`${f.documentNumber}-${String(i)}`} className={selErrorLine}>
                     {`${f.documentNumber}: ${f.message ?? t(f.tag)}`}
                   </span>
                 ))}

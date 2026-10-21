@@ -291,6 +291,10 @@ export const createCoreApiReconciliationClient = (
       // preenchido, porque trocar é recusado (`cedente-convenio-already-set`) e o convênio viaja no
       // nome de toda remessa já transmitida.
       ...(i.convenio !== undefined ? { convenio: i.convenio } : {}),
+      // core-api#999. Viajam JUNTOS ou não viajam (FR-006) — quem garante isso é o binding, que só
+      // define os dois quando o operador mexeu no par.
+      ...(i.openingBalanceCents !== undefined ? { openingBalanceCents: i.openingBalanceCents } : {}),
+      ...(i.openingBalanceDate !== undefined ? { openingBalanceDate: i.openingBalanceDate } : {}),
     }
     const r = await resultFetch<unknown>(`${baseUrl}/cedente-accounts/${i.id}`, {
       method: 'PATCH',

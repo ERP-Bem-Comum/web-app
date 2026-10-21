@@ -45,7 +45,8 @@ export const CloseCedenteAccountInputSchema = z.object({ id: z.uuid() })
 // o id, sem body. O ator vem da sessão no servidor, nunca do client.
 export const ReopenCedenteAccountInputSchema = z.object({ id: z.uuid() })
 export const DeleteCedenteAccountInputSchema = z.object({ id: z.uuid() })
-// Editar conta-cedente (PATCH /cedente-accounts/:id) — campos editáveis opcionais (CNPJ/saldo são imutáveis).
+// Editar conta-cedente (PATCH /cedente-accounts/:id) — campos editáveis opcionais. O CNPJ segue
+// imutável; o SALDO DE ABERTURA deixou de ser (core-api#999).
 export const EditCedenteAccountInputSchema = z.object({
   id: z.uuid(),
   bankCode: z.string().trim().min(1).max(10).optional(),
@@ -72,6 +73,17 @@ export const EditCedenteAccountInputSchema = z.object({
   // 6, não 20: o campo do header CNAB tem 6 posições (033-038) e o banco trunca o excedente em
   // silêncio. Ver CONVENIO_MAX_DIGITS e core-api#804.
   convenio: z.string().trim().max(6).optional(),
+  // core-api#999 — o saldo de abertura passou a ser corrigível, e a origem disso é operacional: a
+  // conta migrada do legado veio com o saldo congelado, e não poder corrigi-lo foi o que levou o
+  // operador a criar contas NOVAS para gerar remessa (é a raiz das duplicatas da #995).
+  //
+  // ⚠️ DUAS REGRAS DO BACKEND que o binding precisa respeitar, e nenhuma delas mora aqui:
+  //  · FR-006 — saldo e data são um PAR: um sem o outro volta `opening-balance-requires-date`;
+  //  · FR-008 — mexer no saldo entra na MESMA trava do dado bancário: conta com extrato importado
+  //    recusa com `cedente-account-bank-data-locked`, porque o saldo de abertura é a premissa de
+  //    todo saldo calculado depois.
+  openingBalanceCents: z.string().trim().optional(),
+  openingBalanceDate: z.string().trim().optional(),
 })
 
 // #205: extrato por período. `from`/`to` date-only (YYYY-MM-DD); filter opcional.

@@ -79,9 +79,9 @@ export const MENU: readonly MenuSection[] = [
     subItems: [
       { label: 'Fornecedores sem Contrato', to: '/relatorios/fornecedores-sem-contrato' },
       { label: 'Realizado × Planejado', to: '/relatorios/realizado-x-planejado' },
-      // Equipe ABC: front-first, dados sintéticos/anonimizados (LGPD). SEM `requiredPermission` — o RBAC é
+      // Equipe Bem Comum: front-first, dados sintéticos/anonimizados (LGPD). SEM `requiredPermission` — o RBAC é
       // modelado pelo cliente PÓS-entrega (não gateia este relatório agora).
-      { label: 'Equipe ABC', to: '/relatorios/equipe' },
+      { label: 'Equipe Bem Comum', to: '/relatorios/equipe' },
       // Posição de Pagamentos: front-first, dados sintéticos. Snapshot Fornecedor→CC→Categoria (Pendente/
       // Pago/Atrasado). SEM `requiredPermission` (RBAC pós-entrega). Engine reusável p/ Recebíveis depois.
       { label: 'Posição de Pagamentos', to: '/relatorios/posicao-pagamentos' },

@@ -73,6 +73,7 @@ export const ptBR: Catalog = {
   'auth.error.reference-label': 'Código de referência:',
   // Contracts — Errors
   'contracts.error.invalid-code': 'Código do contrato inválido.',
+  'contracts.error.number-duplicated': 'Já existe um contrato com este número.',
   'contracts.error.invalid-value': 'Valor inválido ou excede o teto permitido.',
   'contracts.error.invalid-period': 'Período de vigência inválido.',
   'contracts.error.missing-contractor': 'Contratante obrigatório não informado.',
@@ -235,6 +236,10 @@ export const ptBR: Catalog = {
   'contracts.create.partnerNotFound': 'Nenhum contratado encontrado',
   'contracts.create.newPartner': 'Cadastrar novo parceiro',
   'contracts.create.field.classification': 'Classificação',
+  'contracts.create.field.number': 'Número do contrato',
+  'contracts.create.field.numberHint': 'Deixe vazio para gerar automaticamente',
+  'contracts.create.field.numberInvalid': 'Use o formato 0123/2024.',
+  'contracts.create.numberPending': 'número a definir',
   'contracts.create.field.classification.ct': 'Contrato',
   'contracts.create.field.classification.os': 'Ordem de Serviço',
   'contracts.create.field.contractModel': 'Modelo',
@@ -289,7 +294,8 @@ export const ptBR: Catalog = {
   'contracts.create.modal.title': 'Contrato criado com sucesso!',
   'contracts.create.modal.subtitle': 'O contrato {{code}} foi cadastrado.',
   'contracts.create.modal.button': 'Ir para detalhes',
-  'contracts.create.modal.finalizeTitle': 'Finalizar cadastro',
+  'contracts.create.modal.finalizeTitle': 'Concluir Novo Contrato',
+  'contracts.create.modal.finalizeTitleOS': 'Concluir Nova Ordem de Serviço',
   'contracts.create.modal.finalizeSubtitle': 'Revise os dados e anexe o documento assinado',
   'contracts.create.modal.summary': 'Resumo',
   'contracts.create.modal.statusPreview': 'Status Preview',
@@ -380,6 +386,8 @@ export const ptBR: Catalog = {
   'partners.error.unauthorized': 'Sua sessão expirou. Entre novamente.',
   'partners.error.forbidden': 'Você não tem permissão para esta ação.',
   'partners.error.conflict': 'Já existe um registro com estes dados.',
+  'partners.error.collaborator-personal-data-immutable':
+    'RG, data de nascimento ou raça/cor já foram registrados e não podem ser alterados. Recarregue a página.',
   'partners.error.connectivity': 'Falha de conexão. Tente novamente.',
   'partners.error.server': 'Ocorreu um erro inesperado.',
   'partners.error.invalid-service-category': 'Categoria de serviço inválida.',
@@ -780,7 +788,8 @@ export const ptBR: Catalog = {
   'partners.collaborators.detail.field.telephone': 'Celular',
   'partners.collaborators.detail.field.emergencyContactName': 'Nome contato de emergência',
   'partners.collaborators.detail.field.emergencyContactTelephone': 'Número contato de emergência',
-  'partners.collaborators.detail.field.genderIdentity': 'Identidade de gênero',
+  'partners.collaborators.detail.field.genderIdentity': 'Identidade de Gênero',
+  'partners.collaborators.detail.field.genderIdentityDescription': 'Qual identidade de gênero?',
   'partners.collaborators.detail.field.race': 'Raça/Cor',
   'partners.collaborators.detail.field.allergies': 'Alergias',
   'partners.collaborators.detail.field.foodCategory': 'Categoria alimentar',
@@ -863,7 +872,7 @@ export const ptBR: Catalog = {
   'partners.collaborators.paginator.next': 'Próxima',
   'partners.collaborators.paginator.page': 'Página',
   'partners.collaborators.paginator.of': 'de',
-  'partners.collaborators.area.PARC': 'Parcerias',
+  'partners.collaborators.area.PARC': 'PARC',
   'partners.collaborators.area.DDI': 'DDI',
   'partners.collaborators.area.DCE': 'DCE',
   'partners.collaborators.area.EPV': 'EPV',
@@ -898,6 +907,7 @@ export const ptBR: Catalog = {
   'partners.collaborators.form.email': 'Email',
   'partners.collaborators.form.cpf': 'CPF',
   'partners.collaborators.form.cpfLocked': 'O CPF não pode ser alterado depois do cadastro.',
+  'partners.collaborators.form.personalLocked': 'Já registrado — não pode ser alterado.',
   'partners.collaborators.form.occupationArea': 'Área de Atuação',
   'partners.collaborators.form.role': 'Função',
   'partners.collaborators.form.startOfContract': 'Início de Contrato',
@@ -908,6 +918,8 @@ export const ptBR: Catalog = {
     'Os dados bancários podem ser alterados, mas não apagados. Preencha banco, agência e conta.',
   'partners.collaborators.form.pixRemovalBlocked':
     'A chave PIX pode ser alterada, mas não apagada. Preencha a chave.',
+  'partners.collaborators.form.territoryRemovalBlocked':
+    'O território pode ser alterado, mas não apagado. Preencha a UF ou o município.',
   'partners.collaborators.form.save': 'Salvar',
   'partners.collaborators.form.cancel': 'Cancelar',
   'partners.collaborators.form.saving': 'Salvando…',
@@ -1131,11 +1143,26 @@ export const ptBR: Catalog = {
   'financial.timeline.event.draft': 'Rascunho criado',
   'financial.timeline.event.reconciled': 'Conciliado',
   'financial.timeline.event.reconciliationUndone': 'Conciliação desfeita',
+  // Spec 119 / core-api#61 — desfazimentos no Histórico, com o motivo.
+  'financial.timeline.event.paymentUndone': 'Baixa desfeita',
+  // core-api#823 — geração da remessa no Histórico.
+  'financial.timeline.event.transmitted': 'Transmitido em remessa',
+  'financial.timeline.field.remittanceNsa': 'Remessa (NSA)',
+  'financial.timeline.field.remittanceYourNumber': 'Seu número',
+  'financial.timeline.reason': 'Motivo',
   'financial.timeline.field.dueDate': 'Vencimento',
   'financial.timeline.field.grossValue': 'Valor',
   'financial.timeline.field.description': 'Descrição',
   'financial.timeline.field.paymentMethod': 'Forma de pagamento',
   'financial.timeline.field.status': 'Status',
+  // spec 125: categorização e complemento entram no Histórico (antes eram descartados).
+  'financial.timeline.field.paymentDetail': 'Complemento do pagamento',
+  'financial.timeline.field.programRef': 'Programa',
+  'financial.timeline.field.budgetPlanRef': 'Plano orçamentário',
+  'financial.timeline.field.costCenterRef': 'Centro de custo',
+  'financial.timeline.field.categoryRef': 'Categoria',
+  'financial.timeline.field.subcategoryRef': 'Subcategoria',
+  'financial.timeline.value.unresolved': 'não identificado',
   'financial.detail.loading': 'Carregando…',
   'financial.detail.section.composicao': 'Composição Financeira',
   'financial.detail.section.titulos': 'Títulos Gerados',
@@ -1164,12 +1191,20 @@ export const ptBR: Catalog = {
   'financial.detail.file.empty': 'Nenhum arquivo anexado',
   'financial.detail.file.soon': 'Disponível ao anexar o documento',
   'financial.detail.file.attached': 'Arquivo anexado', // #568: comprovante-fonte presente (OCR)
-  'financial.detail.edit': 'Editar pagamento',
+  'financial.detail.edit': 'Editar documento',
   'financial.detail.editSoon': 'Edição do documento — em breve',
   'financial.create.hero.placeholder': 'Selecione o fornecedor',
   'financial.create.hero.change': 'Alterar fornecedor',
   'financial.create.submit': 'Salvar Documento',
   'financial.edit.title': 'Editar Documento',
+  // spec 125 — editar documento Aprovado (continua Aprovado).
+  'financial.edit.approved.awaitingBackend':
+    'A alteração de forma de pagamento e de categorização em documento Aprovado ainda não está disponível. Por enquanto, só a descrição pode ser salva.',
+  'financial.edit.approved.methodAlreadyChanged':
+    'A forma de pagamento já foi alterada uma vez após a aprovação. Para mudar de novo, faça a baixa manual.',
+  'financial.edit.approved.barcodeLocked': 'O código de barras não pode ser alterado depois da aprovação.',
+  'financial.edit.approved.barcodeMethodBlocked':
+    'Depois da aprovação não é possível voltar para uma forma paga por código de barras.',
   'financial.create.editSubmit': 'Salvar alterações',
   'financial.create.discard': 'Descartar',
   'financial.create.backToList': 'Voltar',
@@ -1624,7 +1659,14 @@ export const ptBR: Catalog = {
   'financial.recon.accounts.edit.action': 'Editar',
   'financial.recon.edit.title': 'Editar conta bancária',
   'financial.recon.edit.sub': 'Ajuste os dados do cadastro da conta.',
-  'financial.recon.edit.immutableNote': 'CNPJ e saldo de abertura não podem ser alterados após o cadastro.',
+  // ⚠️ O saldo SAIU desta frase (core-api#999): ele deixou de ser imutável, e manter o texto antigo
+  // faria a tela contradizer os campos logo acima — o operador leria "não pode" ao lado de um campo
+  // editável. Sobrou o CNPJ, que segue imutável de verdade.
+  'financial.recon.edit.immutableNote': 'O CNPJ da organização não pode ser alterado após o cadastro.',
+  // A trava do FR-008 dita em voz alta, ANTES do clique. Sem ela, o operador só descobre pelo 409 —
+  // e a mensagem do backend ("a conta já tem histórico") chega sem dizer o que ele deveria ter feito.
+  'financial.recon.edit.hint.openingBalance':
+    'Corrija o saldo e a data se eles nasceram errados. ⚠️ Só é possível enquanto a conta não tiver extrato importado — o saldo de abertura é a base de todo saldo calculado depois.',
   // #722: o convênio é preenchível UMA vez. O texto diz o MOTIVO, não só que está travado — sem isso
   // a trava parece defeito da tela.
   'financial.recon.edit.hint.convenioLocked':
@@ -1989,7 +2031,7 @@ export const ptBR: Catalog = {
   'financial.list.selection.sumGrossLabel': 'Soma (bruto):',
   'financial.list.selection.sumLabel': 'Soma (líquido):',
   // Mudar Status (chrome — transições pendentes no backend)
-  'financial.list.status.change': 'Mudar Status',
+  'financial.list.status.change': 'Alterar status',
   'financial.list.status.soon': 'Indisponível no v1 — pendente no backend',
   'financial.list.status.needOpen': 'Selecione documentos em "Aberto" para aprovar',
   'financial.list.status.needApproved': 'Selecione documentos "Aprovado" para voltar à edição',
@@ -1998,13 +2040,13 @@ export const ptBR: Catalog = {
   // se resolvem repetindo, e repetir é o que a frase mandava fazer.
   'financial.list.status.bulkError': 'Nem todos os documentos foram alterados:',
   'financial.list.status.approve': 'Aprovar',
-  'financial.list.status.approveHint': 'aprova o documento',
+  'financial.list.status.approveHint': 'Aprova o documento',
   'financial.list.status.reopen': 'Voltar para edição',
-  'financial.list.status.reopenHint': 'retorna para Aberto',
+  'financial.list.status.reopenHint': 'Retorna para Aberto',
   'financial.list.status.submit': 'Enviar para aprovação',
   'financial.list.status.submitHint': 'Rascunho → Aberto',
   'financial.list.status.pay': 'Marcar como pago',
-  'financial.list.status.payHint': 'registra a baixa',
+  'financial.list.status.payHint': 'Registra a baixa',
   'financial.list.status.needApprovedToPay': 'Selecione títulos "Aprovado" para dar baixa',
   'financial.list.status.bulkPayError': 'Algumas baixas não foram concluídas (atualize e tente de novo)',
   'financial.list.search': 'Buscar por fornecedor, número, CNPJ…',
@@ -2047,8 +2089,8 @@ export const ptBR: Catalog = {
     '{n} título(s) não tiveram o vencimento alterado: a lista está desatualizada. Atualize a página e refaça a seleção.',
   'financial.list.dueDate.errorPartialServer':
     '{n} título(s) não tiveram o vencimento alterado por falha temporária do servidor. Os demais foram alterados — clique em Aplicar de novo só para os que faltaram.',
-  'financial.list.delete.action': 'Excluir',
-  'financial.list.delete.actionHint': 'apaga o documento definitivamente',
+  'financial.list.delete.action': 'Excluir documento',
+  'financial.list.delete.actionHint': 'Exclusão definitiva',
   'financial.list.delete.needOpen': 'Só documentos em Rascunho ou Aberto podem ser excluídos.',
   'financial.list.delete.title': 'Excluir documento(s)?',
   'financial.list.delete.bodyOne': 'Esta ação é definitiva e não pode ser desfeita.',
@@ -2073,6 +2115,34 @@ export const ptBR: Catalog = {
   'financial.list.dueDate.modalCancel': 'Cancelar',
   'financial.list.dueDate.modalApply': 'Aplicar',
   // Baixa de Pagamento (baixa manual #224/#232) — modal de data de pagamento (a ação na linha é "Marcar como pago").
+  // Spec 119 / core-api#61 — desfazer baixa (Alterar status) e alerta do Voltar para edição.
+  'financial.list.status.group.approval': 'Aprovação',
+  'financial.list.status.summaryOne': 'documento',
+  'financial.list.status.summaryMany': 'documentos',
+  'financial.list.status.group.payment': 'Pagamento',
+  'financial.list.status.group.correction': 'Correções',
+  'financial.list.undo.payment.action': 'Desfazer baixa',
+  'financial.list.undo.payment.actionHint': 'Retorna ao status anterior',
+  'financial.list.undo.payment.needPaid':
+    'Selecione títulos com status Pago. Conciliado: desfaça a conciliação antes.',
+  'financial.list.undo.payment.modalTitle': 'Desfazer baixa',
+  'financial.list.undo.payment.modalBodyOne':
+    'Este título volta ao status anterior à baixa, e a data de pagamento é removida:',
+  'financial.list.undo.payment.modalBodyMany':
+    'títulos voltam ao status anterior à baixa, e a data de pagamento é removida:',
+  'financial.list.undo.payment.apply': 'Desfazer baixa',
+  'financial.list.undo.paidOn': 'pago em',
+  'financial.list.undo.reasonLabel': 'Motivo',
+  'financial.list.undo.reasonPlaceholder': 'Motivo (obrigatório) — fica registrado no Histórico do documento',
+  'financial.list.undo.cancel': 'Cancelar',
+  'financial.list.undo.bulkError': 'Não foi possível desfazer alguns títulos:',
+  'financial.list.reopenWarning.title': 'Voltar para edição — atenção',
+  'financial.list.reopenWarning.risk':
+    'Este documento já teve baixa desfeita. O pagamento pode ter acontecido no banco.',
+  'financial.list.reopenWarning.advice':
+    'Confira o extrato bancário antes de corrigir e relançar. Voltar para edição é uma operação fora da rotina — use só para erro grave de lançamento.',
+  'financial.list.reopenWarning.cancel': 'Cancelar',
+  'financial.list.reopenWarning.confirm': 'Voltar para edição mesmo assim',
   'financial.list.pay.modalTitle': 'Baixa de Pagamento',
   'financial.list.pay.dateLabel': 'Data de pagamento',
   'financial.list.pay.modalBodyOne': 'Informe a data de pagamento (saída bancária) do título selecionado.',
@@ -2840,8 +2910,8 @@ export const ptBR: Catalog = {
   'reports.realizadoXPlanejado.monthTitle.nov': 'Nov',
   'reports.realizadoXPlanejado.monthTitle.dec': 'Dez',
 
-  // ── Relatório "Equipe ABC" (front-first; dados sintéticos/anonimizados — LGPD) ──
-  'reports.equipe.title': 'Relatório Equipe ABC',
+  // ── Relatório "Equipe Bem Comum" (front-first; dados sintéticos/anonimizados — LGPD) ──
+  'reports.equipe.title': 'Relatório Equipe Bem Comum',
   'reports.equipe.back': 'Voltar',
   'reports.equipe.empty': 'Nenhum colaborador para exibir.',
   // Estados da fonte real (#114, endpoint LGPD-safe): carregando + erro + gráficos demográficos indisponíveis.
@@ -2869,6 +2939,21 @@ export const ptBR: Catalog = {
   'reports.equipe.filters.status': 'Status',
   'reports.equipe.filters.situacaoCadastral': 'Situação Cadastral',
   'reports.equipe.filters.idade': 'Idade',
+  'reports.equipe.filters.geracao': 'Geração',
+  'reports.equipe.generation.BOOMER': 'Baby Boomer',
+  'reports.equipe.generation.GEN_X': 'Geração X',
+  'reports.equipe.generation.MILLENNIAL': 'Millennial (Geração Y)',
+  'reports.equipe.generation.GEN_Z': 'Geração Z',
+  'reports.equipe.generation.OUTROS': 'Outras gerações',
+  'reports.equipe.generation.NA': 'N/A',
+  // Opções do FILTRO de Geração com o período (spec 127). Anos = recortes Pew do core-api
+  // (`partners/public-api/generation.ts`, `generationIdOf`) — mudou lá, muda aqui.
+  'reports.equipe.filters.generationOption.BOOMER': 'Baby Boomer (1946–1964)',
+  'reports.equipe.filters.generationOption.GEN_X': 'Geração X (1965–1980)',
+  'reports.equipe.filters.generationOption.MILLENNIAL': 'Millennial / Geração Y (1981–1996)',
+  'reports.equipe.filters.generationOption.GEN_Z': 'Geração Z (1997–2012)',
+  'reports.equipe.filters.generationOption.OUTROS': 'Outras gerações (até 1945 ou após 2012)',
+  'reports.equipe.filters.generationOption.NA': 'N/A (sem data de nascimento)',
   'reports.equipe.filters.vinculo': 'Vínculo Empregatício',
   'reports.equipe.filters.filtrar': 'Filtrar',
 

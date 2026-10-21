@@ -216,6 +216,22 @@ export const maskDateInput = (v: string): string => {
   return `${d.slice(0, 2)}/${d.slice(2, 4)}/${d.slice(4)}`
 }
 
+/**
+ * ISO "AAAA-MM-DD" → "DD/MM/AAAA", para semear o campo com o que está gravado. `''` quando não há data.
+ *
+ * ⚠️ Fatia a string, nunca `new Date(iso)`. `new Date('2026-09-01')` é interpretado como UTC e, no fuso
+ * de Brasília, volta como 31/08 — a data do saldo andaria um dia para trás toda vez que a edição
+ * abrisse, e o operador salvaria o retrocesso sem perceber.
+ */
+export const isoToDateInput = (iso: string | null): string => {
+  if (iso === null) return ''
+  const d = iso.slice(0, 10).split('-')
+  const [yyyy, mm, dd] = d
+  if (yyyy === undefined || mm === undefined || dd === undefined) return ''
+  if (yyyy.length !== 4 || mm.length !== 2 || dd.length !== 2) return ''
+  return `${dd}/${mm}/${yyyy}`
+}
+
 /** "DD/MM/AAAA" → ISO "AAAA-MM-DD". null se incompleto/inválido (dia/mês fora de faixa). */
 export const dateInputToIso = (masked: string): string | null => {
   const d = masked.replace(/\D/g, '')

@@ -134,6 +134,12 @@ export type EditCedenteAccountInput = Readonly<{
   nickname?: string
   /** #722: preenchível quando AUSENTE. Trocar um já preenchido é recusado — o front não deve tentar. */
   convenio?: string
+  /**
+   * Saldo de abertura (core-api#999). Par coeso: os dois juntos ou nenhum (FR-006). Mexer neles cai
+   * na trava do dado bancário (FR-008) — conta com extrato importado recusa.
+   */
+  openingBalanceCents?: string
+  openingBalanceDate?: string
 }>
 export type RejectSuggestionInput = Readonly<{ transactionId: string; payableId: string }>
 export type DifferenceInput = Readonly<{

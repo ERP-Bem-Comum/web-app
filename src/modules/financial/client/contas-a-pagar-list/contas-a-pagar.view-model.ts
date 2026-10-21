@@ -401,9 +401,34 @@ const MANUALLY_PAYABLE: readonly DocumentStatus[] = ['Aprovado', 'Transmitido']
 
 export const isManuallyPayable = (status: DocumentStatus): boolean => MANUALLY_PAYABLE.includes(status)
 
+/**
+ * Spec 119 / core-api#61: alvo de um DESFAZIMENTO — por TÍTULO, sem dedup por documento (o backend
+ * desfaz título a título, e irmãos do mesmo documento seguem cada um o seu ciclo). `documentNumber`,
+ * `supplier` e `pagamento` existem para o modal LISTAR o que vai voltar, antes de confirmar.
+ */
+export type UndoTarget = Readonly<{
+  documentId: string
+  payableId: string
+  version: number
+  documentNumber: string
+  supplier: string
+  pagamento: string
+}>
+
+/**
+ * Spec 119 (P.O., 19/10): o documento JÁ teve baixa desfeita? Se sim, o "Voltar para
+ * edição" não age direto: abre o alerta reforçado — o título já foi pago antes, e o pagamento
+ * pode ter acontecido no banco. PURA: recebe os tipos de evento da trilha, não a trilha inteira.
+ */
+const UNDO_EVENTS: ReadonlySet<string> = new Set(['ManualPaymentUndone'])
+export const hadUndoInHistory = (eventTypes: readonly string[]): boolean =>
+  eventTypes.some((type) => UNDO_EVENTS.has(type))
+
 export type TitleActionTargets = Readonly<{
   approve: readonly StatusTarget[] // documentos distintos com título Aberto (Aprovar cascateia)
   reopen: readonly StatusTarget[] // documentos com título Aprovado
+  // Spec 119: só títulos Pago (conciliado desfaz a conciliação antes, no módulo de Conciliação).
+  undoPayment: readonly UndoTarget[]
   deletable: readonly StatusTarget[] // Rascunho (descarte) + Aberto (hard-delete) — ambos canceláveis (#166)
   draftCount: number // rascunhos "ignorados" — 0 desde #166 (rascunho agora É excluível)
   // #270: vencimento por TÍTULO (Aberto ou Aprovado), isolado — por payable (sem dedup por documento).
@@ -442,9 +467,18 @@ export const deriveTitleActionTargets = (
   const selDueEditableRows = sel.filter(
     (r) => (r.status === 'Aberto' || r.status === 'Aprovado') && r.dueIso !== null,
   )
+  const toUndo = (r: GridRow): UndoTarget => ({
+    documentId: r.documentId,
+    payableId: r.id,
+    version: r.version,
+    documentNumber: r.documentNumber,
+    supplier: r.supplier,
+    pagamento: r.pagamento,
+  })
   return {
     approve: aberto,
     reopen: dedupByDoc(sel.filter((r) => r.status === 'Aprovado')),
+    undoPayment: sel.filter((r) => r.status === 'Pago').map(toUndo),
     deletable: [...rascunho, ...aberto],
     draftCount: 0, // #166: rascunho agora É excluível → nada "ignorado" no modal
     dueEditable: selDueEditableRows.map((r) => ({

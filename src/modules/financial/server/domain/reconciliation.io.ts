@@ -273,6 +273,15 @@ export type EditCedenteAccountInput = Readonly<{
   nickname?: string
   /** #722: preenchível quando AUSENTE; trocar um já preenchido é recusado pelo core-api. */
   convenio?: string
+  /**
+   * Saldo de abertura (core-api#999). Deixou de ser imutável: a conta migrada veio com o saldo
+   * congelado, e não poder corrigi-lo foi o que levou o operador a duplicar contas (#995).
+   *
+   * ⚠️ PAR COESO (FR-006): os dois viajam juntos ou nenhum viaja. E mexer neles entra na trava do
+   * dado bancário (FR-008) — conta com extrato importado recusa.
+   */
+  openingBalanceCents?: string
+  openingBalanceDate?: string
 }>
 
 // Extrato por PERÍODO (#205 — GET /cedente-accounts/:id/statement?from&to). Input do read-model.

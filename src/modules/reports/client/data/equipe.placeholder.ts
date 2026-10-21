@@ -1,5 +1,5 @@
 /**
- * Dados PLACEHOLDER do relatório "Equipe ABC" (front-first). NÃO é um mock de teste (ADR-0011: mocks/doubles
+ * Dados PLACEHOLDER do relatório "Equipe Bem Comum" (front-first). NÃO é um mock de teste (ADR-0011: mocks/doubles
  * só em `tests/`) — são CONSTANTES que a tela consome enquanto o endpoint do core-api (#114/#112) não existe.
  * Quando o backend nascer, a `data/` passa a montar estas linhas do DTO real (mesmo shape `TeamMemberRow`).
  *
@@ -42,6 +42,8 @@ export type TeamMemberRow = Readonly<{
   nome: string
   /** Idade em anos; null = "N/A" (nascimento não informado / endpoint LGPD-safe sem idade). */
   idade: number | null
+  /** Código da geração ('GEN_Z', 'NA'…) — vem pronto do core-api (#1055); a View traduz. */
+  geracao: string
   programa: string
   funcao: string
   vinculo: string
@@ -64,6 +66,7 @@ export const EQUIPE_PLACEHOLDER: readonly TeamMemberRow[] = [
   {
     nome: 'Ana Beatriz Moraes',
     idade: 34,
+    geracao: 'MILLENNIAL',
     programa: 'DDI',
     funcao: 'Coordenadora de Projetos',
     vinculo: 'CLT',
@@ -77,6 +80,7 @@ export const EQUIPE_PLACEHOLDER: readonly TeamMemberRow[] = [
   {
     nome: 'Carlos Eduardo Farias',
     idade: 41,
+    geracao: 'MILLENNIAL',
     programa: 'EPV',
     funcao: 'Analista de Dados',
     vinculo: 'PJ',
@@ -90,6 +94,7 @@ export const EQUIPE_PLACEHOLDER: readonly TeamMemberRow[] = [
   {
     nome: 'Mariana Lopes Cardoso',
     idade: 28,
+    geracao: 'GEN_Z',
     programa: 'PARC',
     funcao: 'Assistente Administrativa',
     vinculo: 'CLT',
@@ -103,6 +108,7 @@ export const EQUIPE_PLACEHOLDER: readonly TeamMemberRow[] = [
   {
     nome: 'Rafael Nunes Teixeira',
     idade: 52,
+    geracao: 'GEN_X',
     programa: 'DDI',
     funcao: 'Consultor Sênior',
     vinculo: 'PJ',
@@ -116,6 +122,7 @@ export const EQUIPE_PLACEHOLDER: readonly TeamMemberRow[] = [
   {
     nome: 'Juliana Ribeiro Alves',
     idade: null,
+    geracao: 'NA',
     programa: 'EPV',
     funcao: 'Coordenadora Pedagógica',
     vinculo: 'CLT',
@@ -129,6 +136,7 @@ export const EQUIPE_PLACEHOLDER: readonly TeamMemberRow[] = [
   {
     nome: 'Felipe Santana Braga',
     idade: 37,
+    geracao: 'MILLENNIAL',
     programa: 'PARC',
     funcao: 'Gerente de Parcerias',
     vinculo: 'CLT',
@@ -142,6 +150,7 @@ export const EQUIPE_PLACEHOLDER: readonly TeamMemberRow[] = [
   {
     nome: 'Camila Duarte Pires',
     idade: 45,
+    geracao: 'MILLENNIAL',
     programa: 'DDI',
     funcao: 'Analista de Dados',
     vinculo: 'PJ',
@@ -155,6 +164,7 @@ export const EQUIPE_PLACEHOLDER: readonly TeamMemberRow[] = [
   {
     nome: 'Bruno Almeida Rocha',
     idade: 31,
+    geracao: 'MILLENNIAL',
     programa: 'EPV',
     funcao: 'Educador Social',
     vinculo: 'CLT',
@@ -168,6 +178,7 @@ export const EQUIPE_PLACEHOLDER: readonly TeamMemberRow[] = [
   {
     nome: 'Larissa Fonseca Melo',
     idade: 26,
+    geracao: 'GEN_Z',
     programa: 'PARC',
     funcao: 'Assistente Administrativa',
     vinculo: 'PJ',
@@ -181,6 +192,7 @@ export const EQUIPE_PLACEHOLDER: readonly TeamMemberRow[] = [
   {
     nome: 'Gustavo Henrique Dias',
     idade: 39,
+    geracao: 'MILLENNIAL',
     programa: 'DDI',
     funcao: 'Coordenador de Projetos',
     vinculo: 'CLT',
@@ -194,6 +206,7 @@ export const EQUIPE_PLACEHOLDER: readonly TeamMemberRow[] = [
   {
     nome: 'Patrícia Gomes Vasconcelos',
     idade: 48,
+    geracao: 'GEN_X',
     programa: 'EPV',
     funcao: 'Consultora Sênior',
     vinculo: 'PJ',
@@ -207,6 +220,7 @@ export const EQUIPE_PLACEHOLDER: readonly TeamMemberRow[] = [
   {
     nome: 'Thiago Correia Bastos',
     idade: 33,
+    geracao: 'MILLENNIAL',
     programa: 'PARC',
     funcao: 'Analista de Dados',
     vinculo: 'CLT',
@@ -220,6 +234,7 @@ export const EQUIPE_PLACEHOLDER: readonly TeamMemberRow[] = [
   {
     nome: 'Fernanda Azevedo Cunha',
     idade: null,
+    geracao: 'NA',
     programa: 'DDI',
     funcao: 'Assistente Administrativa',
     vinculo: 'CLT',
@@ -233,6 +248,7 @@ export const EQUIPE_PLACEHOLDER: readonly TeamMemberRow[] = [
   {
     nome: 'Leonardo Martins Prado',
     idade: 55,
+    geracao: 'GEN_X',
     programa: 'EPV',
     funcao: 'Educador Social',
     vinculo: 'PJ',
@@ -246,6 +262,7 @@ export const EQUIPE_PLACEHOLDER: readonly TeamMemberRow[] = [
   {
     nome: 'Beatriz Carvalho Nogueira',
     idade: 29,
+    geracao: 'GEN_Z',
     programa: 'PARC',
     funcao: 'Coordenadora de Projetos',
     vinculo: 'CLT',
@@ -259,6 +276,7 @@ export const EQUIPE_PLACEHOLDER: readonly TeamMemberRow[] = [
   {
     nome: 'Diego Ramos Siqueira',
     idade: 42,
+    geracao: 'MILLENNIAL',
     programa: 'DDI',
     funcao: 'Gerente de Parcerias',
     vinculo: 'CLT',
@@ -272,6 +290,7 @@ export const EQUIPE_PLACEHOLDER: readonly TeamMemberRow[] = [
   {
     nome: 'Renata Barros Figueiredo',
     idade: 36,
+    geracao: 'MILLENNIAL',
     programa: 'EPV',
     funcao: 'Analista de Dados',
     vinculo: 'PJ',
@@ -285,6 +304,7 @@ export const EQUIPE_PLACEHOLDER: readonly TeamMemberRow[] = [
   {
     nome: 'Vinícius Tavares Monteiro',
     idade: 24,
+    geracao: 'GEN_Z',
     programa: 'PARC',
     funcao: 'Educador Social',
     vinculo: 'CLT',
@@ -298,6 +318,7 @@ export const EQUIPE_PLACEHOLDER: readonly TeamMemberRow[] = [
   {
     nome: 'Aline Souza Batista',
     idade: 47,
+    geracao: 'GEN_X',
     programa: 'DDI',
     funcao: 'Consultora Sênior',
     vinculo: 'PJ',
@@ -311,6 +332,7 @@ export const EQUIPE_PLACEHOLDER: readonly TeamMemberRow[] = [
   {
     nome: 'Marcelo Pinto Guimarães',
     idade: 61,
+    geracao: 'GEN_X',
     programa: 'EPV',
     funcao: 'Consultor Sênior',
     vinculo: 'PJ',
@@ -324,6 +346,7 @@ export const EQUIPE_PLACEHOLDER: readonly TeamMemberRow[] = [
   {
     nome: 'Tatiane Mendes Lima',
     idade: 32,
+    geracao: 'MILLENNIAL',
     programa: 'PARC',
     funcao: 'Assistente Administrativa',
     vinculo: 'CLT',
@@ -337,6 +360,7 @@ export const EQUIPE_PLACEHOLDER: readonly TeamMemberRow[] = [
   {
     nome: 'André Luiz Castro',
     idade: 38,
+    geracao: 'MILLENNIAL',
     programa: 'DDI',
     funcao: 'Coordenador de Projetos',
     vinculo: 'CLT',
@@ -350,6 +374,7 @@ export const EQUIPE_PLACEHOLDER: readonly TeamMemberRow[] = [
   {
     nome: 'Priscila Andrade Reis',
     idade: null,
+    geracao: 'NA',
     programa: 'EPV',
     funcao: 'Educadora Social',
     vinculo: 'CLT',
@@ -363,6 +388,7 @@ export const EQUIPE_PLACEHOLDER: readonly TeamMemberRow[] = [
   {
     nome: 'Rodrigo Freitas Campos',
     idade: 44,
+    geracao: 'MILLENNIAL',
     programa: 'PARC',
     funcao: 'Analista de Dados',
     vinculo: 'PJ',
@@ -376,6 +402,7 @@ export const EQUIPE_PLACEHOLDER: readonly TeamMemberRow[] = [
   {
     nome: 'Sabrina Costa Machado',
     idade: 27,
+    geracao: 'GEN_Z',
     programa: 'DDI',
     funcao: 'Assistente Administrativa',
     vinculo: 'CLT',
@@ -389,6 +416,7 @@ export const EQUIPE_PLACEHOLDER: readonly TeamMemberRow[] = [
   {
     nome: 'Eduardo Vieira Sampaio',
     idade: 50,
+    geracao: 'GEN_X',
     programa: 'EPV',
     funcao: 'Gerente de Parcerias',
     vinculo: 'CLT',
@@ -402,6 +430,7 @@ export const EQUIPE_PLACEHOLDER: readonly TeamMemberRow[] = [
   {
     nome: 'Natália Ferreira Coelho',
     idade: 35,
+    geracao: 'MILLENNIAL',
     programa: 'PARC',
     funcao: 'Coordenadora Pedagógica',
     vinculo: 'PJ',
@@ -415,6 +444,7 @@ export const EQUIPE_PLACEHOLDER: readonly TeamMemberRow[] = [
   {
     nome: 'Alexandre Ribeiro Pacheco',
     idade: 58,
+    geracao: 'GEN_X',
     programa: 'DDI',
     funcao: 'Consultor Sênior',
     vinculo: 'PJ',
@@ -428,6 +458,7 @@ export const EQUIPE_PLACEHOLDER: readonly TeamMemberRow[] = [
   {
     nome: 'Vanessa Lima Antunes',
     idade: 30,
+    geracao: 'MILLENNIAL',
     programa: 'EPV',
     funcao: 'Analista de Dados',
     vinculo: 'CLT',
@@ -441,6 +472,7 @@ export const EQUIPE_PLACEHOLDER: readonly TeamMemberRow[] = [
   {
     nome: 'Fábio Nascimento Rios',
     idade: 40,
+    geracao: 'MILLENNIAL',
     programa: 'PARC',
     funcao: 'Educador Social',
     vinculo: 'CLT',
@@ -454,6 +486,7 @@ export const EQUIPE_PLACEHOLDER: readonly TeamMemberRow[] = [
   {
     nome: 'Isabela Moreira Pontes',
     idade: 25,
+    geracao: 'GEN_Z',
     programa: 'DDI',
     funcao: 'Assistente Administrativa',
     vinculo: 'PJ',
@@ -467,6 +500,7 @@ export const EQUIPE_PLACEHOLDER: readonly TeamMemberRow[] = [
   {
     nome: 'Ricardo Barbosa Leal',
     idade: 49,
+    geracao: 'GEN_X',
     programa: 'EPV',
     funcao: 'Coordenador de Projetos',
     vinculo: 'CLT',
@@ -480,6 +514,7 @@ export const EQUIPE_PLACEHOLDER: readonly TeamMemberRow[] = [
   {
     nome: 'Débora Santos Xavier',
     idade: 43,
+    geracao: 'MILLENNIAL',
     programa: 'PARC',
     funcao: 'Consultora Sênior',
     vinculo: 'PJ',
@@ -493,6 +528,7 @@ export const EQUIPE_PLACEHOLDER: readonly TeamMemberRow[] = [
   {
     nome: 'Paulo César Aragão',
     idade: 63,
+    geracao: 'BOOMER',
     programa: 'DDI',
     funcao: 'Gerente de Parcerias',
     vinculo: 'CLT',
@@ -506,6 +542,7 @@ export const EQUIPE_PLACEHOLDER: readonly TeamMemberRow[] = [
   {
     nome: 'Letícia Cavalcanti Rezende',
     idade: null,
+    geracao: 'NA',
     programa: 'EPV',
     funcao: 'Educadora Social',
     vinculo: 'CLT',
@@ -519,6 +556,7 @@ export const EQUIPE_PLACEHOLDER: readonly TeamMemberRow[] = [
   {
     nome: 'Marcos Vinícius Oliveira',
     idade: 33,
+    geracao: 'MILLENNIAL',
     programa: 'PARC',
     funcao: 'Analista de Dados',
     vinculo: 'CLT',

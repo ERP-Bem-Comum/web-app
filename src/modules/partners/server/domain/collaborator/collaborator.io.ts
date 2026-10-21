@@ -39,7 +39,7 @@ export interface CreateCollaboratorInput {
   role: string
   startOfContract: string // YYYY-MM-DD
   employmentRelationship: EmploymentRelationship
-  territory: Territory | null // #42 — entra no create (PUT omite)
+  territory: Territory | null // #42; editável no PUT desde a spec 121 (core-api#1053)
   bankAccount: BankAccount | null // #40; editável no PUT desde a spec 120 (core-api#1029)
   pixKey: CollaboratorPixKey | null // #40; editável no PUT desde a spec 120 (core-api#1029)
 }
@@ -49,6 +49,7 @@ export interface CompleteCollaboratorRegistrationInput {
   rg?: string
   dateOfBirth?: string
   genderIdentity?: string
+  genderIdentityDescription?: string // core-api#1054; só com genderIdentity = 'OUTRO'
   race?: string
   education?: string
   foodCategory?: string
@@ -75,9 +76,16 @@ export interface CompleteCollaboratorRegistrationInput {
   publicSectorExperienceDuration?: string
 }
 
-// PUT omite território (#42). Banco/PIX entram (spec 120, core-api#1029): `null` MANTÉM o que está
-// gravado (não remove); objeto valida e substitui.
-export type UpdateCollaboratorInput = Omit<CreateCollaboratorInput, 'territory'> & { id: string }
+// Banco/PIX (spec 120, core-api#1029) e território (spec 121, core-api#1053) entram no PUT: `null` MANTÉM
+// o que está gravado (não remove); objeto valida e substitui.
+// RG, nascimento e raça (spec 124, core-api#1070): preenchidos UMA vez — ausente mantém, vazio grava,
+// igual mantém, diferente do gravado é recusado (409).
+export type UpdateCollaboratorInput = CreateCollaboratorInput & {
+  id: string
+  rg?: string
+  dateOfBirth?: string
+  race?: string
+}
 
 export interface DeactivateCollaboratorInput {
   id: string
@@ -124,6 +132,7 @@ export type CollaboratorDetail = CollaboratorListItem &
     emergencyContactName?: string
     emergencyContactTelephone?: string
     genderIdentity?: string
+    genderIdentityDescription?: string // core-api#1054; só com genderIdentity = 'OUTRO'
     race?: string
     allergies?: string
     foodCategory?: string

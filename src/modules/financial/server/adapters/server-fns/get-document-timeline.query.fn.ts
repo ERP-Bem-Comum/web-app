@@ -47,6 +47,7 @@ export const getDocumentTimelineFn = createServerFn({ method: 'GET' })
       occurredAt: e.occurredAt,
       isSystem: e.actor === null,
       actorName: e.actor !== null ? (nameByActor.get(e.actor) ?? null) : null,
+      reason: e.reason,
       changes: e.changes,
     }))
     return { ok: true, data: entries }

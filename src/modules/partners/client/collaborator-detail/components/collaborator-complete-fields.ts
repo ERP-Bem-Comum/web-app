@@ -19,6 +19,7 @@ export type CollaboratorCompleteFieldsState = Readonly<{
   emergencyContactName: string
   emergencyContactTelephone: string
   genderIdentity: string
+  genderIdentityDescription: string
   race: string
   allergies: string
   foodCategory: string
@@ -50,6 +51,7 @@ export const emptyCompleteFieldsState: CollaboratorCompleteFieldsState = {
   emergencyContactName: '',
   emergencyContactTelephone: '',
   genderIdentity: '',
+  genderIdentityDescription: '',
   race: '',
   allergies: '',
   foodCategory: '',
@@ -70,6 +72,9 @@ export const emptyCompleteFieldsState: CollaboratorCompleteFieldsState = {
   leaveRenewable: '',
   leaveRenewalDuration: '',
 }
+
+/** Código de "Outra identidade de gênero" — o único que aceita o texto livre (core-api#1054). */
+export const GENDER_IDENTITY_OTHER = 'OUTRO'
 
 export const blank = (s: string): string | undefined => (s.trim() === '' ? undefined : s.trim())
 
@@ -99,6 +104,10 @@ export const buildCompleteFields = (
     rg: blank(state.rg),
     dateOfBirth: blank(state.dateOfBirth),
     genderIdentity: blank(state.genderIdentity),
+    // Só vai com "Outra": o core-api recusa (422) a descrição com outra identidade (#1054, P.O. 16/10).
+    // Trocar de "Outra" para outra opção descarta o texto digitado em vez de mandá-lo e levar o 422.
+    genderIdentityDescription:
+      state.genderIdentity === GENDER_IDENTITY_OTHER ? blank(state.genderIdentityDescription) : undefined,
     race: blank(state.race),
     education: blank(state.education),
     foodCategory: blank(state.foodCategory),
@@ -136,6 +145,7 @@ export const computeHasCompleteData = (f: CollaboratorCompleteFieldsState): bool
     f.emergencyContactName,
     f.emergencyContactTelephone,
     f.genderIdentity,
+    f.genderIdentityDescription,
     f.race,
     f.allergies,
     f.foodCategory,

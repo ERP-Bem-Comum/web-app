@@ -190,7 +190,8 @@ export function buildContractsCsv(rows: readonly ContractRow[]): string {
     const derived = deriveStatus(info, !!(row.children?.length ?? 0))
     const valorAtual = row.currentValue ?? row.totalValue
     return [
-      formatContractNumber(row.contractCode),
+      // O prefixo (CT/OS) vem da classificação — sem ela, toda OS saía "CT" no CSV.
+      formatContractNumber(row.contractCode, row.classification),
       c?.name ?? '—',
       c?.cnpj ?? c?.cpf ?? '',
       row.object,

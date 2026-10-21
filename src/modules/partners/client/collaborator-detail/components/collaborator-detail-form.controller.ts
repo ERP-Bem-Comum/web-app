@@ -2,7 +2,8 @@
  * Controller (ADR-0009) do form de detalhe/edição do colaborador. Mantém o estado dos campos do
  * pré-cadastro (7) + cadastro completo (2ª etapa), inicializado a partir do detalhe carregado.
  * `buildPre()`/`buildComplete()` montam os inputs dos dois server-fns (update + complete-registration).
- * Banco/PIX são editáveis (spec 120): `validate()` barra grupo parcial antes do salvar.
+ * Banco/PIX (spec 120) e território (spec 121) são editáveis: `validate()` barra grupo parcial e
+ * esvaziamento antes do salvar.
  */
 import { useCallback, useState } from 'react'
 
@@ -12,19 +13,24 @@ import {
   OCCUPATION_AREAS,
   EMPLOYMENT_RELATIONSHIPS,
   GENDER_IDENTITIES,
+  GENDER_IDENTITY_OPTIONS,
   RACES,
   EDUCATION_LEVELS,
+  EDUCATION_LEVEL_OPTIONS,
+  selectableWithCurrent,
   FOOD_CATEGORIES,
   SEXES,
   MARITAL_STATUSES,
   PIX_KEY_TYPES,
   isPixKeyType,
+  BR_UF,
   BankAccountFormSchema,
   PixKeyFormSchema,
   type BankAccount,
   type PixKey,
+  type Territory,
   type CollaboratorDetail,
-  type CollaboratorWriteInput,
+  type CollaboratorUpdateInput,
   type CollaboratorCompleteInput,
   type OccupationArea,
   type EmploymentRelationship,
@@ -36,8 +42,10 @@ import {
   parseChildrenAges,
   formatChildrenAges,
   boolToTri,
+  blank,
   buildCompleteFields,
   computeHasCompleteData as computeHasCompleteFields,
+  GENDER_IDENTITY_OTHER,
   type CollaboratorCompleteFieldsState,
 } from './collaborator-complete-fields.ts'
 
@@ -46,13 +54,18 @@ export {
   OCCUPATION_AREAS,
   EMPLOYMENT_RELATIONSHIPS,
   GENDER_IDENTITIES,
+  GENDER_IDENTITY_OPTIONS,
+  GENDER_IDENTITY_OTHER,
   RACES,
   EDUCATION_LEVELS,
+  EDUCATION_LEVEL_OPTIONS,
+  selectableWithCurrent,
   FOOD_CATEGORIES,
   SEXES,
   MARITAL_STATUSES,
   PIX_KEY_TYPES,
   isPixKeyType,
+  BR_UF,
 }
 
 // Re-export dos helpers puros de "Idade dos filhos" (agora em `children-ages.ts`) — API estável p/ quem
@@ -60,7 +73,7 @@ export {
 export { parseChildrenAges, formatChildrenAges }
 
 // O estado do form do detalhe = os campos da 2ª etapa (núcleo puro reusável) + pré-cadastro + território
-// (read-only) + banco/PIX (editáveis, spec 120). `CollaboratorCompleteFieldsState` vem do módulo puro.
+// (editável, spec 121) + banco/PIX (editáveis, spec 120). `CollaboratorCompleteFieldsState` vem do módulo puro.
 export type CollaboratorDetailFormState = CollaboratorCompleteFieldsState &
   Readonly<{
     // pré-cadastro
@@ -71,7 +84,7 @@ export type CollaboratorDetailFormState = CollaboratorCompleteFieldsState &
     role: string
     startOfContract: string
     employmentRelationship: string
-    // Território (#42) — somente leitura no detalhe (o PUT omite território).
+    // Território (#42) — editável no modo Editar (spec 121, core-api#1053). `uf` = sigla IBGE.
     uf: string
     municipality: string
     // Banco/PIX (#40) — editáveis no modo Editar (spec 120). `bank` = código COMPE (ou texto legado).
@@ -106,6 +119,7 @@ const fromDetail = (c: CollaboratorDetail): CollaboratorDetailFormState => ({
   emergencyContactName: c.emergencyContactName ?? '',
   emergencyContactTelephone: c.emergencyContactTelephone ?? '',
   genderIdentity: c.genderIdentity ?? '',
+  genderIdentityDescription: c.genderIdentityDescription ?? '',
   race: c.race ?? '',
   allergies: c.allergies ?? '',
   foodCategory: c.foodCategory ?? '',
@@ -149,10 +163,22 @@ export const buildCompleteInput = (
 /** Há algum dado de perfil (2ª etapa) preenchido? (PURO — testável sem React). Delega ao núcleo puro. */
 export const computeHasCompleteData = (f: CollaboratorDetailFormState): boolean => computeHasCompleteFields(f)
 
+/** RG, nascimento e raça já gravados → travados no Editar (spec 124). O que falta segue livre. */
+export type LockedPersonalFields = Readonly<{ rg: boolean; dateOfBirth: boolean; race: boolean }>
+
+const stored = (v: string | undefined): boolean => v !== undefined && v.trim() !== ''
+
+/** Trava por campo a partir do GRAVADO (PURO). Nunca do form: travaria ao digitar o primeiro caractere. */
+export const lockedPersonalFrom = (detail: CollaboratorDetail): LockedPersonalFields => ({
+  rg: stored(detail.rg),
+  dateOfBirth: stored(detail.dateOfBirth),
+  race: stored(detail.race),
+})
+
 /** Hidratação PURA do estado do form a partir do detalhe carregado (testável sem React). */
 export const stateFromDetail = (detail: CollaboratorDetail): CollaboratorDetailFormState => fromDetail(detail)
 
-/** Erros do grupo bancário/PIX, por caminho (`bankAccount.agency`, `pixKey.key`…). */
+/** Erros dos grupos editáveis, por caminho (`bankAccount.agency`, `pixKey.key`, `territory.removal`…). */
 export type CollaboratorDetailFormErrors = Readonly<Record<string, boolean>>
 
 const filled = (v: string): boolean => v.trim() !== ''
@@ -222,6 +248,33 @@ export const validatePaymentTarget = (
   return errors
 }
 
+/**
+ * Território do PUT (PURO, spec 121). Algum campo preenchido → objeto (substitui; o vazio vira `null`);
+ * os dois vazios → `null`, que no core-api MANTÉM o gravado (core-api#1053). Apagar pelo PUT não existe.
+ */
+export const buildTerritory = (s: CollaboratorDetailFormState): Territory | null => {
+  const uf = s.uf.trim()
+  const municipality = s.municipality.trim()
+  if (uf === '' && municipality === '') return null
+  return { uf: uf === '' ? null : uf, municipality: municipality === '' ? null : municipality }
+}
+
+const hasStoredTerritory = (t: Territory | null): boolean =>
+  t !== null && ((t.uf ?? '').trim() !== '' || (t.municipality ?? '').trim() !== '')
+
+/**
+ * Validação PURA do território antes do salvar (spec 121). A P.O. decidiu: substituir pode, apagar não.
+ * Esvaziar UF e município de quem já tinha território mandaria `null`, que MANTÉM o gravado — a tela
+ * mentiria que apagou, então marca o grupo (mesmo padrão do banco/PIX).
+ */
+export const validateTerritory = (
+  s: CollaboratorDetailFormState,
+  original: CollaboratorDetail,
+): CollaboratorDetailFormErrors =>
+  buildTerritory(s) === null && hasStoredTerritory(original.territory)
+    ? { 'territory.removal': true, 'territory.uf': true, 'territory.municipality': true }
+    : {}
+
 export interface CollaboratorDetailFormController {
   readonly state: CollaboratorDetailFormState
   readonly errors: CollaboratorDetailFormErrors
@@ -230,9 +283,9 @@ export interface CollaboratorDetailFormController {
     value: CollaboratorDetailFormState[K],
   ) => void
   readonly reset: (detail: CollaboratorDetail) => void
-  /** Valida banco/PIX contra o detalhe ATUAL (o gravado); marca os erros e diz se pode salvar. */
+  /** Valida banco/PIX e território contra o detalhe ATUAL (o gravado); marca os erros e diz se pode salvar. */
   readonly validate: (current: CollaboratorDetail) => boolean
-  readonly buildPre: () => CollaboratorWriteInput
+  readonly buildPre: () => CollaboratorUpdateInput
   readonly buildComplete: (id: string) => CollaboratorCompleteInput
   readonly hasCompleteData: () => boolean
 }
@@ -254,7 +307,7 @@ export function useCollaboratorDetailFormController(
 
   const validate = useCallback(
     (current: CollaboratorDetail): boolean => {
-      const next = validatePaymentTarget(state, current)
+      const next = { ...validatePaymentTarget(state, current), ...validateTerritory(state, current) }
       setErrors(next)
       return Object.keys(next).length === 0
     },
@@ -262,7 +315,7 @@ export function useCollaboratorDetailFormController(
   )
 
   const buildPre = useCallback(
-    (): CollaboratorWriteInput => ({
+    (): CollaboratorUpdateInput => ({
       name: state.name.trim(),
       email: state.email.trim(),
       cpf: state.cpf.trim(),
@@ -271,10 +324,15 @@ export function useCollaboratorDetailFormController(
       role: state.role.trim(),
       startOfContract: state.startOfContract,
       employmentRelationship: state.employmentRelationship as EmploymentRelationship,
-      // PUT omite território (#42); a borda de update faz strip. Banco/PIX: objeto substitui, `null`
-      // mantém o gravado (spec 120, core-api#1029).
-      territory: null,
+      // Território (spec 121, core-api#1053) e banco/PIX (spec 120, core-api#1029): objeto substitui,
+      // `null` mantém o gravado.
+      territory: buildTerritory(state),
       ...buildPaymentTarget(state),
+      // RG, nascimento e raça (spec 124, core-api#1070): vão sempre — o backend preenche o que está vazio
+      // e trata o valor igual ao gravado como "mantém"; vazio → ausente → mantém.
+      rg: blank(state.rg),
+      dateOfBirth: blank(state.dateOfBirth),
+      race: blank(state.race),
     }),
     [state],
   )
