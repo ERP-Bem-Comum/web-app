@@ -16,6 +16,7 @@ import { useContasAPagar } from '../contas-a-pagar.binding.ts'
 import { useDocumentDetail } from '../document-detail.binding.ts'
 import { useDocumentTimeline } from '../document-timeline.binding.ts'
 import { useBulkStatus } from '../bulk-status.binding.ts'
+import { useColumnVisibility } from '../column-visibility.binding.ts'
 import { useBulkDelete } from '../bulk-delete.binding.ts'
 import { useIsolatedDueDate } from '../isolated-due-date.binding.ts'
 import { useBulkPay, type PayTarget } from '../bulk-pay.binding.ts'
@@ -41,6 +42,7 @@ import {
 import { DocumentGrid } from '../components/document-grid.component.tsx'
 import { AddFilterButton, ActiveFiltersRow } from '../components/document-filters.component.tsx'
 import { SavedViewsMenu } from '../components/saved-views-menu.component.tsx'
+import { ColumnsMenu } from '../components/columns-menu.component.tsx'
 import { DocumentDetailDrawer, type DrawerTab } from '../components/document-detail-drawer.component.tsx'
 import { DeleteConfirmModal } from '../components/delete-confirm.component.tsx'
 import { DueDateModal } from '../components/due-date-modal.component.tsx'
@@ -148,6 +150,9 @@ export function ContasAPagarPage(): ReactNode {
   const [filterMenuOpen, setFilterMenuOpen] = useState(false)
   // Menu "Visões salvas" (#351) — toggle local, mesmo padrão do menu de filtros.
   const [savedViewsMenuOpen, setSavedViewsMenuOpen] = useState(false)
+  // Seletor de colunas (spec 129): menu = toggle local; a escolha persiste por navegador (binding).
+  const [columnsMenuOpen, setColumnsMenuOpen] = useState(false)
+  const { hiddenColumns, onToggleColumn, onShowAllColumns } = useColumnVisibility()
   // Busca/autocomplete do filtro Fornecedor (texto digitado + dropdown de resultados).
   const [fornecedorQuery, setFornecedorQuery] = useState('')
   const [fornecedorOpen, setFornecedorOpen] = useState(false)
@@ -350,6 +355,18 @@ export function ContasAPagarPage(): ReactNode {
             }}
             onDeleteView={onDeleteView}
           />
+          <ColumnsMenu
+            menuOpen={columnsMenuOpen}
+            onToggleMenu={() => {
+              setColumnsMenuOpen((v) => !v)
+            }}
+            onCloseMenu={() => {
+              setColumnsMenuOpen(false)
+            }}
+            hiddenColumns={hiddenColumns}
+            onToggleColumn={onToggleColumn}
+            onShowAllColumns={onShowAllColumns}
+          />
           <AddFilterButton
             menuOpen={filterMenuOpen}
             onToggleMenu={() => {
@@ -421,6 +438,7 @@ export function ContasAPagarPage(): ReactNode {
           allSelected={allSelected}
           onToggle={toggle}
           onToggleAll={toggleAll}
+          hiddenColumns={hiddenColumns}
         />
       </div>
 
