@@ -8,7 +8,13 @@ import type { ReactNode } from 'react'
 import { Checkbox } from '#shared/ui/index.ts'
 import { fieldError } from '#shared/ui/brand/brand-form.css.ts'
 
-import { group, legend, options as optionsClass, option } from './pwd-types-checklist.css.ts'
+import {
+  group,
+  legend,
+  options as optionsClass,
+  option,
+  trailing as trailingClass,
+} from './pwd-types-checklist.css.ts'
 
 export type PwdTypesChecklistProps = Readonly<{
   idPrefix: string
@@ -19,6 +25,8 @@ export type PwdTypesChecklistProps = Readonly<{
   /** Mensagem do que falta ("Marque ao menos um tipo") ou null. */
   error: string | null
   onToggle: (value: string, checked: boolean) => void
+  /** Campo exibido na MESMA linha, depois da última opção (o texto de "Outra"). */
+  trailing?: ReactNode
 }>
 
 export function PwdTypesChecklist(props: PwdTypesChecklistProps): ReactNode {
@@ -42,6 +50,7 @@ export function PwdTypesChecklist(props: PwdTypesChecklistProps): ReactNode {
             </label>
           )
         })}
+        {props.trailing !== undefined ? <div className={trailingClass}>{props.trailing}</div> : null}
       </div>
       {props.error !== null ? (
         <span className={fieldError} role="alert">

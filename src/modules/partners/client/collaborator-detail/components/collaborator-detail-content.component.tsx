@@ -530,15 +530,18 @@ export function CollaboratorDetailContent({
                       if (type !== undefined)
                         c.setField('pwdTypes', togglePwdType(c.state.pwdTypes, type, checked))
                     }}
+                    // O texto de "Outra" entra na MESMA linha das opções (P.O., 23/10).
+                    trailing={
+                      c.state.pwdTypes.includes(PWD_TYPE_OTHER)
+                        ? txt(
+                            'pwdOtherDescription',
+                            t('partners.collaborators.detail.field.pwdOtherDescription'),
+                            { highlight: true, errorKey: 'pwd.other', ...pwdLock },
+                          )
+                        : undefined
+                    }
                   />
                 ) : null}
-                {c.state.pwdAnswer === 'SIM' && c.state.pwdTypes.includes(PWD_TYPE_OTHER)
-                  ? txt('pwdOtherDescription', t('partners.collaborators.detail.field.pwdOtherDescription'), {
-                      highlight: true,
-                      errorKey: 'pwd.other',
-                      ...pwdLock,
-                    })
-                  : null}
               </div>
             </div>
           </section>

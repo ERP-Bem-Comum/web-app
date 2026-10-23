@@ -267,28 +267,31 @@ export function AutocadastroForm({
                   if (type !== undefined)
                     c.setField('pwdTypes', togglePwdType(c.state.pwdTypes, type, checked))
                 }}
+                // O texto de "Outra" entra na MESMA linha das opções (P.O., 23/10).
+                trailing={
+                  c.state.pwdTypes.includes(PWD_TYPE_OTHER) ? (
+                    <div className={fieldHighlight}>
+                      <Field
+                        htmlFor="ac-pwdOtherDescription"
+                        label={t('partners.collaborators.detail.field.pwdOtherDescription')}
+                        error={
+                          c.pwdIssues.includes('other-required')
+                            ? t('partners.collaborators.pwd.error.other')
+                            : undefined
+                        }
+                      >
+                        <Input
+                          id="ac-pwdOtherDescription"
+                          value={c.state.pwdOtherDescription}
+                          onChange={(v) => {
+                            c.setField('pwdOtherDescription', v)
+                          }}
+                        />
+                      </Field>
+                    </div>
+                  ) : undefined
+                }
               />
-            ) : null}
-            {c.state.pwdAnswer === 'SIM' && c.state.pwdTypes.includes(PWD_TYPE_OTHER) ? (
-              <div className={fieldHighlight}>
-                <Field
-                  htmlFor="ac-pwdOtherDescription"
-                  label={t('partners.collaborators.detail.field.pwdOtherDescription')}
-                  error={
-                    c.pwdIssues.includes('other-required')
-                      ? t('partners.collaborators.pwd.error.other')
-                      : undefined
-                  }
-                >
-                  <Input
-                    id="ac-pwdOtherDescription"
-                    value={c.state.pwdOtherDescription}
-                    onChange={(v) => {
-                      c.setField('pwdOtherDescription', v)
-                    }}
-                  />
-                </Field>
-              </div>
             ) : null}
           </div>
         </section>

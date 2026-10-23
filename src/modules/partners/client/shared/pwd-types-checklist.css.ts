@@ -31,8 +31,17 @@ export const legend = style({
 export const options = style({
   display: 'flex',
   flexWrap: 'wrap',
+  alignItems: 'center',
   columnGap: brand.space.xl,
   rowGap: brand.space.sm,
+})
+
+// Campo que entra NA MESMA LINHA das opções (o texto de "Outra", P.O. 23/10): ocupa a sobra da linha e só
+// desce quando não cabe a largura mínima de um campo.
+export const trailing = style({
+  flex: '1 1 18rem',
+  maxInlineSize: '28rem',
+  minInlineSize: 0,
 })
 
 export const option = style({
