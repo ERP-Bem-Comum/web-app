@@ -72,13 +72,15 @@ export const GENDER_IDENTITIES = [
   'MULHER_TRANS',
   'TRAVESTI',
   'NAO_BINARIO',
+  'QUEER',
   'OUTRO',
 ] as const
 export type GenderIdentity = (typeof GENDER_IDENTITIES)[number]
 /**
- * Opções do SELETOR de Identidade de Gênero (spec 122), na ordem e na redação definidas pelo cliente.
- * TRAVESTI fica fora do seletor (decisão da P.O., 12/10) mas segue em `GENDER_IDENTITIES`, que espelha o
- * enum do core-api — assim um valor gravado ainda é exibido e contado nos relatórios.
+ * Opções do SELETOR de Identidade de Gênero (specs 122 e 130), na ordem e na redação definidas pelo cliente.
+ * TRAVESTI fica fora do seletor: não há dado gravado com esse valor, e o rótulo do cliente é
+ * "Mulher transgênero / Travesti", de `MULHER_TRANS` (P.O., 23/10). Segue em `GENDER_IDENTITIES` só por
+ * espelhar o enum do core-api.
  */
 export const GENDER_IDENTITY_OPTIONS = [
   'MULHER_CIS',
@@ -86,6 +88,7 @@ export const GENDER_IDENTITY_OPTIONS = [
   'MULHER_TRANS',
   'HOMEM_TRANS',
   'NAO_BINARIO',
+  'QUEER',
   'OUTRO',
   'PREFIRO_NAO_RESPONDER',
 ] as const satisfies readonly GenderIdentity[]
