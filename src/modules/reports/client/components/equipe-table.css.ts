@@ -9,7 +9,8 @@ import { vars } from '#shared/ui/tokens/index.ts'
 import { brand } from '#shared/ui/brand/grid-brand.values.ts'
 
 // 8 colunas: Nome (flex) | Idade | Área | Função (flex) | Vínculo | Gênero | Raça/cor | Escolaridade.
-const GRID_COLUMNS = 'minmax(12rem, 1.8fr) 4.5rem 6rem minmax(11rem, 1.6fr) 5rem 9rem 9rem 11rem'
+// A última coluna é a de PcD (spec 131): "Prefiro não responder" é o rótulo mais longo dela.
+const GRID_COLUMNS = 'minmax(12rem, 1.8fr) 4.5rem 6rem minmax(11rem, 1.6fr) 5rem 9rem 9rem 11rem 10rem'
 
 export const card = style({
   background: brand.color.surface,

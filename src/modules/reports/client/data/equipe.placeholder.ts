@@ -56,13 +56,17 @@ export type TeamMemberRow = Readonly<{
   status: string
   /** Situação cadastral — CÓDIGO do core-api ('Complete'/'PreRegistration'). A View traduz. */
   situacaoCadastral: string
+  /** Pessoa com Deficiência (spec 131) — CÓDIGO da resposta ('SIM'/'NAO'/'PREFIRO_NAO_RESPONDER'; 'NA' = não respondeu). */
+  pcd: string
+  /** Tipos marcados (códigos, ordem do formulário); vazio fora do "Sim". A View traduz. */
+  pcdTipos: readonly string[]
 }>
 
 /**
  * 36 colaboradores SINTÉTICOS (nomes fictícios pt-BR) com distribuição realista entre os campos de exibição.
  * Ordem estável (a view não reordena). Nenhum campo sensível — ver o cabeçalho (LGPD).
  */
-export const EQUIPE_PLACEHOLDER: readonly TeamMemberRow[] = [
+const BASE_ROWS: readonly Omit<TeamMemberRow, 'pcd' | 'pcdTipos'>[] = [
   {
     nome: 'Ana Beatriz Moraes',
     idade: 34,
@@ -568,3 +572,10 @@ export const EQUIPE_PLACEHOLDER: readonly TeamMemberRow[] = [
     situacaoCadastral: 'Complete',
   },
 ]
+
+/** As 36 linhas com PcD (spec 131) "não respondeu" — o fixture não exercita o campo, só o mantém no shape. */
+export const EQUIPE_PLACEHOLDER: readonly TeamMemberRow[] = BASE_ROWS.map((r) => ({
+  ...r,
+  pcd: 'NA',
+  pcdTipos: [],
+}))

@@ -34,6 +34,8 @@ export type EquipeTableLabels = Readonly<{
   genero: string
   racaCor: string
   escolaridade: string
+  /** Spec 131: Pessoa com Deficiência (a View já traduz o código da linha). */
+  pcd: string
   naLabel: string
   empty: string
   /** aria-label da linha clicável, com `{{nome}}` substituído pelo nome do colaborador. */
@@ -72,6 +74,7 @@ export function EquipeTable(props: EquipeTableProps): ReactNode {
             <span>{labels.genero}</span>
             <span>{labels.racaCor}</span>
             <span>{labels.escolaridade}</span>
+            <span>{labels.pcd}</span>
           </div>
 
           {props.rows.map((r, i) => (
@@ -96,6 +99,7 @@ export function EquipeTable(props: EquipeTableProps): ReactNode {
               <span className={cell}>{r.genero}</span>
               <span className={cell}>{r.racaCor}</span>
               <span className={cell}>{r.escolaridade}</span>
+              <span className={cell}>{r.pcd}</span>
             </button>
           ))}
         </div>

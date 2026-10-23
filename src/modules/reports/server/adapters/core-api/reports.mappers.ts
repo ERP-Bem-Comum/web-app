@@ -86,6 +86,8 @@ export const teamReportToModel = (raw: unknown): Result<readonly TeamMember[], R
     race: m.race,
     age: m.age,
     generation: m.generation,
+    pwdAnswer: m.pwdAnswer,
+    pwdTypes: m.pwdTypes,
   }))
   return ok(members)
 }

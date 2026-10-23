@@ -20,6 +20,8 @@ import {
   EDUCATION_LEVELS,
   EMPLOYMENT_RELATIONSHIPS,
   OCCUPATION_AREAS,
+  PWD_ANSWERS,
+  PWD_TYPES,
 } from '#modules/partners/public-api/index.ts'
 import { EQUIPE_PLACEHOLDER, type TeamMemberRow } from './data/equipe.placeholder.ts'
 import type { TeamMember } from './data/model/team-report.model.ts'
@@ -84,6 +86,9 @@ export function toTeamRows(
     // os filtros Status e Situação Cadastral ficavam inertes em "Todos" sem ter por quê.
     status: m.active ? 'ATIVO' : 'INATIVO',
     situacaoCadastral: m.registrationStatus,
+    // Spec 131: não respondeu → `NA` (mesma chave de "não informado" dos gráficos demográficos).
+    pcd: m.pwdAnswer ?? PCD_NA,
+    pcdTipos: m.pwdTypes,
   }))
 }
 
@@ -151,6 +156,10 @@ export type TeamFilterOptions = Readonly<{
   status: readonly string[]
   situacaoCadastral: readonly string[]
   geracao: readonly string[]
+  /** Spec 131: resposta da pergunta 1 + `NA` (não respondeu). */
+  pcd: readonly string[]
+  /** Spec 131: tipos da pergunta 2. */
+  pcdTipo: readonly string[]
 }>
 
 /**
@@ -185,6 +194,27 @@ export const AGE_RANGE_NA = 'NA'
  */
 export const GENERATIONS = ['BOOMER', 'GEN_X', 'MILLENNIAL', 'GEN_Z'] as const
 export const GENERATION_NA = 'NA'
+
+/**
+ * Pessoa com Deficiência (spec 131). Respostas e tipos são lista FECHADA do domínio de Colaboradores (via
+ * `partners/public-api`); `NA` = não respondeu (o dado anterior à pergunta), sempre por último.
+ */
+export const PCD_NA = 'NA'
+
+/** Distribuição da pergunta 1 (Sim/Não/Prefiro não responder/Não informado) sobre as linhas. */
+export function byPcd(rows: readonly TeamMemberRow[]): readonly Readonly<{ id: string; count: number }>[] {
+  return countByTemplate(rows, [...PWD_ANSWERS, PCD_NA], (r) => r.pcd)
+}
+
+/**
+ * Contagem por TIPO (pergunta 2), na ordem do formulário. Uma pessoa com dois tipos conta nos dois — por isso o
+ * gráfico mostra quantas pessoas marcaram cada tipo, e a soma pode passar do total de PcD.
+ */
+export function byPcdTipo(
+  rows: readonly TeamMemberRow[],
+): readonly Readonly<{ id: string; count: number }>[] {
+  return PWD_TYPES.map((id) => ({ id, count: rows.filter((r) => r.pcdTipos.includes(id)).length }))
+}
 
 /** Opções do filtro Geração: canônicas + códigos extras presentes no dado + `NA` no fim. Sem `throw`. */
 function generationOptions(rows: readonly TeamMemberRow[]): readonly string[] {
@@ -266,6 +296,9 @@ export function teamFilterOptions(rows: readonly TeamMemberRow[] = EQUIPE_PLACEH
     situacaoCadastral: TEAM_REGISTRATION_STATUSES,
     // Fechada (as 4 gerações + N/A), mais o código que o backend mandar e o front não conhecer.
     geracao: generationOptions(rows),
+    // PcD (spec 131): fechadas, do domínio de Colaboradores.
+    pcd: [...PWD_ANSWERS, PCD_NA],
+    pcdTipo: PWD_TYPES,
     // Derivadas: sem enum no domínio.
     anoContrato,
     funcao: distinctSorted(rows.map((r) => r.funcao)),
@@ -293,6 +326,10 @@ export type TeamFilters = Readonly<{
   faixaEtaria: string
   /** Código da geração ('GEN_Z', 'NA'…); '' = todas. */
   geracao: string
+  /** Spec 131: resposta de PcD ('SIM', 'NA'…); '' = todas. */
+  pcd: string
+  /** Spec 131: tipo de deficiência ('VISUAL'…) — quem marcou o tipo; '' = todos. */
+  pcdTipo: string
   search: string
 }>
 
@@ -308,6 +345,8 @@ export const EMPTY_TEAM_FILTERS: TeamFilters = {
   situacaoCadastral: '',
   faixaEtaria: '',
   geracao: '',
+  pcd: '',
+  pcdTipo: '',
   search: '',
 }
 
@@ -339,6 +378,8 @@ export function applyTeamFilters(rows: readonly TeamMemberRow[], f: TeamFilters)
       (f.situacaoCadastral === '' || r.situacaoCadastral === f.situacaoCadastral) &&
       (f.faixaEtaria === '' || faixaEtariaIdOf(r.idade) === f.faixaEtaria) &&
       (f.geracao === '' || r.geracao === f.geracao) &&
+      (f.pcd === '' || r.pcd === f.pcd) &&
+      (f.pcdTipo === '' || r.pcdTipos.includes(f.pcdTipo)) &&
       (q === '' || normalizeText(r.nome).includes(q)),
   )
 }
@@ -386,7 +427,7 @@ export function formatSharePercent(count: number, totalCount: number): string {
 
 // ── Export CSV (client-side; colunas ENXUTAS de exibição — SEM PII sensível) ──
 
-/** Cabeçalho pt-BR das 9 colunas enxutas. */
+/** Cabeçalho pt-BR das 11 colunas enxutas. */
 export const CSV_HEADER = csvHeaderLine([
   'Nome',
   'Idade',
@@ -397,18 +438,28 @@ export const CSV_HEADER = csvHeaderLine([
   'Identidade de gênero',
   'Raça/cor',
   'Escolaridade',
+  'Pessoa com deficiência',
+  'Tipo de deficiência',
 ])
 
+/** Rótulos PT de PcD (spec 131), injetados pela page — o view-model não importa o catálogo. */
+export type PcdLabels = Readonly<{ answer: (code: string) => string; type: (code: string) => string }>
+
+const PCD_CODES_AS_IS: PcdLabels = { answer: (code) => code, type: (code) => code }
+
 /**
- * Monta o CSV: uma linha por colaborador, só as 9 colunas de exibição (LGPD — sem cpf/email/telefone/
- * endereço/remuneração/alergias/biografia). Escape e convenções vêm do `csv.view-model.ts`.
+ * Monta o CSV: uma linha por colaborador, só as colunas de exibição (LGPD — sem cpf/email/telefone/
+ * endereço/remuneração/alergias/biografia; o texto livre de "Outra deficiência" também fica fora). Escape e
+ * convenções vêm do `csv.view-model.ts`.
  *
- * Geração (spec 123): só o CÓDIGO vem do core-api; o rótulo PT é do i18n, que a page injeta em
- * `generationLabel` (o view-model não importa o catálogo). Sem injeção, sai o código cru — nunca vazio.
+ * Geração (spec 123) e PcD (spec 131): só o CÓDIGO vem do core-api; o rótulo PT é do i18n, que a page injeta
+ * (o view-model não importa o catálogo). Sem injeção, sai o código cru — nunca vazio. Vários tipos de
+ * deficiência saem na mesma célula, separados por "; ".
  */
 export function buildCsv(
   rows: readonly TeamMemberRow[] = EQUIPE_PLACEHOLDER,
   generationLabel: (code: string) => string = (code) => code,
+  pcdLabels: PcdLabels = PCD_CODES_AS_IS,
 ): string {
   const lines: string[] = []
   for (const r of rows) {
@@ -425,6 +476,8 @@ export function buildCsv(
         r.genero,
         r.racaCor,
         r.escolaridade,
+        pcdLabels.answer(r.pcd),
+        r.pcdTipos.map(pcdLabels.type).join('; '),
       ]),
     )
   }

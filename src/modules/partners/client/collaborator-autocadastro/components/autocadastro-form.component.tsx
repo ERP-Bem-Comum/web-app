@@ -20,8 +20,13 @@ import {
   EDUCATION_LEVEL_OPTIONS,
   FOOD_CATEGORIES,
   MARITAL_STATUSES,
+  PWD_ANSWERS,
+  PWD_TYPES,
+  PWD_TYPE_OTHER,
+  togglePwdType,
   type AutocadastroFormController,
 } from './autocadastro-form.controller.ts'
+import { PwdTypesChecklist } from '#modules/partners/client/shared/pwd-types-checklist.component.tsx'
 import type { CollaboratorCompleteFieldsState } from '#modules/partners/client/collaborator-detail/components/collaborator-complete-fields.ts'
 import {
   greeting,
@@ -40,6 +45,11 @@ import {
 } from './autocadastro-form.css.ts'
 
 const t = createTranslator(ptBR)
+
+// Campos de TEXTO do form — os únicos que `txt`/`sel` desenham (os tipos de PcD são lista: checklist própria).
+type TextKey = {
+  [K in keyof CollaboratorCompleteFieldsState]: CollaboratorCompleteFieldsState[K] extends string ? K : never
+}[keyof CollaboratorCompleteFieldsState]
 
 export type AutocadastroFormProps = Readonly<{
   controller: AutocadastroFormController
@@ -64,7 +74,7 @@ export function AutocadastroForm({
   onSubmit,
 }: AutocadastroFormProps): ReactNode {
   const txt = (
-    key: keyof CollaboratorCompleteFieldsState,
+    key: TextKey,
     label: string,
     type?: 'text' | 'date',
     mask?: 'phone',
@@ -85,7 +95,7 @@ export function AutocadastroForm({
   )
 
   const sel = (
-    key: keyof CollaboratorCompleteFieldsState,
+    key: TextKey,
     label: string,
     options: readonly Readonly<{ value: string; label: string }>[],
   ): ReactNode => (
@@ -130,6 +140,15 @@ export function AutocadastroForm({
   const maritalOptions = MARITAL_STATUSES.map((v) => ({
     value: v,
     label: t(`partners.collaborators.detail.marital.${v}`),
+  }))
+  // Pessoa com Deficiência (spec 131) — redação do cliente.
+  const pwdAnswerOptions = PWD_ANSWERS.map((v) => ({
+    value: v,
+    label: t(`partners.collaborators.pwd.answer.${v}`),
+  }))
+  const pwdTypeOptions = PWD_TYPES.map((v) => ({
+    value: v,
+    label: t(`partners.collaborators.pwd.type.${v}`),
   }))
 
   return (
@@ -230,8 +249,47 @@ export function AutocadastroForm({
             {txt('allergies', t('partners.collaborators.detail.field.allergies'))}
             {sel('foodCategory', t('partners.collaborators.detail.field.foodCategory'), foodOptions)}
             {txt('foodCategoryDescription', t('partners.collaborators.detail.field.foodCategoryDescription'))}
-            {sel('isPwd', t('partners.collaborators.detail.field.isPwd'), simNao)}
-            {txt('pwdDescription', t('partners.collaborators.detail.field.pwdDescription'))}
+            {/* Pessoa com Deficiência (spec 131): pergunta 1 OBRIGATÓRIA; tipos só com "Sim"; o texto só com
+                "Outra" (molde de Identidade de Gênero). */}
+            {sel('pwdAnswer', t('partners.autocadastro.field.pwdAnswer'), pwdAnswerOptions)}
+            {c.state.pwdAnswer === 'SIM' ? (
+              <PwdTypesChecklist
+                idPrefix="ac-pwdType"
+                legend={t('partners.collaborators.detail.field.pwdTypes')}
+                options={pwdTypeOptions}
+                selected={c.state.pwdTypes}
+                disabled={false}
+                error={
+                  c.pwdIssues.includes('type-required') ? t('partners.collaborators.pwd.error.types') : null
+                }
+                onToggle={(value, checked) => {
+                  const type = PWD_TYPES.find((v) => v === value)
+                  if (type !== undefined)
+                    c.setField('pwdTypes', togglePwdType(c.state.pwdTypes, type, checked))
+                }}
+              />
+            ) : null}
+            {c.state.pwdAnswer === 'SIM' && c.state.pwdTypes.includes(PWD_TYPE_OTHER) ? (
+              <div className={fieldHighlight}>
+                <Field
+                  htmlFor="ac-pwdOtherDescription"
+                  label={t('partners.collaborators.detail.field.pwdOtherDescription')}
+                  error={
+                    c.pwdIssues.includes('other-required')
+                      ? t('partners.collaborators.pwd.error.other')
+                      : undefined
+                  }
+                >
+                  <Input
+                    id="ac-pwdOtherDescription"
+                    value={c.state.pwdOtherDescription}
+                    onChange={(v) => {
+                      c.setField('pwdOtherDescription', v)
+                    }}
+                  />
+                </Field>
+              </div>
+            ) : null}
           </div>
         </section>
 

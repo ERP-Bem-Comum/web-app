@@ -49,6 +49,16 @@ const PixKeyInputSchema = z.object({
   key: z.string().trim().min(1).max(140),
 })
 
+// Pessoa com Deficiência (spec 131). A coerência (tipo com "Sim", texto com "Outra") é do core-api (422).
+export const PwdInputSchema = z.object({
+  answer: z.enum(['SIM', 'NAO', 'PREFIRO_NAO_RESPONDER']),
+  types: z
+    .array(z.enum(['FISICA', 'VISUAL', 'AUDITIVA', 'INTELECTUAL_MENTAL', 'TEA', 'MULTIPLA', 'OUTRA']))
+    .max(7)
+    .optional(),
+  otherDescription: z.string().trim().max(120).optional(),
+})
+
 export const CreateCollaboratorInputSchema = z.object({
   name: z.string().trim().min(1).max(200),
   email: z.email(),
@@ -86,8 +96,7 @@ export const CompleteCollaboratorRegistrationInputSchema = z.object({
   hasChildren: z.boolean().optional(),
   childrenCount: z.int().nonnegative().optional(),
   childrenAges: z.array(z.int().nonnegative()).optional(),
-  isPwd: z.boolean().optional(),
-  pwdDescription: z.string().trim().max(300).optional(),
+  pwd: PwdInputSchema.optional(), // spec 131
   isOnLeave: z.boolean().optional(),
   leaveDuration: z.string().trim().max(120).optional(),
   leaveRenewable: z.boolean().optional(),
@@ -104,6 +113,8 @@ export const UpdateCollaboratorInputSchema = CreateCollaboratorInputSchema.exten
   rg: z.string().trim().max(20).optional(),
   dateOfBirth: z.iso.date().optional(),
   race: z.string().trim().max(60).optional(),
+  // Spec 131: preenche enquanto vazio ou incompleto; completo trava (409).
+  pwd: PwdInputSchema.optional(),
 })
 
 export const DeactivateCollaboratorInputSchema = z.object({

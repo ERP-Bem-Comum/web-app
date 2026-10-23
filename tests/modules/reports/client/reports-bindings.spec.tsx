@@ -148,6 +148,8 @@ const TEAM: readonly TeamMember[] = [
     race: null,
     age: null,
     generation: 'NA',
+    pwdAnswer: null,
+    pwdTypes: [],
   },
 ]
 

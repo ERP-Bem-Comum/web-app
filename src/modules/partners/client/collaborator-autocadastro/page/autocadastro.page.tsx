@@ -98,7 +98,9 @@ function AutocadastroReadyBody(
   const { token, preview, submitCommand } = props
   const form = useAutocadastroFormController(submitCommand.resetError)
 
-  const canSubmit = autocadastroViewModel.canSubmit(form.cpfPrefix) && !submitCommand.running
+  // Spec 131: a resposta de PcD é obrigatória no autocadastro e precisa estar completa.
+  const canSubmit =
+    autocadastroViewModel.canSubmit(form.cpfPrefix) && form.pwdIssues.length === 0 && !submitCommand.running
 
   return (
     <>
@@ -111,7 +113,8 @@ function AutocadastroReadyBody(
           submitting={submitCommand.running}
           errorMessage={submitCommand.errorTag === null ? null : t(submitCommand.errorTag)}
           onSubmit={() => {
-            submitCommand.execute(form.buildSubmit(token))
+            const input = form.buildSubmit(token)
+            if (input !== null) submitCommand.execute(input)
           }}
         />
       </div>

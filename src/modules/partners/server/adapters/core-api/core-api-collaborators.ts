@@ -124,8 +124,11 @@ const detailToModel = (raw: unknown): Result<CollaboratorDetail, PartnersError> 
     hasChildren: c.hasChildren ?? undefined,
     childrenCount: c.childrenCount ?? undefined,
     childrenAges: c.childrenAges ?? undefined,
-    isPwd: c.isPwd ?? undefined,
-    pwdDescription: u(c.pwdDescription),
+    // Spec 131: resposta + tipos + texto de "Outra"; não respondeu → undefined.
+    pwd:
+      c.pwd === null
+        ? undefined
+        : { answer: c.pwd.answer, types: c.pwd.types, otherDescription: u(c.pwd.otherDescription) ?? null },
     isOnLeave: c.isOnLeave ?? undefined,
     leaveDuration: u(c.leaveDuration),
     leaveRenewable: c.leaveRenewable ?? undefined,
