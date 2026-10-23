@@ -1198,8 +1198,6 @@ export const ptBR: Catalog = {
   'financial.create.submit': 'Salvar Documento',
   'financial.edit.title': 'Editar Documento',
   // spec 125 — editar documento Aprovado (continua Aprovado).
-  'financial.edit.approved.awaitingBackend':
-    'A alteração de forma de pagamento e de categorização em documento Aprovado ainda não está disponível. Por enquanto, só a descrição pode ser salva.',
   'financial.edit.approved.methodAlreadyChanged':
     'A forma de pagamento já foi alterada uma vez após a aprovação. Para mudar de novo, faça a baixa manual.',
   'financial.edit.approved.barcodeLocked': 'O código de barras não pode ser alterado depois da aprovação.',

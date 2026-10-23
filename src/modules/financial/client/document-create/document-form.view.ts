@@ -669,7 +669,7 @@ export const isEditableStatus = (status: DocumentStatus): boolean => status === 
 // · A forma muda UMA vez depois de aprovado (a troca serve à remessa; mudar de novo = baixa manual).
 // · Código de barras (Boleto/Guia) não se edita — exceto a Guia lançada SEM código, que pode recebê-lo.
 // · Voltar para uma forma de código de barras é bloqueado (pediria um código novo).
-// O backend ainda não aceita forma nem categorização no Aprovado (core-api#1057): até lá só a descrição salva.
+// · Só com título em Aprovado (P.O., 23/10): transmitido ou pago fica somente-consulta (core-api#1057).
 
 /** Formas pagas por código de barras — o código delas não se edita depois de aprovado. */
 const BARCODE_METHODS: ReadonlySet<PaymentMethod> = new Set<PaymentMethod>(['Boleto', 'GuiaRecolhimento'])
@@ -677,11 +677,22 @@ export const isBarcodeMethod = (m: PaymentMethod | ''): boolean => m !== '' && B
 
 export const isApprovedEditableStatus = (status: DocumentStatus): boolean => status === 'Aprovado'
 
+/**
+ * O modo "editar aprovado" abre? Documento Aprovado E todos os títulos ainda em Aprovado — a descrição e a
+ * categorização chegam a todos eles, e o core-api recusa a edição se algum já foi transmitido ou pago.
+ */
+export const isApprovedEditable = (d: DocumentDetail): boolean =>
+  isApprovedEditableStatus(d.status) && d.payables.every((p) => p.status === 'Aprovado')
+
+/** A forma do título pai já foi trocada depois da aprovação (core-api#1057) — só muda uma vez. */
+export const methodChangedAfterApproval = (d: DocumentDetail): boolean =>
+  d.payables.some((p) => p.kind === 'Parent' && p.paymentMethodChangedAt !== null)
+
 export type ApprovedEditContext = Readonly<{
   /** Forma e complemento GRAVADOS (o que a aprovação viu). */
   originalMethod: PaymentMethod | null
   originalDetail: string | null
-  /** A forma já foi trocada uma vez depois de aprovado (vem do core-api#1057; até lá, `false`). */
+  /** A forma já foi trocada uma vez depois de aprovado (`paymentMethodChangedAt` do título pai). */
   methodAlreadyChanged: boolean
 }>
 
@@ -724,7 +735,7 @@ export const approvedLockReasonTag = (
 
 const norm = (s: string | null | undefined): string => (s ?? '').trim()
 
-/** O que mudou em relação ao gravado — decide o que salvar e o que ainda espera o backend. PURA. */
+/** O que mudou em relação ao gravado — decide o que vai no PATCH e se o "Salvar" ativa. PURA. */
 export type ApprovedEditChanges = Readonly<{
   description: boolean
   paymentMethod: boolean
@@ -744,22 +755,46 @@ export const approvedEditChanges = (fields: DocumentFormFields, d: DocumentDetai
     norm(fields.subcategoryRef) !== norm(d.subcategoryRef),
 })
 
-/** Mudou algo que o core-api ainda não aceita no Aprovado (forma/complemento/categorização — #1057)? */
-export const approvedEditAwaitsBackend = (c: ApprovedEditChanges): boolean =>
-  c.paymentMethod || c.paymentDetail || c.taxonomy
+/** A categorização do form, se o caminho estiver INTEIRO (o core-api só aceita os 5 níveis juntos). */
+const taxonomyFromFields = (fields: DocumentFormFields): AdjustDocumentInput['taxonomy'] | null => {
+  const path = {
+    programRef: norm(fields.programRef),
+    budgetPlanRef: norm(fields.planoOrcamentario),
+    costCenterRef: norm(fields.costCenterRef),
+    categoryRef: norm(fields.categoryRef),
+    subcategoryRef: norm(fields.subcategoryRef),
+  }
+  return Object.values(path).every((v) => v !== '') ? path : null
+}
 
 /**
- * Salvar do Aprovado. Hoje só a DESCRIÇÃO tem rota (o caminho leve do PATCH aceita Aprovado e mantém o
- * status). Forma/complemento/categorização → `null` até o core-api#1057: o PATCH descartaria esses campos em
- * silêncio, e o complemento iria só ao documento (a remessa lê o do título). Nada mudou → `null`.
+ * Salvar do Aprovado (core-api#1057): vai só o que MUDOU — descrição, forma + complemento do título pai e/ou
+ * categorização. Qualquer um deles ativa o "Salvar". `null` (botão desativado) quando nada mudou, quando a
+ * forma ficou vazia ou quando a categorização está pela metade.
  */
 export const buildApprovedAdjustInput = (
   fields: DocumentFormFields,
   d: DocumentDetail,
 ): AdjustDocumentInput | null => {
   const changes = approvedEditChanges(fields, d)
-  if (approvedEditAwaitsBackend(changes) || !changes.description) return null
-  return { id: d.id, version: d.version, description: trimToUndefined(fields.description) ?? null }
+  if (!changes.description && !changes.paymentMethod && !changes.paymentDetail && !changes.taxonomy) {
+    return null
+  }
+  if (changes.paymentMethod && !isPaymentMethod(fields.paymentMethod)) return null
+  const taxonomy = changes.taxonomy ? taxonomyFromFields(fields) : null
+  if (changes.taxonomy && taxonomy === null) return null
+  return {
+    id: d.id,
+    version: d.version,
+    ...(changes.description ? { description: trimToUndefined(fields.description) ?? null } : {}),
+    ...(changes.paymentMethod && isPaymentMethod(fields.paymentMethod)
+      ? { paymentMethod: fields.paymentMethod }
+      : {}),
+    ...(changes.paymentMethod || changes.paymentDetail
+      ? { paymentDetail: trimToUndefined(fields.paymentComplement) ?? null }
+      : {}),
+    ...(taxonomy !== null ? { taxonomy } : {}),
+  }
 }
 
 /** Soma (centavos) das retenções existentes do documento (filhos) — p/ validar líquido > 0 ao mudar bruto. */

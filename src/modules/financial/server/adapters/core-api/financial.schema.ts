@@ -12,6 +12,8 @@ export const CoreApiPayableSchema = z.object({
   retentionType: z.string().trim().nullable(),
   valueCents: z.string().trim(),
   status: z.string().trim(),
+  // core-api#1057: quando a forma do título foi trocada depois da aprovação (null = nunca). Drift → null.
+  paymentMethodChangedAt: z.string().trim().nullable().optional().catch(null),
 })
 export type CoreApiPayable = z.infer<typeof CoreApiPayableSchema>
 

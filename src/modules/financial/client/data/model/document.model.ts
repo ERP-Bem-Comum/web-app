@@ -97,6 +97,15 @@ export type AdjustDocumentInput = Readonly<{
   dueDate?: string
   description?: string | null
   paymentDetail?: string | null // #273/#284: complemento da forma — editável no ajuste; null = limpar
+  paymentMethod?: PaymentMethod // core-api#1057: só no Aprovado (título pai)
+  // core-api#1057: só no Aprovado — o caminho inteiro da árvore do plano, os 5 níveis juntos.
+  taxonomy?: Readonly<{
+    programRef: string
+    budgetPlanRef: string
+    costCenterRef: string
+    categoryRef: string
+    subcategoryRef: string
+  }>
 }>
 
 export type ApproveInput = Readonly<{ id: string; version: number }>
@@ -176,6 +185,7 @@ export type Payable = Readonly<{
   retentionType: RetentionType | null
   valueCents: string
   status: DocumentStatus
+  paymentMethodChangedAt: string | null // core-api#1057: forma trocada depois da aprovação (ISO); null = nunca
 }>
 
 // #62/Feature 2 (core-api#568): comprovante-fonte do documento. `url` é o endpoint proxy que serve os
