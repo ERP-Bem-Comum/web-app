@@ -17,18 +17,22 @@ export const group = style({
   gap: brand.space.xs,
 })
 
+// A <legend> de um <fieldset> não participa do `gap` do contêiner — o respiro até as opções vem daqui.
 export const legend = style({
   padding: 0,
+  marginBlockEnd: brand.space.sm,
   fontSize: brand.text.label,
   fontWeight: brand.weight.semibold,
   color: brand.color.ink700,
 })
 
-// Duas colunas no desktop, uma no celular — as 7 opções não viram uma tira longa.
+// Opções em sequência, com o mesmo espaço entre elas; quebram de linha quando não cabem. Uma grade de
+// colunas iguais espalhava as caixas com vãos irregulares na seção larga.
 export const options = style({
-  display: 'grid',
-  gridTemplateColumns: 'repeat(auto-fill, minmax(16rem, 1fr))',
-  gap: brand.space.xs,
+  display: 'flex',
+  flexWrap: 'wrap',
+  columnGap: brand.space.xl,
+  rowGap: brand.space.sm,
 })
 
 export const option = style({
