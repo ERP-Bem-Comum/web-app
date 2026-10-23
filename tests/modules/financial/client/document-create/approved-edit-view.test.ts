@@ -1,21 +1,22 @@
 /**
- * spec 125 — editar documento APROVADO: travas por forma, formas bloqueadas, o que muda, o que já salva
- * (descrição) e o que espera o core-api#1057 (forma/complemento/categorização). Também a hidratação da
- * categorização no modo edição/consulta.
+ * spec 125 / core-api#1057 — editar documento APROVADO: travas por forma, formas bloqueadas, quando o modo
+ * abre (só com títulos em Aprovado), o que muda e o que vai no PATCH. Também a hidratação da categorização
+ * no modo edição/consulta.
  */
 import { describe, it } from 'node:test'
 import assert from 'node:assert/strict'
 
 import {
   approvedBlockedMethods,
-  approvedEditAwaitsBackend,
   approvedEditChanges,
   approvedEditLocksFor,
   approvedLockReasonTag,
   buildApprovedAdjustInput,
   editLocksFor,
   hydrateFieldsFromDetail,
+  isApprovedEditable,
   isApprovedEditableStatus,
+  methodChangedAfterApproval,
   type ApprovedEditContext,
 } from '../../../../../src/modules/financial/client/document-create/document-form.view.ts'
 import type { DocumentDetail } from '../../../../../src/modules/financial/client/data/model/document.model.ts'
@@ -42,7 +43,16 @@ const approved: DocumentDetail = {
   costCenterRef: 'cc-1',
   programRef: 'prog-1',
   version: 7,
-  payables: [{ id: 'p0', kind: 'Parent', retentionType: null, valueCents: '500000', status: 'Aprovado' }],
+  payables: [
+    {
+      id: 'p0',
+      kind: 'Parent',
+      retentionType: null,
+      valueCents: '500000',
+      status: 'Aprovado',
+      paymentMethodChangedAt: null,
+    },
+  ],
   attachment: null,
 }
 
@@ -74,6 +84,21 @@ describe('spec 125 · travas', () => {
     assert.equal(isApprovedEditableStatus('Aprovado'), true)
     assert.equal(isApprovedEditableStatus('Aberto'), false)
     assert.equal(isApprovedEditableStatus('Transmitido'), false)
+  })
+  it('título transmitido ou pago → o modo não abre (somente consulta)', () => {
+    assert.equal(isApprovedEditable(approved), true)
+    for (const status of ['Transmitido', 'Pago'] as const) {
+      const progressed = { ...approved, payables: approved.payables.map((p) => ({ ...p, status })) }
+      assert.equal(isApprovedEditable(progressed), false, status)
+    }
+  })
+  it('a marca de troca vem do título pai (paymentMethodChangedAt)', () => {
+    assert.equal(methodChangedAfterApproval(approved), false)
+    const changed = {
+      ...approved,
+      payables: approved.payables.map((p) => ({ ...p, paymentMethodChangedAt: '2026-10-23T12:00:00.000Z' })),
+    }
+    assert.equal(methodChangedAfterApproval(changed), true)
   })
   it('abre descrição, forma e categorização; fornecedor/valor/emissão/vencimento/impostos travados', () => {
     const l = approvedEditLocksFor(ctxOf(approved), 'Boleto')
@@ -142,7 +167,7 @@ describe('spec 125 · o que mudou e o que salva', () => {
     assert.deepEqual(c, { description: false, paymentMethod: false, paymentDetail: false, taxonomy: false })
     assert.equal(buildApprovedAdjustInput(base, approved), null)
   })
-  it('só a descrição → PATCH com version e a descrição (o backend já aceita no Aprovado)', () => {
+  it('só a descrição → PATCH com version e a descrição', () => {
     const input = buildApprovedAdjustInput(
       { ...base, description: '  Fatura de setembro (ajustada) ' },
       approved,
@@ -156,12 +181,55 @@ describe('spec 125 · o que mudou e o que salva', () => {
       description: null,
     })
   })
-  it('forma/complemento/categorização → espera o core-api#1057 (não salva em silêncio)', () => {
+  it('só a forma → ativa o salvar: PATCH com a forma nova e o complemento limpo', () => {
     const pix = { ...base, paymentMethod: 'PIX' as const, paymentComplement: '' }
-    assert.equal(approvedEditAwaitsBackend(approvedEditChanges(pix, approved)), true)
-    assert.equal(buildApprovedAdjustInput(pix, approved), null)
-    const recat = { ...base, categoryRef: 'cat-2', description: 'x' }
-    assert.equal(approvedEditChanges(recat, approved).taxonomy, true)
-    assert.equal(buildApprovedAdjustInput(recat, approved), null)
+    assert.deepEqual(buildApprovedAdjustInput(pix, approved), {
+      id: 'doc-9',
+      version: 7,
+      paymentMethod: 'PIX',
+      paymentDetail: null,
+    })
+  })
+  it('só a categorização → ativa o salvar: PATCH com o caminho inteiro', () => {
+    const recat = { ...base, categoryRef: 'cat-2', subcategoryRef: 'sub-2' }
+    assert.deepEqual(buildApprovedAdjustInput(recat, approved), {
+      id: 'doc-9',
+      version: 7,
+      taxonomy: {
+        programRef: 'prog-1',
+        budgetPlanRef: 'plan-1',
+        costCenterRef: 'cc-1',
+        categoryRef: 'cat-2',
+        subcategoryRef: 'sub-2',
+      },
+    })
+  })
+  it('categorização pela metade (cascata limpou a subcategoria) → não salva', () => {
+    const half = { ...base, categoryRef: 'cat-2', subcategoryRef: '' }
+    assert.equal(approvedEditChanges(half, approved).taxonomy, true)
+    assert.equal(buildApprovedAdjustInput(half, approved), null)
+  })
+  it('descrição + forma + categorização juntas → um PATCH só', () => {
+    const all = {
+      ...base,
+      description: 'Pago por Pix',
+      paymentMethod: 'PIX' as const,
+      paymentComplement: '',
+      categoryRef: 'cat-2',
+      subcategoryRef: 'sub-2',
+    }
+    const input = buildApprovedAdjustInput(all, approved)
+    assert.equal(input?.description, 'Pago por Pix')
+    assert.equal(input?.paymentMethod, 'PIX')
+    assert.equal(input?.taxonomy?.subcategoryRef, 'sub-2')
+  })
+  it('Guia sem código recebendo o código → só o complemento vai, sem trocar a forma', () => {
+    const guia = { ...approved, paymentMethod: 'GuiaRecolhimento' as const, paymentDetail: null }
+    const fields = { ...hydrateFieldsFromDetail(guia), paymentComplement: '8581' }
+    assert.deepEqual(buildApprovedAdjustInput(fields, guia), {
+      id: 'doc-9',
+      version: 7,
+      paymentDetail: '8581',
+    })
   })
 })

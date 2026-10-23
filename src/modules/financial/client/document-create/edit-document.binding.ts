@@ -23,7 +23,8 @@ import {
   hydrateFieldsFromDetail,
   editLocksFor,
   isEditableStatus,
-  isApprovedEditableStatus,
+  isApprovedEditable,
+  methodChangedAfterApproval,
   type ApprovedEditContext,
   type DocumentFormFields,
   type FieldLocks,
@@ -45,6 +46,8 @@ export type DocumentEditBinding = Readonly<{
   approvedContext: ApprovedEditContext | null
   running: boolean
   errorTag: string | null
+  /** Texto PT-BR do core-api quando houver — separa as recusas da edição do Aprovado (todas 409). */
+  errorMessage: string | null
   execute: (input: AdjustDocumentInput) => void
 }>
 
@@ -77,11 +80,11 @@ export function useDocumentEditing(id: string | undefined): DocumentEditBinding 
   })
 
   const data = mutation.data
-  const errorTag = mutation.isPending
-    ? null
-    : data !== undefined && !isOk(data)
-      ? financialErrorTag(data.error)
-      : mutation.isError
+  const failure = !mutation.isPending && data !== undefined && !isOk(data) ? data.error : null
+  const errorTag =
+    failure !== null
+      ? financialErrorTag(failure.error)
+      : !mutation.isPending && mutation.isError
         ? 'financial.error.server'
         : null
 
@@ -93,17 +96,18 @@ export function useDocumentEditing(id: string | undefined): DocumentEditBinding 
     initialFields,
     locks: detail !== null ? editLocksFor(detail.status) : null,
     editable: detail !== null && isEditableStatus(detail.status),
+    // Título transmitido ou pago → sem contexto → a tela cai em somente-consulta.
     approvedContext:
-      detail !== null && isApprovedEditableStatus(detail.status)
+      detail !== null && isApprovedEditable(detail)
         ? {
             originalMethod: detail.paymentMethod,
             originalDetail: detail.paymentDetail,
-            // core-api#1057 vai expor se a forma já foi trocada depois da aprovação; até lá, nunca trocou.
-            methodAlreadyChanged: false,
+            methodAlreadyChanged: methodChangedAfterApproval(detail),
           }
         : null,
     running: mutation.isPending,
     errorTag,
+    errorMessage: failure?.message ?? null,
     execute: (input) => {
       mutation.mutate(input)
     },
