@@ -21,6 +21,9 @@ import {
   FOOD_CATEGORIES,
   SEXES,
   MARITAL_STATUSES,
+  PWD_ANSWERS,
+  PWD_TYPES,
+  isPwdAnswer,
   PIX_KEY_TYPES,
   isPixKeyType,
   BR_UF,
@@ -46,6 +49,12 @@ import {
   buildCompleteFields,
   computeHasCompleteData as computeHasCompleteFields,
   GENDER_IDENTITY_OTHER,
+  PWD_TYPE_OTHER,
+  pwdStateFrom,
+  isPwdComplete,
+  pwdIssues,
+  buildPwdInput,
+  togglePwdType,
   type CollaboratorCompleteFieldsState,
 } from './collaborator-complete-fields.ts'
 
@@ -63,6 +72,11 @@ export {
   FOOD_CATEGORIES,
   SEXES,
   MARITAL_STATUSES,
+  PWD_ANSWERS,
+  PWD_TYPES,
+  PWD_TYPE_OTHER,
+  isPwdAnswer,
+  togglePwdType,
   PIX_KEY_TYPES,
   isPixKeyType,
   BR_UF,
@@ -134,8 +148,7 @@ const fromDetail = (c: CollaboratorDetail): CollaboratorDetailFormState => ({
   hasChildren: boolToTri(c.hasChildren),
   childrenCount: c.childrenCount === undefined ? '' : String(c.childrenCount),
   childrenAges: formatChildrenAges(c.childrenAges),
-  isPwd: boolToTri(c.isPwd),
-  pwdDescription: c.pwdDescription ?? '',
+  ...pwdStateFrom(c.pwd),
   isOnLeave: boolToTri(c.isOnLeave),
   leaveDuration: c.leaveDuration ?? '',
   leaveRenewable: boolToTri(c.leaveRenewable),
@@ -163,8 +176,16 @@ export const buildCompleteInput = (
 /** Há algum dado de perfil (2ª etapa) preenchido? (PURO — testável sem React). Delega ao núcleo puro. */
 export const computeHasCompleteData = (f: CollaboratorDetailFormState): boolean => computeHasCompleteFields(f)
 
-/** RG, nascimento e raça já gravados → travados no Editar (spec 124). O que falta segue livre. */
-export type LockedPersonalFields = Readonly<{ rg: boolean; dateOfBirth: boolean; race: boolean }>
+/**
+ * RG, nascimento e raça já gravados → travados no Editar (spec 124). O que falta segue livre. PcD (spec 131)
+ * trava só quando COMPLETO: vazio ou incompleto (o "Sim" antigo, sem tipo) segue aberto.
+ */
+export type LockedPersonalFields = Readonly<{
+  rg: boolean
+  dateOfBirth: boolean
+  race: boolean
+  pwd: boolean
+}>
 
 const stored = (v: string | undefined): boolean => v !== undefined && v.trim() !== ''
 
@@ -173,7 +194,20 @@ export const lockedPersonalFrom = (detail: CollaboratorDetail): LockedPersonalFi
   rg: stored(detail.rg),
   dateOfBirth: stored(detail.dateOfBirth),
   race: stored(detail.race),
+  pwd: isPwdComplete(detail.pwd),
 })
+
+/**
+ * Validação PURA do PcD antes do salvar (spec 131). No detalhe a pergunta não é obrigatória (o RH completa
+ * sem ela), mas o que se responde tem de chegar completo: "Sim" pede tipo, "Outra" pede o texto.
+ */
+export const validatePwd = (s: CollaboratorDetailFormState): CollaboratorDetailFormErrors => {
+  const issues = pwdIssues(s, { required: false })
+  return {
+    ...(issues.includes('type-required') ? { 'pwd.types': true } : {}),
+    ...(issues.includes('other-required') ? { 'pwd.other': true } : {}),
+  }
+}
 
 /** Hidratação PURA do estado do form a partir do detalhe carregado (testável sem React). */
 export const stateFromDetail = (detail: CollaboratorDetail): CollaboratorDetailFormState => fromDetail(detail)
@@ -307,7 +341,11 @@ export function useCollaboratorDetailFormController(
 
   const validate = useCallback(
     (current: CollaboratorDetail): boolean => {
-      const next = { ...validatePaymentTarget(state, current), ...validateTerritory(state, current) }
+      const next = {
+        ...validatePaymentTarget(state, current),
+        ...validateTerritory(state, current),
+        ...validatePwd(state),
+      }
       setErrors(next)
       return Object.keys(next).length === 0
     },
@@ -333,6 +371,9 @@ export function useCollaboratorDetailFormController(
       rg: blank(state.rg),
       dateOfBirth: blank(state.dateOfBirth),
       race: blank(state.race),
+      // PcD (spec 131): vai sempre que respondido — o core-api grava enquanto o gravado estiver vazio ou
+      // incompleto e trata o igual como "mantém"; sem resposta → ausente → mantém.
+      pwd: buildPwdInput(state),
     }),
     [state],
   )

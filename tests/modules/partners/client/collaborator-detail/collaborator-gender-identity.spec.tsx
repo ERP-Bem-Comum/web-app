@@ -164,7 +164,8 @@ const fakeController = (state = emptyCompleteFieldsState): AutocadastroFormContr
   cpfPrefix: '',
   setField: vi.fn(),
   setCpfPrefix: vi.fn(),
-  buildSubmit: vi.fn<(token: string) => AutocadastroSubmitInput>(),
+  pwdIssues: [],
+  buildSubmit: vi.fn<(token: string) => AutocadastroSubmitInput | null>(),
 })
 
 const formProps = (controller: AutocadastroFormController): AutocadastroFormProps => ({

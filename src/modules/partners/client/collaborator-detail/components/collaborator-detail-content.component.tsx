@@ -6,6 +6,7 @@ import { formatMask, unmask, type InputMask } from '#shared/ui/index.ts'
 import { BankSelect, isUnknownBank } from '#shared/ui/brand/bank-select.component.tsx'
 import { BANK_LABELS, BANK_UNKNOWN_HINT } from '#modules/partners/client/shared/bank-select-labels.ts'
 import { derivePixKey } from '#modules/partners/client/domain/derive-pix-key.ts'
+import { PwdTypesChecklist } from '#modules/partners/client/shared/pwd-types-checklist.component.tsx'
 import {
   UsersIcon,
   FileTextIcon,
@@ -47,6 +48,10 @@ import {
   selectableWithCurrent,
   FOOD_CATEGORIES,
   MARITAL_STATUSES,
+  PWD_ANSWERS,
+  PWD_TYPES,
+  PWD_TYPE_OTHER,
+  togglePwdType,
   PIX_KEY_TYPES,
   isPixKeyType,
   BR_UF,
@@ -56,6 +61,11 @@ import {
 } from './collaborator-detail-form.controller.ts'
 
 const t = createTranslator(ptBR)
+
+// Campos de TEXTO do form — os únicos que `txt`/`sel` desenham (os tipos de PcD são lista: checklist própria).
+type TextKey = {
+  [K in keyof CollaboratorDetailFormState]: CollaboratorDetailFormState[K] extends string ? K : never
+}[keyof CollaboratorDetailFormState]
 
 export type CollaboratorDetailContentProps = Readonly<{
   controller: CollaboratorDetailFormController
@@ -123,7 +133,7 @@ export function CollaboratorDetailContent({
   // Campo de texto. `readOnly` força desabilitado (ex.: CPF travado); senão segue `editing`.
   // `errorKey` liga o campo ao erro de validação do controller (banco/PIX spec 120, território spec 121).
   const txt = (
-    key: keyof CollaboratorDetailFormState,
+    key: TextKey,
     label: string,
     opts?: {
       type?: 'text' | 'email' | 'date'
@@ -167,7 +177,7 @@ export function CollaboratorDetailContent({
   }
 
   const sel = (
-    key: keyof CollaboratorDetailFormState,
+    key: TextKey,
     label: string,
     options: readonly Readonly<{ value: string; label: string }>[],
     opts?: { readOnly?: boolean; lockedHint?: string; errorKey?: string },
@@ -249,6 +259,19 @@ export function CollaboratorDetailContent({
     value: v,
     label: t(`partners.collaborators.detail.marital.${v}`),
   }))
+  // Pessoa com Deficiência (spec 131) — redação do cliente.
+  const pwdAnswerOptions = PWD_ANSWERS.map((v) => ({
+    value: v,
+    label: t(`partners.collaborators.pwd.answer.${v}`),
+  }))
+  const pwdTypeOptions = PWD_TYPES.map((v) => ({
+    value: v,
+    label: t(`partners.collaborators.pwd.type.${v}`),
+  }))
+  const pwdLock =
+    lockedPersonal?.pwd === true
+      ? { readOnly: true, lockedHint: t('partners.collaborators.pwd.locked') }
+      : undefined
 
   return (
     <>
@@ -485,8 +508,40 @@ export function CollaboratorDetailContent({
                   'foodCategoryDescription',
                   t('partners.collaborators.detail.field.foodCategoryDescription'),
                 )}
-                {sel('isPwd', t('partners.collaborators.detail.field.isPwd'), simNao)}
-                {txt('pwdDescription', t('partners.collaborators.detail.field.pwdDescription'))}
+                {/* Pessoa com Deficiência (spec 131): tipos só com "Sim"; o texto só com "Outra" (molde de
+                    Identidade de Gênero). Trava quando a resposta gravada está COMPLETA; incompleta segue
+                    aberta para completar (P.O., 23/10). */}
+                {sel(
+                  'pwdAnswer',
+                  t('partners.collaborators.detail.field.pwdAnswer'),
+                  pwdAnswerOptions,
+                  pwdLock,
+                )}
+                {c.state.pwdAnswer === 'SIM' ? (
+                  <PwdTypesChecklist
+                    idPrefix="cd-pwdType"
+                    legend={t('partners.collaborators.detail.field.pwdTypes')}
+                    options={pwdTypeOptions}
+                    selected={c.state.pwdTypes}
+                    disabled={!editing || lockedPersonal?.pwd === true}
+                    error={isInvalid('pwd.types') ? t('partners.collaborators.pwd.error.types') : null}
+                    onToggle={(value, checked) => {
+                      const type = PWD_TYPES.find((v) => v === value)
+                      if (type !== undefined)
+                        c.setField('pwdTypes', togglePwdType(c.state.pwdTypes, type, checked))
+                    }}
+                    // O texto de "Outra" entra na MESMA linha das opções (P.O., 23/10).
+                    trailing={
+                      c.state.pwdTypes.includes(PWD_TYPE_OTHER)
+                        ? txt(
+                            'pwdOtherDescription',
+                            t('partners.collaborators.detail.field.pwdOtherDescription'),
+                            { highlight: true, errorKey: 'pwd.other', ...pwdLock },
+                          )
+                        : undefined
+                    }
+                  />
+                ) : null}
               </div>
             </div>
           </section>

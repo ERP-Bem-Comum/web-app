@@ -7,7 +7,7 @@
 import * as z from 'zod'
 
 import type * as D from '../domain/collaborator/collaborator-autocadastro.io.ts'
-import { CompleteCollaboratorRegistrationInputSchema } from './collaborator.io-schemas.ts'
+import { CompleteCollaboratorRegistrationInputSchema, PwdInputSchema } from './collaborator.io-schemas.ts'
 
 export const AutocadastroPreviewInputSchema = z.object({
   token: z.string().trim().min(1),
@@ -16,6 +16,8 @@ export const AutocadastroPreviewInputSchema = z.object({
 export const AutocadastroSubmitInputSchema = CompleteCollaboratorRegistrationInputSchema.omit({
   id: true,
 }).extend({
+  // Spec 131 (P.O., 23/10): no autocadastro a pergunta "Você é PcD?" é OBRIGATÓRIA.
+  pwd: PwdInputSchema,
   token: z.string().trim().min(1),
   // primeiros dígitos do CPF — só-dígitos, ≥3 e ≤14 (o CPF tem 11; teto folgado). FR-002/US2.
   cpfPrefix: z

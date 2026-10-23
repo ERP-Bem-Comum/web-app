@@ -22,6 +22,10 @@ export type TeamMember = Readonly<{
   age: number | null
   /** Código da geração ('BOOMER'…'GEN_Z', 'NA' sem nascimento), derivado no core-api (#1055). */
   generation: string
+  /** Pessoa com Deficiência (spec 131): resposta ('SIM'/'NAO'/'PREFIRO_NAO_RESPONDER'; null = não respondeu). */
+  pwdAnswer: string | null
+  /** Tipos marcados (códigos, ordem do formulário); vazio fora do "Sim". O texto de "Outra" não cruza a borda. */
+  pwdTypes: readonly string[]
 }>
 
 /**
