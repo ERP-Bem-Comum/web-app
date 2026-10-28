@@ -17,7 +17,7 @@ export type ListReconciliationPeriodsFnResult =
   | Readonly<{ ok: false; error: ReconciliationError }>
 
 export const listReconciliationPeriodsFn = createServerFn({ method: 'GET' })
-  .inputValidator(ListReconciliationPeriodsInputSchema)
+  .validator(ListReconciliationPeriodsInputSchema)
   .handler(async ({ data }): Promise<ListReconciliationPeriodsFnResult> => {
     const user = await getCurrentUserFn()
     if (user === null) return { ok: false, error: 'unauthorized' }

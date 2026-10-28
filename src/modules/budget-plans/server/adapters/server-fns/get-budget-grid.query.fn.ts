@@ -18,7 +18,7 @@ export type GetBudgetGridFnResult =
   | Readonly<{ ok: false; error: BudgetPlansError }>
 
 export const getBudgetGridFn = createServerFn({ method: 'GET' })
-  .inputValidator(GetBudgetGridInputSchema)
+  .validator(GetBudgetGridInputSchema)
   .handler(async ({ data }): Promise<GetBudgetGridFnResult> => {
     const user = await getCurrentUserFn()
     if (user === null) return { ok: false, error: 'unauthorized' }

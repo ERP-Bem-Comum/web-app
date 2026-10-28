@@ -6,8 +6,8 @@ import { createServerFn } from '@tanstack/react-start'
 import { isErr } from '#shared/primitives/result.ts'
 import { getCurrentUserFn, resolveAccessTokenFn } from '#modules/auth/public-api/index.ts'
 import { actServer } from '../../act.composition.ts'
-import { UpdateActInputSchema } from "#modules/partners/server/adapters/act.io-schemas.ts"
-import type { ActDetail } from "#modules/partners/server/domain/act/act.io.ts"
+import { UpdateActInputSchema } from '#modules/partners/server/adapters/act.io-schemas.ts'
+import type { ActDetail } from '#modules/partners/server/domain/act/act.io.ts'
 import type { PartnersError } from '#modules/partners/server/domain/errors/partners.errors.ts'
 
 export type UpdateActFnResult =
@@ -15,7 +15,7 @@ export type UpdateActFnResult =
   | Readonly<{ ok: false; error: PartnersError }>
 
 export const updateActFn = createServerFn({ method: 'POST' })
-  .inputValidator(UpdateActInputSchema)
+  .validator(UpdateActInputSchema)
   .handler(async ({ data }): Promise<UpdateActFnResult> => {
     const user = await getCurrentUserFn()
     if (user === null) return { ok: false, error: 'unauthorized' }

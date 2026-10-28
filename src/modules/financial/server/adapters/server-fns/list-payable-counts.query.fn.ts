@@ -17,7 +17,7 @@ export type PayableCountsFnResult =
   | Readonly<{ ok: false; error: FinancialError }>
 
 export const listPayableCountsFn = createServerFn({ method: 'GET' })
-  .inputValidator(PayableCountsInputSchema)
+  .validator(PayableCountsInputSchema)
   .handler(async ({ data }): Promise<PayableCountsFnResult> => {
     const user = await getCurrentUserFn()
     if (user === null) return { ok: false, error: 'unauthorized' }

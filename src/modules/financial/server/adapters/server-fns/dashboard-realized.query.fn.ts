@@ -28,7 +28,7 @@ export type DashboardRealizedFnResult =
   | Readonly<{ ok: false; error: FinancialError }>
 
 export const dashboardRealizedFn = createServerFn({ method: 'GET' })
-  .inputValidator(DashboardRealizedInputSchema)
+  .validator(DashboardRealizedInputSchema)
   .handler(async ({ data }): Promise<DashboardRealizedFnResult> => {
     const user = await getCurrentUserFn()
     if (user === null) return { ok: false, error: 'unauthorized' }

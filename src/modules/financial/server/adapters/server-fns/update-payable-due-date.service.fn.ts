@@ -17,7 +17,7 @@ export type UpdatePayableDueDateFnResult =
   | Readonly<{ ok: false; error: FinancialError }>
 
 export const updatePayableDueDateFn = createServerFn({ method: 'POST' })
-  .inputValidator(UpdatePayableDueDateInputSchema)
+  .validator(UpdatePayableDueDateInputSchema)
   .handler(async ({ data }): Promise<UpdatePayableDueDateFnResult> => {
     const user = await getCurrentUserFn()
     if (user === null) return { ok: false, error: 'unauthorized' }

@@ -6,8 +6,8 @@ import { createServerFn } from '@tanstack/react-start'
 import { isErr } from '#shared/primitives/result.ts'
 import { getCurrentUserFn, resolveAccessTokenFn } from '#modules/auth/public-api/index.ts'
 import { supplierServer } from '../../supplier.composition.ts'
-import { DeactivateSupplierInputSchema } from "#modules/partners/server/adapters/supplier.io-schemas.ts"
-import type { SupplierDetail } from "#modules/partners/server/domain/supplier/supplier.io.ts"
+import { DeactivateSupplierInputSchema } from '#modules/partners/server/adapters/supplier.io-schemas.ts'
+import type { SupplierDetail } from '#modules/partners/server/domain/supplier/supplier.io.ts'
 import type { PartnersError } from '#modules/partners/server/domain/errors/partners.errors.ts'
 
 export type DeactivateSupplierFnResult =
@@ -15,7 +15,7 @@ export type DeactivateSupplierFnResult =
   | Readonly<{ ok: false; error: PartnersError }>
 
 export const deactivateSupplierFn = createServerFn({ method: 'POST' })
-  .inputValidator(DeactivateSupplierInputSchema)
+  .validator(DeactivateSupplierInputSchema)
   .handler(async ({ data }): Promise<DeactivateSupplierFnResult> => {
     const user = await getCurrentUserFn()
     if (user === null) return { ok: false, error: 'unauthorized' }

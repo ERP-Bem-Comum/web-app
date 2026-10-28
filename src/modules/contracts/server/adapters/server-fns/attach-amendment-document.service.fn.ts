@@ -13,7 +13,7 @@ export type AttachAmendmentDocumentFnResult =
   | Readonly<{ ok: false; error: ContractsError }>
 
 export const attachAmendmentDocumentFn = createServerFn({ method: 'POST' })
-  .inputValidator(AttachAmendmentDocumentInputSchema)
+  .validator(AttachAmendmentDocumentInputSchema)
   .handler(async ({ data }): Promise<AttachAmendmentDocumentFnResult> => {
     try {
       const user = await getCurrentUserFn()

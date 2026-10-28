@@ -18,7 +18,7 @@ export type ListPayableTitlesFnResult =
   | Readonly<{ ok: false; error: FinancialError }>
 
 export const listPayableTitlesFn = createServerFn({ method: 'GET' })
-  .inputValidator(ListPayableTitlesInputSchema)
+  .validator(ListPayableTitlesInputSchema)
   .handler(async ({ data }): Promise<ListPayableTitlesFnResult> => {
     const user = await getCurrentUserFn()
     if (user === null) return { ok: false, error: 'unauthorized' }

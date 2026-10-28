@@ -26,7 +26,7 @@ export type PreviewRemittanceFnResult =
   | Readonly<{ ok: false; error: FinancialError }>
 
 export const previewRemittanceFn = createServerFn({ method: 'POST' })
-  .inputValidator(
+  .validator(
     z.object({
       // A conta que PAGA. Obrigatória desde o core-api#804: a repartição dos lotes se decide comparando
       // o banco do favorecido com o do cedente, e sem ela o pré-voo não confere o arquivo que vai sair.

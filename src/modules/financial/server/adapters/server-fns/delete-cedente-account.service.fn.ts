@@ -24,7 +24,7 @@ export type DeleteCedenteAccountFnResult =
   | Readonly<{ ok: false; error: ReconciliationError }>
 
 export const deleteCedenteAccountFn = createServerFn({ method: 'POST' })
-  .inputValidator(DeleteCedenteAccountInputSchema)
+  .validator(DeleteCedenteAccountInputSchema)
   .handler(async ({ data }): Promise<DeleteCedenteAccountFnResult> => {
     const user = await getCurrentUserFn()
     if (user === null) return { ok: false, error: 'unauthorized' }

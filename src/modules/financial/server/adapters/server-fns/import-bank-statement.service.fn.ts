@@ -17,7 +17,7 @@ export type ImportStatementFnResult =
   | Readonly<{ ok: false; error: ReconciliationError }>
 
 export const importBankStatementFn = createServerFn({ method: 'POST' })
-  .inputValidator(ImportStatementInputSchema)
+  .validator(ImportStatementInputSchema)
   .handler(async ({ data }): Promise<ImportStatementFnResult> => {
     const user = await getCurrentUserFn()
     if (user === null) return { ok: false, error: 'unauthorized' }

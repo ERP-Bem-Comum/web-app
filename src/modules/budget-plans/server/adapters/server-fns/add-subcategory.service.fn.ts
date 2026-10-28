@@ -17,7 +17,7 @@ export type AddSubcategoryFnResult =
   | Readonly<{ ok: false; error: BudgetPlansError }>
 
 export const addSubcategoryFn = createServerFn({ method: 'POST' })
-  .inputValidator(AddSubcategoryInputSchema)
+  .validator(AddSubcategoryInputSchema)
   .handler(async ({ data }): Promise<AddSubcategoryFnResult> => {
     const user = await getCurrentUserFn()
     if (user === null) return { ok: false, error: 'unauthorized' }

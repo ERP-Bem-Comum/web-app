@@ -17,7 +17,7 @@ export type CreateUserFnResult =
   | Readonly<{ ok: false; error: UsersError }>
 
 export const createUserFn = createServerFn({ method: 'POST' })
-  .inputValidator(CreateUserInputSchema)
+  .validator(CreateUserInputSchema)
   .handler(async ({ data }): Promise<CreateUserFnResult> => {
     const user = await getCurrentUserFn()
     if (user === null) return { ok: false, error: 'unauthorized' }

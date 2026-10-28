@@ -25,7 +25,7 @@ export type ExportPartnersFnResult =
   | Readonly<{ ok: false; error: PartnersError }>
 
 export const exportPartnersFn = createServerFn({ method: 'GET' })
-  .inputValidator(ExportPartnersInputSchema)
+  .validator(ExportPartnersInputSchema)
   .handler(async ({ data }): Promise<ExportPartnersFnResult> => {
     const user = await getCurrentUserFn()
     if (user === null) return { ok: false, error: 'unauthorized' }

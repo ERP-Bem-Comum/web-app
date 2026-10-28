@@ -17,7 +17,7 @@ export type AddCategoryFnResult =
   | Readonly<{ ok: false; error: BudgetPlansError }>
 
 export const addCategoryFn = createServerFn({ method: 'POST' })
-  .inputValidator(AddCategoryInputSchema)
+  .validator(AddCategoryInputSchema)
   .handler(async ({ data }): Promise<AddCategoryFnResult> => {
     const user = await getCurrentUserFn()
     if (user === null) return { ok: false, error: 'unauthorized' }

@@ -23,7 +23,7 @@ export type UploadProgramLogoFnResult =
   | Readonly<{ ok: false; error: ProgramsError }>
 
 export const uploadProgramLogoFn = createServerFn({ method: 'POST' })
-  .inputValidator(InputSchema)
+  .validator(InputSchema)
   .handler(async ({ data }): Promise<UploadProgramLogoFnResult> => {
     try {
       const user = await getCurrentUserFn()

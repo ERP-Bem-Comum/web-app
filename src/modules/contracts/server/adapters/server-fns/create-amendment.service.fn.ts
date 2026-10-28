@@ -18,7 +18,7 @@ export type CreateAmendmentFnResult =
   | Readonly<{ ok: false; error: ContractsError }>
 
 export const createAmendmentFn = createServerFn({ method: 'POST' })
-  .inputValidator(CreateAmendmentFnInputSchema)
+  .validator(CreateAmendmentFnInputSchema)
   .handler(async ({ data }): Promise<CreateAmendmentFnResult> => {
     const user = await getCurrentUserFn()
     if (user === null) return { ok: false, error: 'unauthorized' }

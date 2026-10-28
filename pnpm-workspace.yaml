@@ -9,6 +9,18 @@
 # Chainguard re-pinado p/ o node-gyp Wolfi). pnpm 11: overrides vivem AQUI (package.json.pnpm não é lido).
 overrides:
   undici: '^7.28.0'
+  # seroval (+ plugins): serialização SSR do TanStack Router/Start. Advisories critical/high na faixa
+  # <=1.6.2 → precisa >=1.6.3. PINADO EXATO em 1.7.1 porque a 1.7.2 (24/10/2026) dos DOIS pacotes saiu
+  # SEM provenance, quebrando a cadeia de trusted publisher das 1.7.0/1.7.1 (`trustPolicy: no-downgrade`
+  # recusou — possível takeover). Antes de soltar o pin: confirmar provenance da versão-alvo
+  # (`pnpm view seroval@X dist.attestations`). O range do router-core é ^1.6.7, então o pin satisfaz.
+  seroval: '1.7.1'
+  seroval-plugins: '1.7.1'
+  # handlebars: 2 critical + 1 moderate (JS injection) em <=4.7.9. Só DEV (eslint-plugin-boundaries@6 →
+  # @boundaries/elements@2, que PINA 4.7.9 exato). 4.7.10 é patch da mesma linha. Sai quando o plugin for
+  # para a v7 (que já traz @boundaries/elements@3 + handlebars 4.7.10) — major no motor dos boundaries
+  # (§I), por isso não entrou junto com a correção de segurança.
+  handlebars: '4.7.10'
 
 # --- 1. Postinstall scripts: allowlist explícita (allowBuilds) ---
 # strictDepBuilds=true (default) => deps com build NÃO listadas aqui falham o install.

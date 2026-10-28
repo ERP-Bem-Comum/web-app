@@ -20,7 +20,7 @@ export type AutocadastroPreviewFnResult =
   | Readonly<{ ok: false; error: PartnersError }>
 
 export const autocadastroPreviewFn = createServerFn({ method: 'GET' })
-  .inputValidator(AutocadastroPreviewInputSchema)
+  .validator(AutocadastroPreviewInputSchema)
   .handler(async ({ data }): Promise<AutocadastroPreviewFnResult> => {
     try {
       const r = await collaboratorAutocadastroServer().autocadastroPreview(data.token)

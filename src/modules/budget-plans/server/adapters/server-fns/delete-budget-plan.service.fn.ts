@@ -21,7 +21,7 @@ export type DeleteBudgetPlanFnResult =
   | Readonly<{ ok: false; error: BudgetPlansError }>
 
 export const deleteBudgetPlanFn = createServerFn({ method: 'POST' })
-  .inputValidator(PlanIdInputSchema)
+  .validator(PlanIdInputSchema)
   .handler(async ({ data }): Promise<DeleteBudgetPlanFnResult> => {
     const user = await getCurrentUserFn()
     if (user === null) return { ok: false, error: 'unauthorized' }

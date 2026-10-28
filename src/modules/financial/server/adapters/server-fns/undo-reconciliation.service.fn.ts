@@ -17,7 +17,7 @@ export type UndoReconciliationFnResult =
   | Readonly<{ ok: false; error: ReconciliationError }>
 
 export const undoReconciliationFn = createServerFn({ method: 'POST' })
-  .inputValidator(UndoReconciliationInputSchema)
+  .validator(UndoReconciliationInputSchema)
   .handler(async ({ data }): Promise<UndoReconciliationFnResult> => {
     const user = await getCurrentUserFn()
     if (user === null) return { ok: false, error: 'unauthorized' }

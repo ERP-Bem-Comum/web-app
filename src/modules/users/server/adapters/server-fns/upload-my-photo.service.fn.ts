@@ -16,7 +16,7 @@ const InputSchema = z.object({ fileBase64: z.string().trim().min(1), mimeType: z
 export type UploadPhotoFnResult = Readonly<{ ok: true }> | Readonly<{ ok: false; error: UsersError }>
 
 export const uploadMyPhotoFn = createServerFn({ method: 'POST' })
-  .inputValidator(InputSchema)
+  .validator(InputSchema)
   .handler(async ({ data }): Promise<UploadPhotoFnResult> => {
     try {
       const user = await getCurrentUserFn()

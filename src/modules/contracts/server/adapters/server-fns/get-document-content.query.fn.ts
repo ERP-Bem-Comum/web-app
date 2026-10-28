@@ -17,7 +17,7 @@ export type GetDocumentContentFnResult =
   | Readonly<{ ok: false; error: ContractsError }>
 
 export const getDocumentContentFn = createServerFn({ method: 'GET' })
-  .inputValidator(GetDocumentContentInputSchema)
+  .validator(GetDocumentContentInputSchema)
   .handler(async ({ data }): Promise<GetDocumentContentFnResult> => {
     // Borda de infra: qualquer exceção inesperada vira Result (ADR-0002, errors-as-values).
     try {

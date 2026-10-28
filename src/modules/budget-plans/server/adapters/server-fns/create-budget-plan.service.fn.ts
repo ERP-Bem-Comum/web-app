@@ -17,7 +17,7 @@ export type CreateBudgetPlanFnResult =
   | Readonly<{ ok: false; error: BudgetPlansError }>
 
 export const createBudgetPlanFn = createServerFn({ method: 'POST' })
-  .inputValidator(CreateBudgetPlanInputSchema)
+  .validator(CreateBudgetPlanInputSchema)
   .handler(async ({ data }): Promise<CreateBudgetPlanFnResult> => {
     const user = await getCurrentUserFn()
     if (user === null) return { ok: false, error: 'unauthorized' }

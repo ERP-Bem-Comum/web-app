@@ -15,7 +15,7 @@ export type CancelContractFnResult =
 // Pendente → Cancelled. Não-Pendente → 409 ContractNotPending (→ 'contract-not-pending'). SEPARADO do
 // distrato (end-contract). A server fn é a única fronteira: auth + token + delega ao use-case.
 export const cancelContractFn = createServerFn({ method: 'POST' })
-  .inputValidator(CancelContractInputSchema)
+  .validator(CancelContractInputSchema)
   .handler(async ({ data }): Promise<CancelContractFnResult> => {
     // Borda de infra: qualquer exceção inesperada vira Result — a UI nunca recebe throw cru (ADR-0002).
     try {

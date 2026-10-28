@@ -6,8 +6,8 @@ import { createServerFn } from '@tanstack/react-start'
 import { isErr } from '#shared/primitives/result.ts'
 import { getCurrentUserFn, resolveAccessTokenFn } from '#modules/auth/public-api/index.ts'
 import { collaboratorServer } from '../../collaborator.composition.ts'
-import { DeactivateCollaboratorInputSchema } from "#modules/partners/server/adapters/collaborator.io-schemas.ts"
-import type { CollaboratorDetail } from "#modules/partners/server/domain/collaborator/collaborator.io.ts"
+import { DeactivateCollaboratorInputSchema } from '#modules/partners/server/adapters/collaborator.io-schemas.ts'
+import type { CollaboratorDetail } from '#modules/partners/server/domain/collaborator/collaborator.io.ts'
 import type { PartnersError } from '#modules/partners/server/domain/errors/partners.errors.ts'
 
 export type DeactivateCollaboratorFnResult =
@@ -15,7 +15,7 @@ export type DeactivateCollaboratorFnResult =
   | Readonly<{ ok: false; error: PartnersError }>
 
 export const deactivateCollaboratorFn = createServerFn({ method: 'POST' })
-  .inputValidator(DeactivateCollaboratorInputSchema)
+  .validator(DeactivateCollaboratorInputSchema)
   .handler(async ({ data }): Promise<DeactivateCollaboratorFnResult> => {
     const user = await getCurrentUserFn()
     if (user === null) return { ok: false, error: 'unauthorized' }

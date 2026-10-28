@@ -17,7 +17,7 @@ export type GetConsolidadoAbcFnResult =
   | Readonly<{ ok: false; error: BudgetPlansError }>
 
 export const getConsolidadoAbcFn = createServerFn({ method: 'GET' })
-  .inputValidator(ConsolidadoAbcQuerySchema)
+  .validator(ConsolidadoAbcQuerySchema)
   .handler(async ({ data }): Promise<GetConsolidadoAbcFnResult> => {
     const user = await getCurrentUserFn()
     if (user === null) return { ok: false, error: 'unauthorized' }

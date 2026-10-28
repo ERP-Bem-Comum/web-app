@@ -17,7 +17,7 @@ export type RegisterManualPaymentFnResult =
   | Readonly<{ ok: false; error: FinancialError }>
 
 export const registerManualPaymentFn = createServerFn({ method: 'POST' })
-  .inputValidator(ManualPaymentInputSchema)
+  .validator(ManualPaymentInputSchema)
   .handler(async ({ data }): Promise<RegisterManualPaymentFnResult> => {
     const user = await getCurrentUserFn()
     if (user === null) return { ok: false, error: 'unauthorized' }

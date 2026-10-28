@@ -17,7 +17,7 @@ export type BatchReconcileFnResult =
   | Readonly<{ ok: false; error: ReconciliationError }>
 
 export const batchReconcileFn = createServerFn({ method: 'POST' })
-  .inputValidator(BatchReconcileInputSchema)
+  .validator(BatchReconcileInputSchema)
   .handler(async ({ data }): Promise<BatchReconcileFnResult> => {
     const user = await getCurrentUserFn()
     if (user === null) return { ok: false, error: 'unauthorized' }

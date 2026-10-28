@@ -17,7 +17,7 @@ export type DeleteBankStatementFnResult =
   | Readonly<{ ok: false; error: ReconciliationError }>
 
 export const deleteBankStatementFn = createServerFn({ method: 'POST' })
-  .inputValidator(DeleteStatementInputSchema)
+  .validator(DeleteStatementInputSchema)
   .handler(async ({ data }): Promise<DeleteBankStatementFnResult> => {
     const user = await getCurrentUserFn()
     if (user === null) return { ok: false, error: 'unauthorized' }
