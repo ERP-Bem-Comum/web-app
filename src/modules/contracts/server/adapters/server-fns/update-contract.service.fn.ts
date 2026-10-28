@@ -12,7 +12,7 @@ export type UpdateContractFnResult =
   | Readonly<{ ok: false; error: ContractsError }>
 
 export const updateContractFn = createServerFn({ method: 'POST' })
-  .inputValidator(UpdateContractInputSchema)
+  .validator(UpdateContractInputSchema)
   .handler(async ({ data }): Promise<UpdateContractFnResult> => {
     const user = await getCurrentUserFn()
     if (user === null) return { ok: false, error: 'unauthorized' }

@@ -15,7 +15,7 @@ export type CreateProgramFnResult =
   | Readonly<{ ok: false; error: ProgramsError }>
 
 export const createProgramFn = createServerFn({ method: 'POST' })
-  .inputValidator(CreateProgramInputSchema)
+  .validator(CreateProgramInputSchema)
   .handler(async ({ data }): Promise<CreateProgramFnResult> => {
     const user = await getCurrentUserFn()
     if (user === null) return { ok: false, error: 'unauthorized' }

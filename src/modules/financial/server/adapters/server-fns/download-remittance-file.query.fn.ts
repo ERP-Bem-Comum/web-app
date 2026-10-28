@@ -28,7 +28,7 @@ export type DownloadRemittanceFileFnResult =
   | Readonly<{ ok: false; error: FinancialError; message: string | null }>
 
 export const downloadRemittanceFileFn = createServerFn({ method: 'POST' })
-  .inputValidator(z.object({ remittanceId: z.uuid() }))
+  .validator(z.object({ remittanceId: z.uuid() }))
   .handler(async ({ data }): Promise<DownloadRemittanceFileFnResult> => {
     const user = await getCurrentUserFn()
     if (user === null) return { ok: false, error: 'unauthorized', message: null }

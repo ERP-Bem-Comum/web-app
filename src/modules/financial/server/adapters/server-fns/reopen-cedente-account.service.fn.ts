@@ -21,7 +21,7 @@ export type ReopenCedenteAccountFnResult =
   | Readonly<{ ok: false; error: ReconciliationError }>
 
 export const reopenCedenteAccountFn = createServerFn({ method: 'POST' })
-  .inputValidator(ReopenCedenteAccountInputSchema)
+  .validator(ReopenCedenteAccountInputSchema)
   .handler(async ({ data }): Promise<ReopenCedenteAccountFnResult> => {
     const user = await getCurrentUserFn()
     if (user === null) return { ok: false, error: 'unauthorized' }

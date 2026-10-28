@@ -17,7 +17,7 @@ export type CreateSceneryFnResult =
   | Readonly<{ ok: false; error: BudgetPlansError }>
 
 export const createSceneryFn = createServerFn({ method: 'POST' })
-  .inputValidator(CreateSceneryInputSchema)
+  .validator(CreateSceneryInputSchema)
   .handler(async ({ data }): Promise<CreateSceneryFnResult> => {
     const user = await getCurrentUserFn()
     if (user === null) return { ok: false, error: 'unauthorized' }

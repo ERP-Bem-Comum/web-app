@@ -17,7 +17,7 @@ export type GetSuggestionsFnResult =
   | Readonly<{ ok: false; error: ReconciliationError }>
 
 export const getTransactionSuggestionsFn = createServerFn({ method: 'GET' })
-  .inputValidator(GetSuggestionsInputSchema)
+  .validator(GetSuggestionsInputSchema)
   .handler(async ({ data }): Promise<GetSuggestionsFnResult> => {
     const user = await getCurrentUserFn()
     if (user === null) return { ok: false, error: 'unauthorized' }

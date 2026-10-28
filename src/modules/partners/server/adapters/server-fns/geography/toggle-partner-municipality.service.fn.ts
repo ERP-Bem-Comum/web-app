@@ -16,7 +16,7 @@ export type TogglePartnerMunicipalityFnResult =
   | Readonly<{ ok: false; error: PartnersError }>
 
 export const togglePartnerMunicipalityFn = createServerFn({ method: 'POST' })
-  .inputValidator(TogglePartnerMunicipalityInputSchema)
+  .validator(TogglePartnerMunicipalityInputSchema)
   .handler(async ({ data }): Promise<TogglePartnerMunicipalityFnResult> => {
     const user = await getCurrentUserFn()
     if (user === null) return { ok: false, error: 'unauthorized' }

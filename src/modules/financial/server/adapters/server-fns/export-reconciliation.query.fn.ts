@@ -18,7 +18,7 @@ export type ExportReconciliationFnResult =
   | Readonly<{ ok: false; error: ReconciliationError }>
 
 export const exportReconciliationFn = createServerFn({ method: 'GET' })
-  .inputValidator(ExportReconciliationInputSchema)
+  .validator(ExportReconciliationInputSchema)
   .handler(async ({ data }): Promise<ExportReconciliationFnResult> => {
     const user = await getCurrentUserFn()
     if (user === null) return { ok: false, error: 'unauthorized' }

@@ -18,7 +18,7 @@ export type GetDocumentSourceFileFnResult =
   | Readonly<{ ok: false; error: FinancialError }>
 
 export const getDocumentSourceFileFn = createServerFn({ method: 'GET' })
-  .inputValidator(z.object({ id: z.uuid() }))
+  .validator(z.object({ id: z.uuid() }))
   .handler(async ({ data }): Promise<GetDocumentSourceFileFnResult> => {
     const user = await getCurrentUserFn()
     if (user === null) return { ok: false, error: 'unauthorized' }

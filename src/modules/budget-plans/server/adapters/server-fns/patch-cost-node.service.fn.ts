@@ -21,7 +21,7 @@ export type PatchCostNodeFnResult =
   | Readonly<{ ok: false; error: BudgetPlansError }>
 
 export const patchCostNodeFn = createServerFn({ method: 'POST' })
-  .inputValidator(PatchCostNodeInputSchema)
+  .validator(PatchCostNodeInputSchema)
   .handler(async ({ data }): Promise<PatchCostNodeFnResult> => {
     const user = await getCurrentUserFn()
     if (user === null) return { ok: false, error: 'unauthorized' }

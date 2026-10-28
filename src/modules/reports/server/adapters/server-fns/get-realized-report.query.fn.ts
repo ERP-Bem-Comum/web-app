@@ -25,7 +25,7 @@ export type GetRealizedReportFnResult =
   | Readonly<{ ok: false; error: ReportsError }>
 
 export const getRealizedReportFn = createServerFn({ method: 'GET' })
-  .inputValidator(GetRealizedReportInputSchema)
+  .validator(GetRealizedReportInputSchema)
   .handler(async ({ data }): Promise<GetRealizedReportFnResult> => {
     const user = await getCurrentUserFn()
     if (user === null) return { ok: false, error: 'unauthorized' }

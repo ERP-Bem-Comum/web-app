@@ -17,7 +17,7 @@ export type AddCostCenterFnResult =
   | Readonly<{ ok: false; error: BudgetPlansError }>
 
 export const addCostCenterFn = createServerFn({ method: 'POST' })
-  .inputValidator(AddCostCenterInputSchema)
+  .validator(AddCostCenterInputSchema)
   .handler(async ({ data }): Promise<AddCostCenterFnResult> => {
     const user = await getCurrentUserFn()
     if (user === null) return { ok: false, error: 'unauthorized' }

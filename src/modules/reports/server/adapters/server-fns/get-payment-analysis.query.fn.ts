@@ -29,7 +29,7 @@ export type GetPaymentAnalysisFnResult =
   | Readonly<{ ok: false; error: ReportsError }>
 
 export const getPaymentAnalysisFn = createServerFn({ method: 'GET' })
-  .inputValidator(GetPaymentAnalysisInputSchema)
+  .validator(GetPaymentAnalysisInputSchema)
   .handler(async ({ data }): Promise<GetPaymentAnalysisFnResult> => {
     const user = await getCurrentUserFn()
     if (user === null) return { ok: false, error: 'unauthorized' }

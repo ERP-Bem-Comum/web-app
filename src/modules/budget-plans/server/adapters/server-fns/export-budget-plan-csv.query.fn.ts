@@ -17,7 +17,7 @@ export type ExportBudgetPlanCsvFnResult =
   | Readonly<{ ok: false; error: BudgetPlansError }>
 
 export const exportBudgetPlanCsvFn = createServerFn({ method: 'GET' })
-  .inputValidator(PlanIdInputSchema)
+  .validator(PlanIdInputSchema)
   .handler(async ({ data }): Promise<ExportBudgetPlanCsvFnResult> => {
     const user = await getCurrentUserFn()
     if (user === null) return { ok: false, error: 'unauthorized' }

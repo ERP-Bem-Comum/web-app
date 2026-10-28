@@ -17,7 +17,7 @@ export type EditCedenteAccountFnResult =
   | Readonly<{ ok: false; error: ReconciliationError }>
 
 export const editCedenteAccountFn = createServerFn({ method: 'POST' })
-  .inputValidator(EditCedenteAccountInputSchema)
+  .validator(EditCedenteAccountInputSchema)
   .handler(async ({ data }): Promise<EditCedenteAccountFnResult> => {
     const user = await getCurrentUserFn()
     if (user === null) return { ok: false, error: 'unauthorized' }

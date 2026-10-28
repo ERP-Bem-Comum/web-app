@@ -22,7 +22,7 @@ export type UpdateUserFnResult =
   | Readonly<{ ok: false; error: UsersError }>
 
 export const updateUserFn = createServerFn({ method: 'POST' })
-  .inputValidator(UpdateUserFnInputSchema)
+  .validator(UpdateUserFnInputSchema)
   .handler(async ({ data }): Promise<UpdateUserFnResult> => {
     const user = await getCurrentUserFn()
     if (user === null) return { ok: false, error: 'unauthorized' }

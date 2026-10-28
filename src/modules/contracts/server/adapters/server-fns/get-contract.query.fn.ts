@@ -14,7 +14,7 @@ export type GetContractFnResult =
   | Readonly<{ ok: false; error: ContractsError }>
 
 export const getContractFn = createServerFn({ method: 'GET' })
-  .inputValidator(GetContractInputSchema)
+  .validator(GetContractInputSchema)
   .handler(async ({ data }): Promise<GetContractFnResult> => {
     const user = await getCurrentUserFn()
     const accessToken = await resolveAccessTokenFn()

@@ -16,7 +16,7 @@ export type ListProgramsFnResult =
   | Readonly<{ ok: false; error: ProgramsError }>
 
 export const listProgramsFn = createServerFn({ method: 'GET' })
-  .inputValidator(ListProgramsInputSchema)
+  .validator(ListProgramsInputSchema)
   .handler(async ({ data }): Promise<ListProgramsFnResult> => {
     const user = await getCurrentUserFn()
     if (user === null) return { ok: false, error: 'unauthorized' }

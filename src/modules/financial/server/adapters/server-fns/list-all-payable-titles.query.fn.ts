@@ -29,7 +29,7 @@ export const listAllPayableTitlesFn = createServerFn({ method: 'GET' })
   // Reusa o schema da listagem paginada: os FILTROS são os mesmos. `page`/`pageSize` chegam e são
   // ignorados pelo adapter (que varre com o teto do core-api) — manter um schema só evita que os dois
   // caminhos aceitem recortes diferentes e passem a discordar sobre o que é "o filtro corrente".
-  .inputValidator(ListPayableTitlesInputSchema)
+  .validator(ListPayableTitlesInputSchema)
   .handler(async ({ data }): Promise<ListAllPayableTitlesFnResult> => {
     const user = await getCurrentUserFn()
     if (user === null) return { ok: false, error: 'unauthorized' }

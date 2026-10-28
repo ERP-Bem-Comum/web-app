@@ -20,7 +20,7 @@ export type ExportCollaboratorHistoryFnResult =
   | Readonly<{ ok: false; error: PartnersError }>
 
 export const exportCollaboratorHistoryFn = createServerFn({ method: 'GET' })
-  .inputValidator(ExportCollaboratorHistoryInputSchema)
+  .validator(ExportCollaboratorHistoryInputSchema)
   .handler(async ({ data }): Promise<ExportCollaboratorHistoryFnResult> => {
     const user = await getCurrentUserFn()
     if (user === null) return { ok: false, error: 'unauthorized' }

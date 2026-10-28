@@ -17,7 +17,7 @@ export type ExportConsolidadoAbcCsvFnResult =
   | Readonly<{ ok: false; error: BudgetPlansError }>
 
 export const exportConsolidadoAbcCsvFn = createServerFn({ method: 'GET' })
-  .inputValidator(ConsolidadoAbcQuerySchema)
+  .validator(ConsolidadoAbcQuerySchema)
   .handler(async ({ data }): Promise<ExportConsolidadoAbcCsvFnResult> => {
     const user = await getCurrentUserFn()
     if (user === null) return { ok: false, error: 'unauthorized' }

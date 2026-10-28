@@ -22,7 +22,7 @@ export type AutocadastroSubmitFnResult =
   | Readonly<{ ok: false; error: PartnersError }>
 
 export const autocadastroSubmitFn = createServerFn({ method: 'POST' })
-  .inputValidator(AutocadastroSubmitInputSchema)
+  .validator(AutocadastroSubmitInputSchema)
   .handler(async ({ data }): Promise<AutocadastroSubmitFnResult> => {
     if (
       !isSameOriginRequest({

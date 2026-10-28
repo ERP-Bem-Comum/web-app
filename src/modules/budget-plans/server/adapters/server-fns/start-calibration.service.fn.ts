@@ -17,7 +17,7 @@ export type StartCalibrationFnResult =
   | Readonly<{ ok: false; error: BudgetPlansError }>
 
 export const startCalibrationFn = createServerFn({ method: 'POST' })
-  .inputValidator(PlanIdInputSchema)
+  .validator(PlanIdInputSchema)
   .handler(async ({ data }): Promise<StartCalibrationFnResult> => {
     const user = await getCurrentUserFn()
     if (user === null) return { ok: false, error: 'unauthorized' }

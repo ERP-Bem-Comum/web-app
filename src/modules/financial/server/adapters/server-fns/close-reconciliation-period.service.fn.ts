@@ -17,7 +17,7 @@ export type ClosePeriodFnResult =
   | Readonly<{ ok: false; error: ReconciliationError }>
 
 export const closeReconciliationPeriodFn = createServerFn({ method: 'POST' })
-  .inputValidator(ClosePeriodInputSchema)
+  .validator(ClosePeriodInputSchema)
   .handler(async ({ data }): Promise<ClosePeriodFnResult> => {
     const user = await getCurrentUserFn()
     if (user === null) return { ok: false, error: 'unauthorized' }

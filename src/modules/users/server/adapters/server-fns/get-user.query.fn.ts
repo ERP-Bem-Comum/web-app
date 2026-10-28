@@ -16,7 +16,7 @@ export type GetUserFnResult =
   | Readonly<{ ok: false; error: UsersError }>
 
 export const getUserFn = createServerFn({ method: 'GET' })
-  .inputValidator(z.object({ id: z.string().trim().min(1) }))
+  .validator(z.object({ id: z.string().trim().min(1) }))
   .handler(async ({ data }): Promise<GetUserFnResult> => {
     const user = await getCurrentUserFn()
     if (user === null) return { ok: false, error: 'unauthorized' }

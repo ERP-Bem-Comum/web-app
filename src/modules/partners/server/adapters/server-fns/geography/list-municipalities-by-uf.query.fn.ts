@@ -15,7 +15,7 @@ export type ListMunicipalitiesByUfFnResult =
   | Readonly<{ ok: false; error: PartnersError }>
 
 export const listMunicipalitiesByUfFn = createServerFn({ method: 'GET' })
-  .inputValidator(ListMunicipalitiesByUfInputSchema)
+  .validator(ListMunicipalitiesByUfInputSchema)
   .handler(async ({ data }): Promise<ListMunicipalitiesByUfFnResult> => {
     const user = await getCurrentUserFn()
     if (user === null) return { ok: false, error: 'unauthorized' }

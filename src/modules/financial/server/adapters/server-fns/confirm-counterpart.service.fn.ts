@@ -18,7 +18,7 @@ export type ConfirmCounterpartFnResult =
   | Readonly<{ ok: false; error: ReconciliationError }>
 
 export const confirmCounterpartFn = createServerFn({ method: 'POST' })
-  .inputValidator(ConfirmCounterpartInputSchema)
+  .validator(ConfirmCounterpartInputSchema)
   .handler(async ({ data }): Promise<ConfirmCounterpartFnResult> => {
     const user = await getCurrentUserFn()
     if (user === null) return { ok: false, error: 'unauthorized' }

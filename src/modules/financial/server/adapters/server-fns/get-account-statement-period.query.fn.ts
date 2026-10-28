@@ -18,7 +18,7 @@ export type GetAccountStatementPeriodFnResult =
   | Readonly<{ ok: false; error: ReconciliationError }>
 
 export const getAccountStatementPeriodFn = createServerFn({ method: 'GET' })
-  .inputValidator(GetAccountStatementInputSchema)
+  .validator(GetAccountStatementInputSchema)
   .handler(async ({ data }): Promise<GetAccountStatementPeriodFnResult> => {
     const user = await getCurrentUserFn()
     if (user === null) return { ok: false, error: 'unauthorized' }
