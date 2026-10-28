@@ -1,0 +1,12 @@
+# Donos das travas de segurança e de supply-chain (ADR-0023).
+# Qualquer PR que mexa nestes caminhos pede revisão do tech lead automaticamente — é o alerta de que
+# uma trava pode estar sendo afrouxada.
+/.github/                                   @GabrielAderaldo
+/SECURITY.md                                @GabrielAderaldo
+/package.json                               @GabrielAderaldo
+/pnpm-lock.yaml                             @GabrielAderaldo
+/pnpm-workspace.yaml                        @GabrielAderaldo
+/tests/architecture/supply-chain-guard.test.ts @GabrielAderaldo
+/tests/architecture/no-mocks-in-src.test.ts    @GabrielAderaldo
+/eslint.config.js                           @GabrielAderaldo
+/handbook/adr/                              @GabrielAderaldo
