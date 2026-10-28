@@ -64,7 +64,12 @@ type GetFn = (opts: { data: { id: string } }) => Promise<FnResult<DocumentDetail
 type SourceFileFn = (opts: { data: { id: string } }) => Promise<FnResult<DocumentSourceFile>>
 type TimelineFn = (opts: { data: { id: string } }) => Promise<FnResult<readonly DocumentTimelineEntry[]>>
 type CreateFn = (opts: { data: CreateDocumentInput }) => Promise<FnResult<DocumentDetail>>
-type AdjustFn = (opts: { data: AdjustDocumentInput }) => Promise<FnResult<DocumentDetail>>
+type AdjustFn = (opts: {
+  data: AdjustDocumentInput
+}) => Promise<
+  | Readonly<{ ok: true; data: DocumentDetail }>
+  | Readonly<{ ok: false; error: FinancialError; message: string | null }>
+>
 // Aprovar / desfazer: a fn devolve a MENSAGEM PT-BR junto da tag. As quatro recusas do aprovador
 // chegam colapsadas num 422 só, e só o texto do core-api as separa (ver `FinancialFailure`).
 type ApproveFn = (opts: {
@@ -121,7 +126,7 @@ export type FinancialRepository = Readonly<{
   // Trilha de auditoria (entradas enriquecidas com o nome do autor).
   getTimeline: (id: string) => Promise<Result<readonly DocumentTimelineEntry[], FinancialError>>
   create: (input: CreateDocumentInput) => Promise<Result<DocumentDetail, FinancialError>>
-  adjust: (input: AdjustDocumentInput) => Promise<Result<DocumentDetail, FinancialError>>
+  adjust: (input: AdjustDocumentInput) => Promise<Result<DocumentDetail, FinancialFailure>>
   approve: (input: ApproveInput) => Promise<Result<DocumentDetail, FinancialFailure>>
   // #270: vencimento de UM título isolado (não propaga pai↔filhos).
   updatePayableDueDate: (input: UpdatePayableDueDateInput) => Promise<Result<DocumentDetail, FinancialError>>
@@ -212,7 +217,7 @@ export const createFinancialRepository = (
   },
   adjust: async (input) => {
     const res = await deps.adjustDocumentFn({ data: input })
-    return res.ok ? ok(res.data) : err(res.error)
+    return res.ok ? ok(res.data) : err({ error: res.error, message: res.message })
   },
   approve: async (input) => {
     const res = await deps.approveDocumentFn({ data: input })

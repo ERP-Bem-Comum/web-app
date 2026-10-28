@@ -108,6 +108,16 @@ export const AdjustDocumentInputSchema = z.object({
   dueDate: DateSchema.optional(),
   description: z.string().trim().max(500).nullable().optional(),
   paymentDetail: z.string().trim().min(1).max(255).nullable().optional(), // #284: editar o complemento; null = limpar
+  paymentMethod: z.enum(PAYMENT_METHODS).optional(), // core-api#1057: só no Aprovado
+  taxonomy: z
+    .object({
+      programRef: z.uuid(),
+      budgetPlanRef: z.uuid(),
+      costCenterRef: z.uuid(),
+      categoryRef: z.uuid(),
+      subcategoryRef: z.uuid(),
+    })
+    .optional(), // core-api#1057: os 5 níveis juntos
 })
 
 // Aprovar / desfazer aprovação (POST /documents/:id/{approve,undo-approval}).

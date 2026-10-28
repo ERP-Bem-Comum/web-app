@@ -84,4 +84,22 @@ describe('DocumentGrid', () => {
     // sem input de data inline na coluna de vencimento
     expect(document.querySelector('input[type="date"]')).toBeNull()
   })
+
+  it('spec 129: esconde a coluna (cabeçalho E célula) que está em hiddenColumns', () => {
+    render(<DocumentGrid state={readyState} hiddenColumns={new Set(['supplier', 'contract'])} />)
+    expect(screen.queryByText(tr('financial.list.col.supplier'))).toBeNull()
+    expect(screen.queryByText('Bambu Educação')).toBeNull()
+    expect(screen.queryByText('0001/2026')).toBeNull()
+    // as demais seguem
+    expect(screen.getByText('0847')).toBeTruthy()
+    expect(screen.getByText('Aberto')).toBeTruthy()
+  })
+
+  it('spec 129: o template de colunas acompanha as visíveis (checkbox + visíveis)', () => {
+    const { container } = render(<DocumentGrid state={readyState} hiddenColumns={new Set(['supplier'])} />)
+    const scroller = container.firstElementChild as HTMLElement
+    const template = scroller.style.getPropertyValue('--cap-grid-cols')
+    expect(template.match(/minmax\(/g)).toHaveLength(10) // 11 colunas − Fornecedor (a checkbox é fixa)
+    expect(template).not.toContain('15rem') // a track do Fornecedor saiu
+  })
 })

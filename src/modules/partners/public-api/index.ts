@@ -50,12 +50,15 @@ export type {
 // do módulo (hoje: o relatório "Equipe Bem Comum", cujos dados saem daqui). Atravessa por aqui de propósito:
 // duplicar a lista foi o que fez os gráficos do Equipe apagarem em silêncio pessoas trans e indígenas.
 // Rótulos PT-BR: `partners.collaborators.{gender,race,education,employment,area}.<CODIGO>` no catálogo.
+// PcD (spec 131): `partners.collaborators.pwd.{answer,type}.<CODIGO>`.
 export {
   GENDER_IDENTITIES,
   RACES,
   EDUCATION_LEVELS,
   EMPLOYMENT_RELATIONSHIPS,
   OCCUPATION_AREAS,
+  PWD_ANSWERS,
+  PWD_TYPES,
 } from '#modules/partners/client/data/model/collaborator.model.ts'
 export type { EmploymentRelationship } from '#modules/partners/client/data/model/collaborator.model.ts'
 

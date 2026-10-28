@@ -55,7 +55,8 @@ const fakeController = (
   cpfPrefix: over.cpfPrefix ?? '',
   setField: vi.fn(),
   setCpfPrefix: vi.fn(),
-  buildSubmit: vi.fn<(token: string) => AutocadastroSubmitInput>(),
+  pwdIssues: [],
+  buildSubmit: vi.fn<(token: string) => AutocadastroSubmitInput | null>(),
 })
 
 const formProps = (over: Partial<AutocadastroFormProps> = {}): AutocadastroFormProps => ({

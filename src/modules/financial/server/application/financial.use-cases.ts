@@ -75,7 +75,8 @@ export type FinancialClient = Readonly<{
     token: string,
   ) => Promise<Result<readonly DocumentTimelineEvent[], FinancialError>>
   create: (input: CreateDocumentInput, token: string) => Promise<Result<DocumentDetail, FinancialError>>
-  adjust: (input: AdjustDocumentInput, token: string) => Promise<Result<DocumentDetail, FinancialError>>
+  // core-api#1057: as recusas da edição do Aprovado chegam todas como 409 → só o texto as separa.
+  adjust: (input: AdjustDocumentInput, token: string) => Promise<Result<DocumentDetail, FinancialFailure>>
   // Falha COM TEXTO: as quatro recusas do aprovador chegam como o mesmo 422 → `validation`, e a tela
   // dizia "Verifique os dados informados" para um problema que não está nos dados do documento.
   approve: (input: ApproveInput, token: string) => Promise<Result<DocumentDetail, FinancialFailure>>
@@ -195,7 +196,7 @@ export const createCreateDocument =
 
 export const createAdjustDocument =
   (deps: Deps) =>
-  (input: AdjustDocumentInput, token: string): Promise<Result<DocumentDetail, FinancialError>> =>
+  (input: AdjustDocumentInput, token: string): Promise<Result<DocumentDetail, FinancialFailure>> =>
     deps.client.adjust(input, token)
 
 export const createApproveDocument =
