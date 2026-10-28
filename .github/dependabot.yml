@@ -1,0 +1,46 @@
+# Atualizações de VERSÃO do Dependabot (ADR-0023).
+#
+# Alvo `develop`: toda atualização passa pela homologação antes da produção. (As atualizações de
+# SEGURANÇA do Dependabot sempre miram a branch default — a `main` — e o GitHub não deixa mudar isso;
+# o job `homologação (origem do PR)` as barra lá de propósito. Nesse caso, refaça a mesma atualização
+# num PR para a `develop` e feche o do Dependabot.)
+#
+# `cooldown` espelha a quarentena do pnpm (`minimumReleaseAge`): versão recém-publicada não entra.
+# Agrupado e semanal para não afogar a revisão em PRs de um pacote só.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    target-branch: develop
+    schedule:
+      interval: weekly
+      day: monday
+      time: '09:00'
+      timezone: America/Sao_Paulo
+    cooldown:
+      default-days: 3
+    open-pull-requests-limit: 5
+    labels: [dependencias]
+    groups:
+      tanstack:
+        patterns: ['@tanstack/*']
+      runtime:
+        dependency-type: production
+        exclude-patterns: ['@tanstack/*']
+      tooling:
+        dependency-type: development
+
+  - package-ecosystem: github-actions
+    directory: /
+    target-branch: develop
+    schedule:
+      interval: weekly
+      day: monday
+      time: '09:00'
+      timezone: America/Sao_Paulo
+    cooldown:
+      default-days: 3
+    labels: [dependencias]
+    groups:
+      actions:
+        patterns: ['*']

@@ -6,36 +6,55 @@ name: CI
 # `go-live-front` está na lista porque é para LÁ que vai todo PR do front — `develop` só recebe a
 # promoção já mesclada. Sem ela, nenhum PR do front era verificado por CI e a primeira checagem real
 # acontecia depois do merge, na promoção (descoberto em 10/08, no PR #335).
+#
+# Blindagem (28/10/2026, ADR-0023): actions pinadas por SHA de commit (tag é móvel — quem controla o
+# repositório da action troca o código sob a mesma tag), permissões mínimas no GITHUB_TOKEN e catraca
+# de warnings do lint. O check `typecheck + lint + tests` é OBRIGATÓRIO na proteção de develop e main.
 on:
   pull_request:
     branches: [go-live-front, develop, main]
   push:
     branches: [develop, main]
 
+permissions:
+  contents: read
+
 jobs:
   verify:
     name: typecheck + lint + tests
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4.3.0
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 22
           cache: pnpm
 
+      # O registry às vezes estoura o tempo no runner. Até 3 tentativas — a instalação continua
+      # `--frozen-lockfile`, então repetir não muda o que é instalado, só tolera a rede.
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: |
+          for i in 1 2 3; do
+            pnpm install --frozen-lockfile && exit 0
+            echo "::warning::pnpm install falhou (tentativa $i/3) — nova tentativa em 15s"
+            sleep 15
+          done
+          exit 1
 
       - name: Typecheck
         run: pnpm typecheck
 
+      # Catraca: o número de warnings só pode CAIR. Ao zerar um grupo, baixe o teto no mesmo PR
+      # (`pnpm lint:ci` no package.json). Subir o teto exige justificativa no PR.
       - name: Lint
-        run: pnpm lint
+        run: pnpm lint:ci
 
       - name: Unit tests (node:test)
         run: pnpm test
