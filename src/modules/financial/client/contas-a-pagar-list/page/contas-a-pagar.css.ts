@@ -459,6 +459,65 @@ export const savedViewsApply = style({
 })
 export const savedViewsDelete = style([filterChipRemove]) // reusa o × dos chips de filtro
 
+// ── Seletor de colunas (spec 129) — botão "Colunas" + menu de checkboxes, mesma pele das Visões ──
+export const columnsWrap = savedViewsWrap
+export const columnsBtn = savedViewsBtn
+export const columnsMenu = style([
+  addFilterMenu,
+  { minInlineSize: '15rem', paddingBlock: vars.space.sm, zIndex: 50 },
+])
+// Backdrop invisível de tela cheia: clicar fora fecha o menu (é um <button>, acessível).
+export const columnsBackdrop = style({
+  position: 'fixed',
+  inset: 0,
+  zIndex: 40,
+  border: 'none',
+  background: 'transparent',
+  cursor: 'default',
+})
+// Uma coluna = checkbox + rótulo (o <label> inteiro é clicável).
+export const columnsItem = style({
+  display: 'flex',
+  alignItems: 'center',
+  gap: vars.space.sm,
+  paddingBlock: '0.4375rem',
+  paddingInline: vars.space.md,
+  fontFamily: vars.font.family.body,
+  fontSize: vars.font.size.xs,
+  color: vars.color.institutional.ink2,
+  cursor: 'pointer',
+  userSelect: 'none',
+  ':hover': { background: vars.color.institutional.paperWarm },
+})
+// Coluna fixa (Documento/Status): marcada e travada — e PARECE travada, não só `disabled` no DOM.
+export const columnsItemLocked = style([
+  columnsItem,
+  { color: vars.color.institutional.ink5, cursor: 'not-allowed', ':hover': { background: 'transparent' } },
+])
+export const columnsCheck = style({
+  inlineSize: '1rem',
+  blockSize: '1rem',
+  accentColor: vars.color.institutional.blueDeep,
+  cursor: 'inherit',
+  ':disabled': { opacity: 0.5 },
+})
+export const columnsLockedHint = style({
+  marginInlineStart: 'auto',
+  fontSize: vars.font.size['2xs'],
+  color: vars.color.institutional.ink5,
+})
+export const columnsShowAll = style([
+  savedViewsApply,
+  {
+    flex: 'none',
+    inlineSize: '100%',
+    paddingInline: vars.space.md,
+    color: vars.color.institutional.blueDeep,
+    fontWeight: vars.font.weight.semibold,
+    ':disabled': { color: vars.color.institutional.ink5, cursor: 'not-allowed' },
+  },
+])
+
 // ── Modal de confirmação de EXCLUSÃO (hard-delete) ────────────────────────────
 export const confirmOverlay = style({
   position: 'fixed',
@@ -587,14 +646,41 @@ export const confirmList = style({
 // Ordem: checkbox · Tipo · Documento · Fornecedor · Contrato · Forma · Emissão · Venc · Bruto · Líquido ·
 // Status. (Emissão é placeholder "—" até o backend expô-la na lista — core-api#95.)
 // tracks: checkbox · type · doc · supplier · contract · forma · emissão · vencimento · pagamento(#231) · bruto · líquido · status
-const GRID_COLS =
-  '2.25rem 4.75rem 7rem minmax(15rem, 1.4fr) 6.5rem 8.5rem 6.5rem 6.5rem 6.5rem 7rem 7rem 7.5rem'
+//
+// Spec 129 (seletor de colunas): a track de cada coluna mora aqui, por chave do `COLUMNS`; o grid monta o
+// `grid-template-columns` só com as visíveis e o publica em `--cap-grid-cols`. `minRem` = largura mínima
+// da track — soma para a largura mínima da linha.
+// Toda coluna é `minmax(mínimo, peso fr)` com peso = o próprio mínimo: a sobra de largura (tela larga ou
+// colunas escondidas) se reparte em PROPORÇÃO entre as visíveis. Antes só o Fornecedor era flexível e
+// engolia todo o espaço liberado. Fornecedor leva peso maior (21 = 15 × 1,4, o 1.4fr de antes).
+export const CHECKBOX_TRACK = { track: '2.25rem', minRem: 2.25 }
+export const COLUMN_TRACKS = {
+  type: { track: 'minmax(4.75rem, 4.75fr)', minRem: 4.75 },
+  documentNumber: { track: 'minmax(7rem, 7fr)', minRem: 7 },
+  supplier: { track: 'minmax(15rem, 21fr)', minRem: 15 },
+  contract: { track: 'minmax(6.5rem, 6.5fr)', minRem: 6.5 },
+  paymentMethod: { track: 'minmax(8.5rem, 8.5fr)', minRem: 8.5 },
+  emissao: { track: 'minmax(6.5rem, 6.5fr)', minRem: 6.5 },
+  due: { track: 'minmax(6.5rem, 6.5fr)', minRem: 6.5 },
+  pagamento: { track: 'minmax(6.5rem, 6.5fr)', minRem: 6.5 },
+  gross: { track: 'minmax(7rem, 7fr)', minRem: 7 },
+  net: { track: 'minmax(7rem, 7fr)', minRem: 7 },
+  status: { track: 'minmax(7.5rem, 7.5fr)', minRem: 7.5 },
+}
+// Vão entre colunas (o `gap` do head/row), em rem — entra na conta da largura mínima.
+export const GRID_GAP_REM = 1
+// Custom properties que o grid publica no scroller; head e row herdam. Sem elas (fallback), todas as
+// colunas.
+export const GRID_COLS_PROP = '--cap-grid-cols'
+export const GRID_ROW_MIN_PROP = '--cap-row-min'
 
-// Largura mínima de UMA linha (header e rows): soma das tracks do GRID_COLS (85rem) + 11 gaps de 1rem +
-// o paddingInline da linha. Mantenha em sincronia com o GRID_COLS. A largura mínima mora na LINHA, não no
-// scroller: com ela no scroller (antes 88rem < ~99rem do conteúdo), a linha transbordava o próprio scroller
-// — o fundo do header acabava no meio (Bruto) e a rolagem horizontal se dividia entre o grid e a tela.
-const ROW_MIN_INLINE = `calc(96rem + 2 * ${vars.space.lg})`
+const GRID_COLS = `var(${GRID_COLS_PROP}, 2.25rem minmax(4.75rem, 4.75fr) minmax(7rem, 7fr) minmax(15rem, 21fr) minmax(6.5rem, 6.5fr) minmax(8.5rem, 8.5fr) minmax(6.5rem, 6.5fr) minmax(6.5rem, 6.5fr) minmax(6.5rem, 6.5fr) minmax(7rem, 7fr) minmax(7rem, 7fr) minmax(7.5rem, 7.5fr))`
+
+// Largura mínima de UMA linha (header e rows): soma das tracks (85rem com todas) + os gaps de 1rem (11) +
+// o paddingInline da linha. A largura mínima mora na LINHA, não no scroller: com ela no scroller (antes
+// 88rem < ~99rem do conteúdo), a linha transbordava o próprio scroller — o fundo do header acabava no meio
+// (Bruto) e a rolagem horizontal se dividia entre o grid e a tela.
+const ROW_MIN_INLINE = `calc(var(${GRID_ROW_MIN_PROP}, 96rem) + 2 * ${vars.space.lg})`
 
 // Faixa do grid: ocupa TODA a altura que sobra na tela (entre a filter-bar e o rodapé fixo). A altura vem
 // do layout, não de uma conta fixa — com `calc(100dvh - 18rem)`, qualquer coisa a mais no topo (linha de

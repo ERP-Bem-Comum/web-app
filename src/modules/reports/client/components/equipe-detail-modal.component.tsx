@@ -35,6 +35,9 @@ export type EquipeDetailModalLabels = Readonly<{
   genero: string
   racaCor: string
   escolaridade: string
+  /** Spec 131: Pessoa com Deficiência + tipos (a View já traduz os códigos). */
+  pcd: string
+  pcdTipos: string
   anoContrato: string
   naLabel: string
   close: string
@@ -76,6 +79,9 @@ export function EquipeDetailModal(props: EquipeDetailModalProps): ReactNode {
     [labels.genero, member.genero],
     [labels.racaCor, member.racaCor],
     [labels.escolaridade, member.escolaridade],
+    [labels.pcd, member.pcd],
+    // Tipos só existem com "Sim"; fora dele a linha some em vez de mostrar vazio.
+    ...(member.pcdTipos.length > 0 ? [[labels.pcdTipos, member.pcdTipos.join('; ')] as const] : []),
     [labels.anoContrato, String(member.anoContrato)],
   ]
 

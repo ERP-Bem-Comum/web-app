@@ -13,7 +13,7 @@ import {
 } from '#modules/partners/server/application/collaborator/collaborator-autocadastro.use-cases.ts'
 import type { AutocadastroSubmitInput } from '#modules/partners/server/domain/collaborator/collaborator-autocadastro.io.ts'
 
-const submitInput: AutocadastroSubmitInput = { token: 't', cpfPrefix: '123' }
+const submitInput: AutocadastroSubmitInput = { token: 't', cpfPrefix: '123', pwd: { answer: 'NAO' } }
 
 const fakeClient = (over: Partial<AutocadastroClient> = {}): AutocadastroClient => ({
   preview: () => Promise.resolve(ok({ collaboratorId: 'c1', name: 'Ana', cpfMasked: '***' })),

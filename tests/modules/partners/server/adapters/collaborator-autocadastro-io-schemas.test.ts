@@ -20,20 +20,48 @@ describe('AutocadastroPreviewInputSchema', () => {
 })
 
 describe('AutocadastroSubmitInputSchema', () => {
-  it('token + cpfPrefix (3 dígitos) + campos opcionais → ok', () => {
+  it('token + cpfPrefix (3 dígitos) + pwd + campos opcionais → ok', () => {
     const parsed = AutocadastroSubmitInputSchema.safeParse({
       token: 't',
       cpfPrefix: '123',
+      pwd: { answer: 'NAO' },
       biography: 'Olá',
     })
     assert.equal(parsed.success, true)
   })
 
   it('NÃO aceita id (o backend identifica pelo token)', () => {
-    const parsed = AutocadastroSubmitInputSchema.safeParse({ token: 't', cpfPrefix: '123', id: 'x' })
+    const parsed = AutocadastroSubmitInputSchema.safeParse({
+      token: 't',
+      cpfPrefix: '123',
+      pwd: { answer: 'NAO' },
+      id: 'x',
+    })
     // z.object faz strip de chaves desconhecidas: `id` some do resultado (não vaza p/ o backend).
     assert.equal(parsed.success, true)
     if (parsed.success) assert.equal('id' in parsed.data, false)
+  })
+
+  it('pwd ausente → falha (a pergunta de PcD é obrigatória no autocadastro, spec 131)', () => {
+    assert.equal(AutocadastroSubmitInputSchema.safeParse({ token: 't', cpfPrefix: '123' }).success, false)
+  })
+
+  it('pwd com resposta fora da lista → falha', () => {
+    const parsed = AutocadastroSubmitInputSchema.safeParse({
+      token: 't',
+      cpfPrefix: '123',
+      pwd: { answer: 'TALVEZ' },
+    })
+    assert.equal(parsed.success, false)
+  })
+
+  it('pwd "Sim" com tipos e texto de "Outra" → ok', () => {
+    const parsed = AutocadastroSubmitInputSchema.safeParse({
+      token: 't',
+      cpfPrefix: '123',
+      pwd: { answer: 'SIM', types: ['VISUAL', 'OUTRA'], otherDescription: 'Dislexia' },
+    })
+    assert.equal(parsed.success, true)
   })
 
   it('cpfPrefix com < 3 dígitos → falha', () => {

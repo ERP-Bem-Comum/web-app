@@ -36,6 +36,9 @@ import {
   withoutEmptyCategories,
   categoryKeyOf,
   faixaEtariaIdOf,
+  byPcd,
+  byPcdTipo,
+  PCD_NA,
   type TeamMemberRow,
   type TeamFilters,
   type CategoryCount,
@@ -150,6 +153,21 @@ const GENERATION_FILTER_LABEL_KEYS: Readonly<Record<string, string>> = {
   NA: 'reports.equipe.filters.generationOption.NA',
 }
 
+/**
+ * Pessoa com Deficiência (spec 131): rótulos de Colaboradores (`partners.collaborators.pwd.*`) — as duas telas
+ * dizem a mesma palavra. `NA` (não respondeu) é do relatório.
+ */
+const pcdOption = (codigo: string): SelectOption => {
+  const tag = codigo === PCD_NA ? 'reports.equipe.pcd.NA' : `partners.collaborators.pwd.answer.${codigo}`
+  const label = t(tag)
+  return { value: codigo, label: label === tag ? codigo : label }
+}
+const pcdTipoOption = (codigo: string): SelectOption => {
+  const tag = `partners.collaborators.pwd.type.${codigo}`
+  const label = t(tag)
+  return { value: codigo, label: label === tag ? codigo : label }
+}
+
 const statusOption = byKeyMap(STATUS_LABEL_KEYS)
 const registrationOption = byKeyMap(REGISTRATION_LABEL_KEYS)
 const generationOption = byKeyMap(GENERATION_LABEL_KEYS)
@@ -250,6 +268,8 @@ export function EquipePage(): ReactNode {
       status: filterOpts.status.map(statusOption),
       situacaoCadastral: filterOpts.situacaoCadastral.map(registrationOption),
       geracao: filterOpts.geracao.map(generationFilterOption),
+      pcd: filterOpts.pcd.map(pcdOption),
+      pcdTipo: filterOpts.pcdTipo.map(pcdTipoOption),
       // Livres: o valor É o rótulo.
       anoContrato: filterOpts.anoContrato.map(asIs),
       funcao: filterOpts.funcao.map(asIs),
@@ -292,6 +312,20 @@ export function EquipePage(): ReactNode {
     [filteredRows, demographics.ageRange],
   )
 
+  // PcD (spec 131): resposta (todas as linhas filtradas) e tipos (quem marcou cada um). Contam as LINHAS, como
+  // os demais gráficos; categoria zerada não desenha.
+  const pcdBars = useMemo(
+    () => withoutEmptyCategories(byPcd(filteredRows).map((c) => ({ ...c, label: pcdOption(c.id).label }))),
+    [filteredRows],
+  )
+  const pcdTipoBars = useMemo(
+    () =>
+      withoutEmptyCategories(
+        byPcdTipo(filteredRows).map((c) => ({ ...c, label: pcdTipoOption(c.id).label })),
+      ),
+    [filteredRows],
+  )
+
   // Paginação da tabela sobre o FILTRADO (fatia PURA da ViewModel; o UI-state page/perPage mora aqui).
   const pages = totalPages(totalCount, perPage)
   const pageRows = useMemo(() => pageSlice(filteredRows, page, perPage), [filteredRows, page, perPage])
@@ -307,6 +341,7 @@ export function EquipePage(): ReactNode {
         genero: labeled('gender')(r.genero).label,
         racaCor: labeled('race')(r.racaCor).label,
         escolaridade: labeled('education')(r.escolaridade).label,
+        pcd: pcdOption(r.pcd).label,
       })),
     [pageRows],
   )
@@ -340,6 +375,11 @@ export function EquipePage(): ReactNode {
     {
       label: t('reports.equipe.filters.geracao'),
       value: applied.geracao === '' ? '' : generationOption(applied.geracao).label,
+    },
+    { label: t('reports.equipe.filters.pcd'), value: applied.pcd === '' ? '' : pcdOption(applied.pcd).label },
+    {
+      label: t('reports.equipe.filters.pcdTipo'),
+      value: applied.pcdTipo === '' ? '' : pcdTipoOption(applied.pcdTipo).label,
     },
     { label: t('reports.equipe.filters.busca'), value: applied.search },
   ])
@@ -393,7 +433,10 @@ export function EquipePage(): ReactNode {
             onClick={() => {
               downloadCsv(
                 'equipe-abc.csv',
-                buildCsv(filteredRows, (code) => generationOption(code).label),
+                buildCsv(filteredRows, (code) => generationOption(code).label, {
+                  answer: (code) => pcdOption(code).label,
+                  type: (code) => pcdTipoOption(code).label,
+                }),
               )
             }}
           >
@@ -527,6 +570,25 @@ export function EquipePage(): ReactNode {
                 setDraft((d) => ({ ...d, vinculo: v }))
               }}
             />
+            {/* Pessoa com Deficiência (spec 131): resposta e tipo — listas fechadas do domínio de Colaboradores. */}
+            <FilterField
+              label={t('reports.equipe.filters.pcd')}
+              placeholder={allOption}
+              options={opts.pcd}
+              value={draft.pcd}
+              onChange={(v) => {
+                setDraft((d) => ({ ...d, pcd: v }))
+              }}
+            />
+            <FilterField
+              label={t('reports.equipe.filters.pcdTipo')}
+              placeholder={allOption}
+              options={opts.pcdTipo}
+              value={draft.pcdTipo}
+              onChange={(v) => {
+                setDraft((d) => ({ ...d, pcdTipo: v }))
+              }}
+            />
           </div>
           <div className={filtersActions}>
             <button
@@ -635,6 +697,39 @@ export function EquipePage(): ReactNode {
                 </div>
               </div>
             </div>
+
+            {/* Linha 3 (2-up): Pessoa com Deficiência (spec 131) — resposta + tipos marcados. */}
+            <div className={charts2}>
+              <div className={chartCard}>
+                <div className={cardHeader}>
+                  <h2 className={cardTitle}>{t('reports.equipe.charts.pcd')}</h2>
+                </div>
+                <div className={chartPad}>
+                  <EquipeHorizontalBars
+                    bars={pcdBars}
+                    total={totalCount}
+                    emptyLabel={t('reports.equipe.empty')}
+                    animate={animate}
+                    formatPercent={formatSharePercent}
+                  />
+                </div>
+              </div>
+
+              <div className={chartCard}>
+                <div className={cardHeader}>
+                  <h2 className={cardTitle}>{t('reports.equipe.charts.pcdTipo')}</h2>
+                </div>
+                <div className={chartPad}>
+                  <EquipeVerticalBars
+                    bars={pcdTipoBars}
+                    total={totalCount}
+                    emptyLabel={t('reports.equipe.charts.pcdTipoEmpty')}
+                    animate={animate}
+                    formatPercent={formatSharePercent}
+                  />
+                </div>
+              </div>
+            </div>
           </>
         )}
       </RealizadoChartsMount>
@@ -654,6 +749,7 @@ export function EquipePage(): ReactNode {
           genero: t('reports.equipe.columns.genero'),
           racaCor: t('reports.equipe.columns.racaCor'),
           escolaridade: t('reports.equipe.columns.escolaridade'),
+          pcd: t('reports.equipe.columns.pcd'),
           naLabel: t('reports.equipe.naLabel'),
           empty: t('reports.equipe.empty'),
           rowAction: t('reports.equipe.table.rowAction'),
@@ -685,7 +781,15 @@ export function EquipePage(): ReactNode {
       />
 
       <EquipeDetailModal
-        member={selected}
+        member={
+          selected === null
+            ? null
+            : {
+                ...selected,
+                pcd: pcdOption(selected.pcd).label,
+                pcdTipos: selected.pcdTipos.map((c) => pcdTipoOption(c).label),
+              }
+        }
         labels={{
           title: t('reports.equipe.detail.title'),
           nome: t('reports.equipe.columns.nome'),
@@ -696,6 +800,8 @@ export function EquipePage(): ReactNode {
           genero: t('reports.equipe.columns.genero'),
           racaCor: t('reports.equipe.columns.racaCor'),
           escolaridade: t('reports.equipe.columns.escolaridade'),
+          pcd: t('reports.equipe.columns.pcd'),
+          pcdTipos: t('reports.equipe.detail.pcdTipos'),
           anoContrato: t('reports.equipe.detail.anoContrato'),
           naLabel: t('reports.equipe.naLabel'),
           close: t('reports.equipe.detail.close'),

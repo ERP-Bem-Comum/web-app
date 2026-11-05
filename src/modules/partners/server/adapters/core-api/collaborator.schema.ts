@@ -74,8 +74,18 @@ export const CoreApiCollaboratorDetailSchema = CoreApiCollaboratorItemSchema.ext
   hasChildren: z.boolean().nullish(),
   childrenCount: z.int().nullish(),
   childrenAges: z.array(z.int()).nullish(),
-  isPwd: z.boolean().nullish(),
-  pwdDescription: z.string().trim().nullish(),
+  // Pessoa com Deficiência (spec 131). `.catch(null)` tolera o core-api anterior (isPwd/pwdDescription):
+  // sem o objeto, o detalhe abre como "não respondeu" em vez de quebrar a tela inteira.
+  pwd: z
+    .object({
+      answer: z.enum(['SIM', 'NAO', 'PREFIRO_NAO_RESPONDER']),
+      types: z.array(
+        z.enum(['FISICA', 'VISUAL', 'AUDITIVA', 'INTELECTUAL_MENTAL', 'TEA', 'MULTIPLA', 'OUTRA']),
+      ),
+      otherDescription: z.string().trim().nullable(),
+    })
+    .nullable()
+    .catch(null),
   isOnLeave: z.boolean().nullish(),
   leaveDuration: z.string().trim().nullish(),
   leaveRenewable: z.boolean().nullish(),

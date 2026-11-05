@@ -6,7 +6,7 @@
  * O submit reusa EXATAMENTE os campos do `CompleteCollaboratorRegistrationInput` MENOS o `id` (o
  * backend identifica o colaborador pelo `token`, não por id) — daí `Omit<..., 'id'>`.
  */
-import type { CompleteCollaboratorRegistrationInput } from './collaborator.io.ts'
+import type { CompleteCollaboratorRegistrationInput, PwdInput } from './collaborator.io.ts'
 
 // Preview (GET ?token=): o mínimo p/ a UI dizer "Olá, {name}!" sem vazar dados sensíveis (CPF mascarado).
 export type AutocadastroPreview = Readonly<{
@@ -16,9 +16,11 @@ export type AutocadastroPreview = Readonly<{
 }>
 
 // Submit (POST): token + prova de posse leve (primeiros dígitos do CPF) + os campos da 2ª fase (sem id).
+// Spec 131: aqui a resposta de PcD é OBRIGATÓRIA (no completar do RH, não).
 export type AutocadastroSubmitInput = Readonly<
   {
     token: string
     cpfPrefix: string
-  } & Omit<CompleteCollaboratorRegistrationInput, 'id'>
+    pwd: PwdInput
+  } & Omit<CompleteCollaboratorRegistrationInput, 'id' | 'pwd'>
 >

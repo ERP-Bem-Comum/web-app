@@ -144,6 +144,7 @@ const payableToModel = (p: CoreApiPayable): Payable => ({
   retentionType: mapRetentionType(p.retentionType),
   valueCents: p.valueCents,
   status: mapStatus(p.status),
+  paymentMethodChangedAt: p.paymentMethodChangedAt ?? null,
 })
 
 // ── API → Model (com parse de borda; drift → err('server')) ─────────────────────

@@ -158,6 +158,8 @@ describe('toTeamRows — dado real do colaborador + área cruzada de Colaborador
       race: 'PARDO',
       age: 34,
       generation: 'MILLENNIAL',
+      pwdAnswer: 'SIM',
+      pwdTypes: ['VISUAL', 'TEA'],
     },
     {
       id: 'tm-2',
@@ -174,6 +176,8 @@ describe('toTeamRows — dado real do colaborador + área cruzada de Colaborador
       race: null,
       age: null,
       generation: 'NA',
+      pwdAnswer: null,
+      pwdTypes: [],
     },
   ]
 
@@ -194,6 +198,14 @@ describe('toTeamRows — dado real do colaborador + área cruzada de Colaborador
     assert.equal(rows[0]?.racaCor, 'PARDO')
     assert.equal(rows[0]?.geracao, 'MILLENNIAL')
     assert.equal(rows[1]?.geracao, 'NA')
+  })
+
+  it('PcD (spec 131): resposta e tipos em código; não respondeu → NA, sem tipos', () => {
+    const rows = toTeamRows(members)
+    assert.equal(rows[0]?.pcd, 'SIM')
+    assert.deepEqual(rows[0]?.pcdTipos, ['VISUAL', 'TEA'])
+    assert.equal(rows[1]?.pcd, 'NA')
+    assert.deepEqual(rows[1]?.pcdTipos, [])
   })
 
   it('gênero/raça/idade ausentes → sentinela, nunca linha descartada', () => {

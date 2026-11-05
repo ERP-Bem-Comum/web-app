@@ -4,7 +4,14 @@
  * Autocadastro (rota pública) SEM arrastar React nem tocar o comportamento do detalhe. O controller do
  * detalhe re-exporta estes símbolos; o comportamento é idêntico (só mudou o local da definição).
  */
-import type { CollaboratorCompleteInput } from '#modules/partners/client/data/model/collaborator.model.ts'
+import {
+  PWD_TYPES,
+  type CollaboratorCompleteInput,
+  type Pwd,
+  type PwdAnswer,
+  type PwdInput,
+  type PwdType,
+} from '#modules/partners/client/data/model/collaborator.model.ts'
 
 import { parseChildrenAges, formatChildrenAges } from './children-ages.ts'
 
@@ -34,8 +41,10 @@ export type CollaboratorCompleteFieldsState = Readonly<{
   hasChildren: '' | 'sim' | 'nao'
   childrenCount: string
   childrenAges: string // texto livre ("5 anos, 12 anos") ↔ int[] via parse/format
-  isPwd: '' | 'sim' | 'nao'
-  pwdDescription: string
+  // Pessoa com Deficiência (spec 131): pergunta 1, tipos marcados (pergunta 2) e o texto de "Outra".
+  pwdAnswer: '' | PwdAnswer
+  pwdTypes: readonly PwdType[]
+  pwdOtherDescription: string
   isOnLeave: '' | 'sim' | 'nao'
   leaveDuration: string
   leaveRenewable: '' | 'sim' | 'nao'
@@ -65,8 +74,9 @@ export const emptyCompleteFieldsState: CollaboratorCompleteFieldsState = {
   hasChildren: '',
   childrenCount: '',
   childrenAges: '',
-  isPwd: '',
-  pwdDescription: '',
+  pwdAnswer: '',
+  pwdTypes: [],
+  pwdOtherDescription: '',
   isOnLeave: '',
   leaveDuration: '',
   leaveRenewable: '',
@@ -75,6 +85,65 @@ export const emptyCompleteFieldsState: CollaboratorCompleteFieldsState = {
 
 /** Código de "Outra identidade de gênero" — o único que aceita o texto livre (core-api#1054). */
 export const GENDER_IDENTITY_OTHER = 'OUTRO'
+
+// ── Pessoa com Deficiência (spec 131) ─────────────────────────────────────────────
+
+/** Tipo "Outra" — o único que abre o texto livre (molde de Identidade de Gênero). */
+export const PWD_TYPE_OTHER: PwdType = 'OUTRA'
+
+/** Estado do form a partir do GRAVADO. Não respondeu → tudo vazio. */
+export const pwdStateFrom = (
+  pwd: Pwd | undefined,
+): Pick<CollaboratorCompleteFieldsState, 'pwdAnswer' | 'pwdTypes' | 'pwdOtherDescription'> => ({
+  pwdAnswer: pwd?.answer ?? '',
+  pwdTypes: pwd?.types ?? [],
+  pwdOtherDescription: pwd?.otherDescription ?? '',
+})
+
+/**
+ * Completo = respondido de vez (P.O., 23/10): "Não", "Prefiro não responder", ou "Sim" com tipo e — havendo
+ * "Outra" — com o texto. É a mesma régua do core-api: vazio ou incompleto fica ABERTO; completo TRAVA.
+ */
+export const isPwdComplete = (pwd: Pwd | undefined): boolean => {
+  if (pwd === undefined) return false
+  if (pwd.answer !== 'SIM') return true
+  if (pwd.types.length === 0) return false
+  return !pwd.types.includes(PWD_TYPE_OTHER) || (pwd.otherDescription ?? '').trim() !== ''
+}
+
+/** O que falta na resposta do form — a tela marca o campo em vez de levar o 422 do core-api. */
+export type PwdIssue = 'answer-required' | 'type-required' | 'other-required'
+
+export const pwdIssues = (
+  s: Pick<CollaboratorCompleteFieldsState, 'pwdAnswer' | 'pwdTypes' | 'pwdOtherDescription'>,
+  opts: Readonly<{ required: boolean }>,
+): readonly PwdIssue[] => {
+  if (s.pwdAnswer === '') return opts.required ? ['answer-required'] : []
+  if (s.pwdAnswer !== 'SIM') return []
+  if (s.pwdTypes.length === 0) return ['type-required']
+  return s.pwdTypes.includes(PWD_TYPE_OTHER) && s.pwdOtherDescription.trim() === '' ? ['other-required'] : []
+}
+
+/**
+ * Resposta para o core-api. Sem resposta → `undefined` (mantém o gravado). Tipos na ordem do formulário; o
+ * texto só vai com "Outra" — desmarcar "Outra" descarta o digitado em vez de mandá-lo e levar o 422.
+ */
+export const buildPwdInput = (
+  s: Pick<CollaboratorCompleteFieldsState, 'pwdAnswer' | 'pwdTypes' | 'pwdOtherDescription'>,
+): PwdInput | undefined => {
+  if (s.pwdAnswer === '') return undefined
+  if (s.pwdAnswer !== 'SIM') return { answer: s.pwdAnswer }
+  const types = PWD_TYPES.filter((t) => s.pwdTypes.includes(t))
+  const otherDescription = types.includes(PWD_TYPE_OTHER) ? blank(s.pwdOtherDescription) : undefined
+  return { answer: 'SIM', types, ...(otherDescription !== undefined ? { otherDescription } : {}) }
+}
+
+/** Marca/desmarca um tipo, preservando a ordem do formulário. */
+export const togglePwdType = (
+  types: readonly PwdType[],
+  type: PwdType,
+  checked: boolean,
+): readonly PwdType[] => PWD_TYPES.filter((t) => (t === type ? checked : types.includes(t)))
 
 export const blank = (s: string): string | undefined => (s.trim() === '' ? undefined : s.trim())
 
@@ -126,8 +195,7 @@ export const buildCompleteFields = (
     hasChildren: triToBool(state.hasChildren),
     childrenCount: blankInt(state.childrenCount),
     childrenAges: ages.length === 0 ? undefined : ages,
-    isPwd: triToBool(state.isPwd),
-    pwdDescription: blank(state.pwdDescription),
+    pwd: buildPwdInput(state),
     isOnLeave: triToBool(state.isOnLeave),
     leaveDuration: blank(state.leaveDuration),
     leaveRenewable: triToBool(state.leaveRenewable),
@@ -158,10 +226,11 @@ export const computeHasCompleteData = (f: CollaboratorCompleteFieldsState): bool
     f.publicSectorExperienceDuration,
     f.childrenCount,
     f.childrenAges,
-    f.pwdDescription,
+    f.pwdAnswer,
+    f.pwdOtherDescription,
     f.leaveDuration,
     f.leaveRenewalDuration,
   ]
-  const tris = [f.experienceInThePublicSector, f.hasChildren, f.isPwd, f.isOnLeave, f.leaveRenewable]
-  return texts.some((v) => v.trim() !== '') || tris.some((v) => v !== '')
+  const tris = [f.experienceInThePublicSector, f.hasChildren, f.isOnLeave, f.leaveRenewable]
+  return texts.some((v) => v.trim() !== '') || tris.some((v) => v !== '') || f.pwdTypes.length > 0
 }

@@ -13,17 +13,19 @@ import type { FinancialError } from '#modules/financial/server/domain/errors/fin
 
 export type AdjustDocumentFnResult =
   | Readonly<{ ok: true; data: DocumentDetail }>
-  | Readonly<{ ok: false; error: FinancialError }>
+  // A MENSAGEM PT-BR do core-api viaja junto: as recusas da edição do Aprovado (core-api#1057) chegam
+  // todas como 409 → `conflict`, e sem o texto a tela não diz qual regra barrou.
+  | Readonly<{ ok: false; error: FinancialError; message: string | null }>
 
 export const adjustDocumentFn = createServerFn({ method: 'POST' })
   .inputValidator(AdjustDocumentInputSchema)
   .handler(async ({ data }): Promise<AdjustDocumentFnResult> => {
     const user = await getCurrentUserFn()
-    if (user === null) return { ok: false, error: 'unauthorized' }
+    if (user === null) return { ok: false, error: 'unauthorized', message: null }
     const accessToken = await resolveAccessTokenFn()
-    if (accessToken === null) return { ok: false, error: 'unauthorized' }
+    if (accessToken === null) return { ok: false, error: 'unauthorized', message: null }
 
     const r = await financialServer().adjustDocument(data, accessToken)
-    if (isErr(r)) return { ok: false, error: r.error }
+    if (isErr(r)) return { ok: false, error: r.error.error, message: r.error.message }
     return { ok: true, data: r.value }
   })

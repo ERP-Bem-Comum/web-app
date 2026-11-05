@@ -103,19 +103,23 @@ export type ListState =
 
 // Colunas (Figma 205-638), enriquecidas pela 012/#47: + Contrato, Forma de Pagamento, Emissão, Bruto.
 // `Emissão` (#163) já vem na lista (issueDate); "—" quando o documento não a informou.
+// `locked` (spec 129): coluna que o seletor de colunas NÃO esconde — Documento identifica a linha e
+// Status diz em que pé ela está; sem as duas, a linha deixa de ser legível.
 export const COLUMNS = [
-  { key: 'type', labelTag: 'financial.list.col.type', align: 'left' },
-  { key: 'documentNumber', labelTag: 'financial.list.col.documentNumber', align: 'left' },
-  { key: 'supplier', labelTag: 'financial.list.col.supplier', align: 'left' },
-  { key: 'contract', labelTag: 'financial.list.col.contract', align: 'left' },
-  { key: 'paymentMethod', labelTag: 'financial.list.col.paymentMethod', align: 'left' },
-  { key: 'emissao', labelTag: 'financial.list.col.emissao', align: 'left' },
-  { key: 'due', labelTag: 'financial.list.col.due', align: 'left' },
-  { key: 'pagamento', labelTag: 'financial.list.col.pagamento', align: 'left' },
-  { key: 'gross', labelTag: 'financial.list.col.gross', align: 'right' },
-  { key: 'net', labelTag: 'financial.list.col.net', align: 'right' },
-  { key: 'status', labelTag: 'financial.list.col.status', align: 'left' },
+  { key: 'type', labelTag: 'financial.list.col.type', align: 'left', locked: false },
+  { key: 'documentNumber', labelTag: 'financial.list.col.documentNumber', align: 'left', locked: true },
+  { key: 'supplier', labelTag: 'financial.list.col.supplier', align: 'left', locked: false },
+  { key: 'contract', labelTag: 'financial.list.col.contract', align: 'left', locked: false },
+  { key: 'paymentMethod', labelTag: 'financial.list.col.paymentMethod', align: 'left', locked: false },
+  { key: 'emissao', labelTag: 'financial.list.col.emissao', align: 'left', locked: false },
+  { key: 'due', labelTag: 'financial.list.col.due', align: 'left', locked: false },
+  { key: 'pagamento', labelTag: 'financial.list.col.pagamento', align: 'left', locked: false },
+  { key: 'gross', labelTag: 'financial.list.col.gross', align: 'right', locked: false },
+  { key: 'net', labelTag: 'financial.list.col.net', align: 'right', locked: false },
+  { key: 'status', labelTag: 'financial.list.col.status', align: 'left', locked: true },
 ] as const
+
+export type ColumnKey = (typeof COLUMNS)[number]['key']
 
 // Chips de status (Figma) — filtram a lista pelo `status` real do backend (Draft/Open/Approved → PT).
 // `status: null` = "Todos" (sem filtro). `filterable: false` = estado que o backend ainda NÃO produz

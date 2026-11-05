@@ -72,13 +72,15 @@ export const GENDER_IDENTITIES = [
   'MULHER_TRANS',
   'TRAVESTI',
   'NAO_BINARIO',
+  'QUEER',
   'OUTRO',
 ] as const
 export type GenderIdentity = (typeof GENDER_IDENTITIES)[number]
 /**
- * Opções do SELETOR de Identidade de Gênero (spec 122), na ordem e na redação definidas pelo cliente.
- * TRAVESTI fica fora do seletor (decisão da P.O., 12/10) mas segue em `GENDER_IDENTITIES`, que espelha o
- * enum do core-api — assim um valor gravado ainda é exibido e contado nos relatórios.
+ * Opções do SELETOR de Identidade de Gênero (specs 122 e 130), na ordem e na redação definidas pelo cliente.
+ * TRAVESTI fica fora do seletor: não há dado gravado com esse valor, e o rótulo do cliente é
+ * "Mulher transgênero / Travesti", de `MULHER_TRANS` (P.O., 23/10). Segue em `GENDER_IDENTITIES` só por
+ * espelhar o enum do core-api.
  */
 export const GENDER_IDENTITY_OPTIONS = [
   'MULHER_CIS',
@@ -86,6 +88,7 @@ export const GENDER_IDENTITY_OPTIONS = [
   'MULHER_TRANS',
   'HOMEM_TRANS',
   'NAO_BINARIO',
+  'QUEER',
   'OUTRO',
   'PREFIRO_NAO_RESPONDER',
 ] as const satisfies readonly GenderIdentity[]
@@ -138,6 +141,28 @@ export const FOOD_CATEGORIES = [
 
 // Perfil completo (US2). Sexo biológico (≠ identidade de gênero) e estado civil — valores batem 1:1
 // com o domínio do core-api (sex.ts: 'F'|'M'; civil-status.ts: snake_case EN).
+/**
+ * Pessoa com Deficiência (spec 131), no texto do cliente. Pergunta 1 = resposta; pergunta 2 (só com "Sim",
+ * várias) = tipos, na ordem do formulário. "Outra" abre o texto livre, no molde de Identidade de Gênero.
+ */
+export const PWD_ANSWERS = ['SIM', 'NAO', 'PREFIRO_NAO_RESPONDER'] as const
+export type PwdAnswer = (typeof PWD_ANSWERS)[number]
+export const PWD_TYPES = [
+  'FISICA',
+  'VISUAL',
+  'AUDITIVA',
+  'INTELECTUAL_MENTAL',
+  'TEA',
+  'MULTIPLA',
+  'OUTRA',
+] as const
+export type PwdType = (typeof PWD_TYPES)[number]
+export const isPwdAnswer = (v: string): v is PwdAnswer => (PWD_ANSWERS as readonly string[]).includes(v)
+/** Resposta gravada. "Sim" sem tipo = dado anterior à spec 131, incompleto (fica aberto para preencher). */
+export type Pwd = Readonly<{ answer: PwdAnswer; types: readonly PwdType[]; otherDescription: string | null }>
+/** Resposta enviada — precisa chegar completa (o core-api recusa com 422). */
+export type PwdInput = Readonly<{ answer: PwdAnswer; types?: PwdType[]; otherDescription?: string }>
+
 export const SEXES = ['F', 'M'] as const
 export type Sex = (typeof SEXES)[number]
 export const MARITAL_STATUSES = ['single', 'married', 'divorced', 'widowed', 'stable_union'] as const
@@ -190,8 +215,7 @@ export type CollaboratorDetail = CollaboratorListItem &
     hasChildren?: boolean
     childrenCount?: number
     childrenAges?: number[]
-    isPwd?: boolean
-    pwdDescription?: string
+    pwd?: Pwd // spec 131; ausente = não respondeu
     isOnLeave?: boolean
     leaveDuration?: string
     leaveRenewable?: boolean
@@ -249,6 +273,8 @@ export type CollaboratorUpdateInput = CollaboratorWriteInput &
     rg?: string
     dateOfBirth?: string
     race?: string
+    // Spec 131: preenche enquanto vazio ou incompleto; completo trava (409).
+    pwd?: PwdInput
   }>
 
 /** Cadastro completo (dados pessoais; todos opcionais). `id` identifica o colaborador. */
@@ -275,8 +301,7 @@ export type CollaboratorCompleteInput = Readonly<{
   hasChildren?: boolean
   childrenCount?: number
   childrenAges?: number[]
-  isPwd?: boolean
-  pwdDescription?: string
+  pwd?: PwdInput // spec 131
   isOnLeave?: boolean
   leaveDuration?: string
   leaveRenewable?: boolean

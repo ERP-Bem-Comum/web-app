@@ -31,8 +31,7 @@ describe('CoreApiCollaboratorDetailSchema — perfil completo (US2)', () => {
       hasChildren: true,
       childrenCount: 2,
       childrenAges: [5, 12],
-      isPwd: false,
-      pwdDescription: null,
+      pwd: { answer: 'SIM', types: ['VISUAL', 'OUTRA'], otherDescription: 'Dislexia' },
       isOnLeave: true,
       leaveDuration: '6 meses',
       leaveRenewable: false,
@@ -46,7 +45,11 @@ describe('CoreApiCollaboratorDetailSchema — perfil completo (US2)', () => {
       assert.equal(r.data.hasChildren, true)
       assert.equal(r.data.childrenCount, 2)
       assert.deepEqual(r.data.childrenAges, [5, 12])
-      assert.equal(r.data.isPwd, false)
+      assert.deepEqual(r.data.pwd, {
+        answer: 'SIM',
+        types: ['VISUAL', 'OUTRA'],
+        otherDescription: 'Dislexia',
+      })
       assert.equal(r.data.isOnLeave, true)
       assert.equal(r.data.leaveDuration, '6 meses')
       assert.equal(r.data.publicSectorExperienceDuration, '3 anos')
@@ -60,6 +63,20 @@ describe('CoreApiCollaboratorDetailSchema — perfil completo (US2)', () => {
       assert.equal(r.data.sex ?? null, null)
       assert.equal(r.data.childrenAges ?? null, null)
       assert.equal(r.data.isOnLeave ?? null, null)
+      assert.equal(r.data.pwd ?? null, null)
     }
+  })
+
+  it('PcD no formato antigo (isPwd/pwdDescription) ou inválido → pwd null (spec 131)', () => {
+    const legacy = CoreApiCollaboratorDetailSchema.safeParse({
+      ...baseDetail,
+      isPwd: true,
+      pwdDescription: 'x',
+    })
+    assert.equal(legacy.success, true)
+    if (legacy.success) assert.equal(legacy.data.pwd ?? null, null)
+    const invalid = CoreApiCollaboratorDetailSchema.safeParse({ ...baseDetail, pwd: { answer: 'TALVEZ' } })
+    assert.equal(invalid.success, true)
+    if (invalid.success) assert.equal(invalid.data.pwd, null)
   })
 })

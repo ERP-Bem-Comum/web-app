@@ -88,7 +88,17 @@ export interface CreateDocumentInput {
   sourceFile?: SourceFileInput // #577: comprovante anexado no create atômico; ausente → sem anexo
 }
 
-// Ajuste (PATCH /documents/:id) — só em Aberto; ≥1 campo além de version; regenera filhos.
+// core-api#1057: categorização do Aprovado — o caminho INTEIRO da árvore do plano, os 5 níveis juntos.
+export interface TaxonomyPathInput {
+  programRef: string
+  budgetPlanRef: string
+  costCenterRef: string
+  categoryRef: string
+  subcategoryRef: string
+}
+
+// Ajuste (PATCH /documents/:id) — Aberto: valores/vencimento/descrição; Aprovado (core-api#1057): descrição,
+// forma + complemento do título pai e categorização, sem desfazer a aprovação.
 export interface AdjustDocumentInput {
   id: string
   version: number
@@ -101,6 +111,8 @@ export interface AdjustDocumentInput {
   dueDate?: string
   description?: string | null
   paymentDetail?: string | null // #273/#284: complemento da forma — editável no ajuste; null = limpar
+  paymentMethod?: PaymentMethod // core-api#1057: só no Aprovado (título pai)
+  taxonomy?: TaxonomyPathInput // core-api#1057: só no Aprovado
 }
 
 // Aprovar / desfazer aprovação (POST /documents/:id/{approve,undo-approval}).
@@ -217,6 +229,7 @@ export type Payable = Readonly<{
   retentionType: RetentionType | null // null no pai
   valueCents: string
   status: DocumentStatus
+  paymentMethodChangedAt: string | null // core-api#1057: forma trocada depois da aprovação (ISO); null = nunca
 }>
 
 // #62/Feature 2 (core-api#568): comprovante-fonte do documento. `url` = endpoint proxy que serve os bytes

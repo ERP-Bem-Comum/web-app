@@ -12,7 +12,20 @@ import type {
   Territory,
   BankAccount,
   CollaboratorPixKey,
+  Pwd,
+  PwdAnswer,
+  PwdType,
 } from './collaborator.types.ts'
+
+/**
+ * Resposta de PcD enviada (spec 131). Precisa vir completa — "Sim" com ao menos um tipo e, com "Outra",
+ * o texto; tipos e texto só existem com "Sim" (o core-api recusa com 422).
+ */
+export interface PwdInput {
+  answer: PwdAnswer
+  types?: PwdType[]
+  otherDescription?: string
+}
 
 // ── Input (validado na server fn pelos schemas em adapters) ─────────────────────
 export interface ListCollaboratorsInput {
@@ -67,8 +80,7 @@ export interface CompleteCollaboratorRegistrationInput {
   hasChildren?: boolean
   childrenCount?: number
   childrenAges?: number[]
-  isPwd?: boolean
-  pwdDescription?: string
+  pwd?: PwdInput // spec 131 — ausente mantém o que o PUT já gravou
   isOnLeave?: boolean
   leaveDuration?: string
   leaveRenewable?: boolean
@@ -80,11 +92,13 @@ export interface CompleteCollaboratorRegistrationInput {
 // o que está gravado (não remove); objeto valida e substitui.
 // RG, nascimento e raça (spec 124, core-api#1070): preenchidos UMA vez — ausente mantém, vazio grava,
 // igual mantém, diferente do gravado é recusado (409).
+// PcD (spec 131): preenche enquanto vazio ou incompleto; completo, trava (mesmo 409).
 export type UpdateCollaboratorInput = CreateCollaboratorInput & {
   id: string
   rg?: string
   dateOfBirth?: string
   race?: string
+  pwd?: PwdInput
 }
 
 export interface DeactivateCollaboratorInput {
@@ -146,8 +160,7 @@ export type CollaboratorDetail = CollaboratorListItem &
     hasChildren?: boolean
     childrenCount?: number
     childrenAges?: number[]
-    isPwd?: boolean
-    pwdDescription?: string
+    pwd?: Pwd // spec 131; ausente = não respondeu
     isOnLeave?: boolean
     leaveDuration?: string
     leaveRenewable?: boolean

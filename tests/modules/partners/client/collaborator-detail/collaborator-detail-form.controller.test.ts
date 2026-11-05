@@ -50,8 +50,9 @@ const emptyState: CollaboratorDetailFormState = {
   hasChildren: '',
   childrenCount: '',
   childrenAges: '',
-  isPwd: '',
-  pwdDescription: '',
+  pwdAnswer: '',
+  pwdTypes: [],
+  pwdOtherDescription: '',
   isOnLeave: '',
   leaveDuration: '',
   leaveRenewable: '',
@@ -105,16 +106,16 @@ describe('buildCompleteInput — envio do PATCH complete-registration', () => {
     assert.equal(out.hasChildren, undefined)
     assert.equal(out.childrenCount, undefined)
     assert.equal(out.childrenAges, undefined)
-    assert.equal(out.isPwd, undefined)
+    assert.equal(out.pwd, undefined)
     assert.equal(out.isOnLeave, undefined)
     assert.equal(out.leaveRenewable, undefined)
     assert.equal(out.experienceInThePublicSector, undefined)
   })
 
-  it('sim/não → boolean (hasChildren=sim, isPwd=nao)', () => {
-    const out = buildCompleteInput({ ...emptyState, hasChildren: 'sim', isPwd: 'nao' }, 'c-1')
+  it('sim/não → boolean (hasChildren=sim) e PcD "Não" → pwd { answer: NAO }', () => {
+    const out = buildCompleteInput({ ...emptyState, hasChildren: 'sim', pwdAnswer: 'NAO' }, 'c-1')
     assert.equal(out.hasChildren, true)
-    assert.equal(out.isPwd, false)
+    assert.deepEqual(out.pwd, { answer: 'NAO' })
   })
 
   it('childrenAges texto → int[]; childrenCount texto → int', () => {
@@ -201,7 +202,7 @@ describe('stateFromDetail — hidratação a partir do detalhe', () => {
       hasChildren: true,
       childrenCount: 2,
       childrenAges: [5, 12],
-      isPwd: false,
+      pwd: { answer: 'SIM', types: ['AUDITIVA', 'OUTRA'], otherDescription: 'Dislexia' },
       isOnLeave: true,
       leaveRenewable: false,
       publicSectorExperienceDuration: '3 anos',
@@ -211,7 +212,9 @@ describe('stateFromDetail — hidratação a partir do detalhe', () => {
     assert.equal(s.hasChildren, 'sim')
     assert.equal(s.childrenCount, '2')
     assert.equal(s.childrenAges, '5, 12')
-    assert.equal(s.isPwd, 'nao')
+    assert.equal(s.pwdAnswer, 'SIM')
+    assert.deepEqual(s.pwdTypes, ['AUDITIVA', 'OUTRA'])
+    assert.equal(s.pwdOtherDescription, 'Dislexia')
     assert.equal(s.isOnLeave, 'sim')
     assert.equal(s.leaveRenewable, 'nao')
     assert.equal(s.publicSectorExperienceDuration, '3 anos')

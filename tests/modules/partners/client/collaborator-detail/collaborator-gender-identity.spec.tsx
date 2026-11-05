@@ -1,7 +1,7 @@
 /**
  * Spec 122 — "Identidade de Gênero" substitui o antigo "Sexo (F/M)" (vitest/jsdom), no Cadastro
  * Completo do detalhe e no Autocadastro:
- *  - o seletor traz as 7 opções do cliente, na ordem e na redação dele;
+ *  - o seletor traz as 8 opções do cliente, na ordem e na redação dele (Queer na spec 130);
  *  - TRAVESTI fica fora do seletor (decisão da P.O., 12/10) e "Sexo" sai da tela;
  *  - escolher uma opção vai para `genderIdentity` no complete-registration;
  *  - "Outra" abre o texto livre `genderIdentityDescription` (core-api#1054), que só vai junto de "Outra".
@@ -28,13 +28,15 @@ afterEach(() => {
   cleanup()
 })
 
-// Redação e ordem do cliente (P.O., 09/08 e 12/10). O "______" de "Outra" é o texto livre (core-api#1054).
+// Redação e ordem do cliente (P.O., 09/08, 12/10 e 23/10 — spec 130: Queer e "/ Travesti"). O "______" de
+// "Outra" é o texto livre (core-api#1054).
 const CLIENT_OPTIONS = [
   'Mulher cisgênero',
   'Homem cisgênero',
-  'Mulher transgênero',
+  'Mulher transgênero / Travesti',
   'Homem transgênero',
   'Pessoa não binária',
+  'Queer',
   'Outra identidade de gênero',
   'Prefiro não responder',
 ]
@@ -78,7 +80,7 @@ function DetailHarness(): ReactNode {
 }
 
 describe('Cadastro completo (detalhe) — Identidade de Gênero (spec 122)', () => {
-  it('mostra o seletor com as 7 opções do cliente, sem Travesti', () => {
+  it('mostra o seletor com as 8 opções do cliente, sem Travesti como opção própria', () => {
     render(<DetailHarness />)
     const select = screen.getByLabelText('Identidade de Gênero', { selector: 'select' }) as HTMLSelectElement
     expect(optionLabels(select)).toEqual(CLIENT_OPTIONS)
@@ -162,7 +164,8 @@ const fakeController = (state = emptyCompleteFieldsState): AutocadastroFormContr
   cpfPrefix: '',
   setField: vi.fn(),
   setCpfPrefix: vi.fn(),
-  buildSubmit: vi.fn<(token: string) => AutocadastroSubmitInput>(),
+  pwdIssues: [],
+  buildSubmit: vi.fn<(token: string) => AutocadastroSubmitInput | null>(),
 })
 
 const formProps = (controller: AutocadastroFormController): AutocadastroFormProps => ({
@@ -176,7 +179,7 @@ const formProps = (controller: AutocadastroFormController): AutocadastroFormProp
 })
 
 describe('Autocadastro — Identidade de Gênero (spec 122)', () => {
-  it('mostra o seletor com as 7 opções do cliente, sem Travesti nem "Sexo"', () => {
+  it('mostra o seletor com as 8 opções do cliente, sem Travesti como opção própria nem "Sexo"', () => {
     render(<AutocadastroForm {...formProps(fakeController())} />)
     const select = document.getElementById('ac-genderIdentity') as HTMLSelectElement
     expect(select).not.toBeNull()

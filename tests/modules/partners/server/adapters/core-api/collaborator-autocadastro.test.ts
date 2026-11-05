@@ -24,7 +24,7 @@ const errEnvelope = (code: string) => ({ error: { code, message: code, requestId
 
 const client = () => createCoreApiCollaboratorAutocadastroClient(BASE)
 
-const submitInput: AutocadastroSubmitInput = { token: 't', cpfPrefix: '123' }
+const submitInput: AutocadastroSubmitInput = { token: 't', cpfPrefix: '123', pwd: { answer: 'NAO' } }
 
 describe('preview (GET)', () => {
   it('200 → ok(AutocadastroPreview)', async () => {

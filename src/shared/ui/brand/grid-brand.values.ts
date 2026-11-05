@@ -110,6 +110,7 @@ export const brand = {
         HOMEM_TRANS: '#2f8f6a', // verde-azulado
         TRAVESTI: '#c2557a', // rosa queimado
         NAO_BINARIO: '#c67c1e', // âmbar
+        QUEER: '#5a7d2a', // verde-oliva (spec 130)
         OUTRO: '#7a8794', // cinza médio
         PREFIRO_NAO_RESPONDER: '#b8c0cc', // cinza claro — não-resposta
         NA: '#d5dae1', // cinza mais claro — ausência de dado

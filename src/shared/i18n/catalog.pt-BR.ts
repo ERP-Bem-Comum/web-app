@@ -414,6 +414,8 @@ export const ptBR: Catalog = {
   'partners.autocadastro.field.cpfPrefix': 'Confirme os primeiros dígitos do seu CPF',
   'partners.autocadastro.field.cpfPrefixPlaceholder': 'Ex: 123',
   'partners.autocadastro.form.select': 'Selecione…',
+  // Spec 131: no autocadastro a pergunta 1 do PcD é obrigatória — o rótulo diz isso.
+  'partners.autocadastro.field.pwdAnswer': 'Você é uma Pessoa com Deficiência (PcD)? (obrigatória)',
   'partners.autocadastro.yes': 'Sim',
   'partners.autocadastro.no': 'Não',
   'partners.autocadastro.submit': 'Concluir cadastro',
@@ -819,8 +821,26 @@ export const ptBR: Catalog = {
   'partners.collaborators.detail.field.childrenCount': 'Quantos filhos possui?',
   'partners.collaborators.detail.field.childrenAges': 'Idade dos filhos',
   'partners.collaborators.detail.field.childrenAgesPlaceholder': 'Ex: 5 anos, 12 anos',
-  'partners.collaborators.detail.field.isPwd': 'Possui alguma deficiência (PCD)?',
-  'partners.collaborators.detail.field.pwdDescription': 'Qual?',
+  // Pessoa com Deficiência (spec 131) — redação do cliente (P.O., 23/10).
+  'partners.collaborators.detail.field.pwdAnswer': 'Você é uma Pessoa com Deficiência (PcD)?',
+  'partners.collaborators.detail.field.pwdTypes':
+    'Qual é o tipo de deficiência? (Marque todas as opções que se aplicam)',
+  'partners.collaborators.detail.field.pwdOtherDescription': 'Qual outra deficiência?',
+  'partners.collaborators.pwd.answer.SIM': 'Sim',
+  'partners.collaborators.pwd.answer.NAO': 'Não',
+  'partners.collaborators.pwd.answer.PREFIRO_NAO_RESPONDER': 'Prefiro não responder',
+  'partners.collaborators.pwd.type.FISICA': 'Deficiência Física',
+  'partners.collaborators.pwd.type.VISUAL': 'Deficiência Visual',
+  'partners.collaborators.pwd.type.AUDITIVA': 'Deficiência Auditiva',
+  'partners.collaborators.pwd.type.INTELECTUAL_MENTAL': 'Deficiência Intelectual ou Mental',
+  'partners.collaborators.pwd.type.TEA': 'Transtorno do Espectro Autista (TEA)',
+  'partners.collaborators.pwd.type.MULTIPLA': 'Deficiência Múltipla',
+  'partners.collaborators.pwd.type.OUTRA': 'Outra',
+  'partners.collaborators.pwd.error.answer': 'Responda se você é uma Pessoa com Deficiência.',
+  'partners.collaborators.pwd.error.types': 'Marque ao menos um tipo de deficiência.',
+  'partners.collaborators.pwd.error.other': 'Descreva a outra deficiência.',
+  'partners.collaborators.pwd.locked':
+    'Já respondido — não pode ser alterado. Enquanto a resposta estava incompleta, ela podia ser completada.',
   'partners.collaborators.detail.field.isOnLeave': 'Atualmente está afastado do município?',
   'partners.collaborators.detail.field.leaveDuration': 'Há quanto tempo está afastado?',
   'partners.collaborators.detail.field.leaveRenewable': 'O afastamento pode ser renovado?',
@@ -839,9 +859,10 @@ export const ptBR: Catalog = {
   'partners.collaborators.gender.HOMEM_CIS': 'Homem cisgênero',
   'partners.collaborators.gender.HOMEM_TRANS': 'Homem transgênero',
   'partners.collaborators.gender.MULHER_CIS': 'Mulher cisgênero',
-  'partners.collaborators.gender.MULHER_TRANS': 'Mulher transgênero',
+  'partners.collaborators.gender.MULHER_TRANS': 'Mulher transgênero / Travesti',
   'partners.collaborators.gender.TRAVESTI': 'Travesti',
   'partners.collaborators.gender.NAO_BINARIO': 'Pessoa não binária',
+  'partners.collaborators.gender.QUEER': 'Queer',
   'partners.collaborators.gender.OUTRO': 'Outra identidade de gênero',
   'partners.collaborators.race.AMARELO': 'Amarela',
   'partners.collaborators.race.BRANCO': 'Branca',
@@ -1198,8 +1219,6 @@ export const ptBR: Catalog = {
   'financial.create.submit': 'Salvar Documento',
   'financial.edit.title': 'Editar Documento',
   // spec 125 — editar documento Aprovado (continua Aprovado).
-  'financial.edit.approved.awaitingBackend':
-    'A alteração de forma de pagamento e de categorização em documento Aprovado ainda não está disponível. Por enquanto, só a descrição pode ser salva.',
   'financial.edit.approved.methodAlreadyChanged':
     'A forma de pagamento já foi alterada uma vez após a aprovação. Para mudar de novo, faça a baixa manual.',
   'financial.edit.approved.barcodeLocked': 'O código de barras não pode ser alterado depois da aprovação.',
@@ -2342,6 +2361,10 @@ export const ptBR: Catalog = {
   'financial.list.chip.conciliado': 'Conciliado',
 
   // ── Visões salvas (saved views, #351) — snapshot nomeado de filtros (preferência de UI) ──
+  'financial.list.columns.button': 'Colunas',
+  'financial.list.columns.close': 'Fechar seletor de colunas',
+  'financial.list.columns.locked': 'fixa',
+  'financial.list.columns.showAll': 'Mostrar todas',
   'financial.list.savedViews.button': 'Visões',
   'financial.list.savedViews.nameLabel': 'Nome da visão',
   'financial.list.savedViews.namePlaceholder': 'Nome da visão…',
@@ -2955,6 +2978,10 @@ export const ptBR: Catalog = {
   'reports.equipe.filters.generationOption.OUTROS': 'Outras gerações (até 1945 ou após 2012)',
   'reports.equipe.filters.generationOption.NA': 'N/A (sem data de nascimento)',
   'reports.equipe.filters.vinculo': 'Vínculo Empregatício',
+  // Pessoa com Deficiência (spec 131).
+  'reports.equipe.filters.pcd': 'Pessoa com Deficiência',
+  'reports.equipe.filters.pcdTipo': 'Tipo de Deficiência',
+  'reports.equipe.pcd.NA': 'Não informado',
   'reports.equipe.filters.filtrar': 'Filtrar',
 
   'reports.equipe.export.label': 'Exportar',
@@ -2964,6 +2991,9 @@ export const ptBR: Catalog = {
   'reports.equipe.charts.idade': 'Distribuição por Idade',
   'reports.equipe.charts.ano': 'Quantitativo de Funcionários por Ano',
   'reports.equipe.charts.funcao': 'Distribuição por Função',
+  'reports.equipe.charts.pcd': 'Pessoa com Deficiência (PcD)',
+  'reports.equipe.charts.pcdTipo': 'Tipos de Deficiência',
+  'reports.equipe.charts.pcdTipoEmpty': 'Nenhum tipo de deficiência informado.',
   'reports.equipe.charts.centerCaption': 'colaboradores',
 
   'reports.equipe.table.title': 'Colaboradores',
@@ -2976,6 +3006,7 @@ export const ptBR: Catalog = {
   'reports.equipe.columns.genero': 'Identidade de gênero',
   'reports.equipe.columns.racaCor': 'Raça/cor',
   'reports.equipe.columns.escolaridade': 'Escolaridade',
+  'reports.equipe.columns.pcd': 'PcD',
   'reports.equipe.table.rowAction': 'Ver detalhes de {{nome}}',
 
   // Paginação da tabela.
@@ -2988,6 +3019,7 @@ export const ptBR: Catalog = {
   // Modal de detalhe do colaborador (só os 9 campos enxutos — LGPD).
   'reports.equipe.detail.title': 'Detalhes do colaborador',
   'reports.equipe.detail.anoContrato': 'Ano de contrato',
+  'reports.equipe.detail.pcdTipos': 'Tipo de deficiência',
   'reports.equipe.detail.close': 'Fechar',
   'reports.equipe.detail.edit': 'Editar',
 

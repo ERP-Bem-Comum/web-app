@@ -15,6 +15,9 @@ import {
   total,
   loadTeam,
   teamFilterOptions,
+  byPcd,
+  byPcdTipo,
+  PCD_NA,
   applyTeamFilters,
   EMPTY_TEAM_FILTERS,
   totalPages,
@@ -33,6 +36,8 @@ import {
   EDUCATION_LEVELS,
   EMPLOYMENT_RELATIONSHIPS,
   OCCUPATION_AREAS,
+  PWD_ANSWERS,
+  PWD_TYPES,
 } from '../../../../src/modules/partners/client/data/model/collaborator.model.ts'
 import {
   EQUIPE_PLACEHOLDER,
@@ -54,6 +59,8 @@ const FIX: readonly TeamMemberRow[] = [
     anoContrato: 2019,
     status: 'ATIVO',
     situacaoCadastral: 'Complete',
+    pcd: 'NA',
+    pcdTipos: [],
   },
   {
     nome: 'B',
@@ -68,6 +75,8 @@ const FIX: readonly TeamMemberRow[] = [
     anoContrato: 2020,
     status: 'ATIVO',
     situacaoCadastral: 'Complete',
+    pcd: 'NA',
+    pcdTipos: [],
   },
   {
     nome: 'C',
@@ -82,6 +91,8 @@ const FIX: readonly TeamMemberRow[] = [
     anoContrato: 2020,
     status: 'ATIVO',
     situacaoCadastral: 'Complete',
+    pcd: 'NA',
+    pcdTipos: [],
   },
   {
     nome: 'D',
@@ -96,6 +107,8 @@ const FIX: readonly TeamMemberRow[] = [
     anoContrato: 2021,
     status: 'ATIVO',
     situacaoCadastral: 'Complete',
+    pcd: 'NA',
+    pcdTipos: [],
   },
   {
     nome: 'E',
@@ -110,6 +123,8 @@ const FIX: readonly TeamMemberRow[] = [
     anoContrato: 2025,
     status: 'ATIVO',
     situacaoCadastral: 'Complete',
+    pcd: 'NA',
+    pcdTipos: [],
   },
   {
     nome: 'F',
@@ -124,6 +139,8 @@ const FIX: readonly TeamMemberRow[] = [
     anoContrato: 2018,
     status: 'ATIVO',
     situacaoCadastral: 'Complete',
+    pcd: 'NA',
+    pcdTipos: [],
   },
 ]
 
@@ -183,10 +200,10 @@ describe('buildCsv — colunas enxutas (LGPD)', () => {
   const csv = buildCsv(FIX)
   const lines = csv.split('\r\n')
 
-  it('cabeçalho exato das 9 colunas de exibição (Geração logo depois de Idade)', () => {
+  it('cabeçalho exato das 11 colunas de exibição (Geração logo depois de Idade; PcD no fim)', () => {
     assert.strictEqual(
       lines[0],
-      '"Nome";"Idade";"Geração";"Área de atuação";"Função";"Vínculo";"Identidade de gênero";"Raça/cor";"Escolaridade"',
+      '"Nome";"Idade";"Geração";"Área de atuação";"Função";"Vínculo";"Identidade de gênero";"Raça/cor";"Escolaridade";"Pessoa com deficiência";"Tipo de deficiência"',
     )
   })
 
@@ -197,7 +214,7 @@ describe('buildCsv — colunas enxutas (LGPD)', () => {
   it('primeira linha = colaborador A com os campos enxutos', () => {
     assert.strictEqual(
       lines[1],
-      '"A";"22";"MILLENNIAL";"DDI";"Analista";"CLT";"Mulher Cis";"Branco";"Superior Completo"',
+      '"A";"22";"MILLENNIAL";"DDI";"Analista";"CLT";"Mulher Cis";"Branco";"Superior Completo";"NA";""',
     )
   })
 
@@ -293,6 +310,8 @@ describe('placeholder sintético (LGPD)', () => {
       'anoContrato',
       'status',
       'situacaoCadastral',
+      'pcd',
+      'pcdTipos',
     ])
     for (const row of EQUIPE_PLACEHOLDER) {
       for (const key of Object.keys(row)) {
@@ -341,6 +360,8 @@ describe('teamFilterOptions', () => {
     anoContrato: 0,
     status: 'ATIVO',
     situacaoCadastral: 'Complete',
+    pcd: 'NA',
+    pcdTipos: [],
     ...over,
   })
   const ROWS: readonly TeamMemberRow[] = [
@@ -402,6 +423,8 @@ describe('countByTemplate (contagem dos gráficos a partir das linhas)', () => {
     anoContrato: 0,
     status: 'ATIVO',
     situacaoCadastral: 'Complete',
+    pcd: 'NA',
+    pcdTipos: [],
   })
 
   it('conta sobre o template e mantém a ordem dele, inclusive as categorias zeradas', () => {
@@ -465,6 +488,8 @@ describe('applyTeamFilters (client-side)', () => {
     anoContrato: 2021,
     status: 'ATIVO',
     situacaoCadastral: 'Complete',
+    pcd: 'NA',
+    pcdTipos: [],
     ...over,
   })
   const ROWS: readonly TeamMemberRow[] = [
@@ -559,6 +584,8 @@ describe('teamFilterOptions — geração (spec 123)', () => {
     anoContrato: 2021,
     status: 'ATIVO',
     situacaoCadastral: 'Complete',
+    pcd: 'NA',
+    pcdTipos: [],
   })
 
   it('lista fechada na ordem cronológica com NA no fim, mesmo sem ninguém na geração', () => {
@@ -580,5 +607,122 @@ describe('teamFilterOptions — geração (spec 123)', () => {
       'OUTROS',
       'NA',
     ])
+  })
+})
+
+// ── Pessoa com Deficiência (spec 131) ─────────────────────────────────────────────
+
+const mkPcd = (nome: string, pcd: string, pcdTipos: readonly string[] = []): TeamMemberRow => ({
+  nome,
+  idade: null,
+  geracao: 'NA',
+  programa: '—',
+  funcao: '—',
+  vinculo: '—',
+  genero: '—',
+  racaCor: '—',
+  escolaridade: '—',
+  anoContrato: 2021,
+  status: 'ATIVO',
+  situacaoCadastral: 'Complete',
+  pcd,
+  pcdTipos,
+})
+
+const PCD_ROWS: readonly TeamMemberRow[] = [
+  mkPcd('S1', 'SIM', ['VISUAL', 'AUDITIVA']),
+  mkPcd('S2', 'SIM', ['VISUAL']),
+  mkPcd('N1', 'NAO'),
+  mkPcd('P1', 'PREFIRO_NAO_RESPONDER'),
+  mkPcd('X1', PCD_NA),
+  mkPcd('X2', PCD_NA),
+]
+
+describe('byPcd (spec 131)', () => {
+  it('conta por resposta + NA (não respondeu), na ordem do domínio, e soma = total de linhas', () => {
+    const r = byPcd(PCD_ROWS)
+    assert.deepStrictEqual(r, [
+      { id: 'SIM', count: 2 },
+      { id: 'NAO', count: 1 },
+      { id: 'PREFIRO_NAO_RESPONDER', count: 1 },
+      { id: 'NA', count: 2 },
+    ])
+    assert.strictEqual(
+      r.reduce((s, x) => s + x.count, 0),
+      PCD_ROWS.length,
+    )
+  })
+})
+
+describe('byPcdTipo (spec 131)', () => {
+  it('quem marcou dois tipos conta nos dois; todos os tipos aparecem, na ordem do formulário', () => {
+    const r = byPcdTipo(PCD_ROWS)
+    assert.deepStrictEqual(
+      r.map((x) => x.id),
+      [...PWD_TYPES],
+    )
+    assert.strictEqual(r.find((x) => x.id === 'VISUAL')?.count, 2)
+    assert.strictEqual(r.find((x) => x.id === 'AUDITIVA')?.count, 1)
+    assert.strictEqual(r.find((x) => x.id === 'TEA')?.count, 0)
+  })
+})
+
+describe('teamFilterOptions — PcD (spec 131)', () => {
+  it('pcd = respostas do domínio + NA; pcdTipo = tipos do domínio', () => {
+    const o = teamFilterOptions(PCD_ROWS)
+    assert.deepStrictEqual(o.pcd, [...PWD_ANSWERS, 'NA'])
+    assert.deepStrictEqual(o.pcdTipo, [...PWD_TYPES])
+  })
+})
+
+describe('applyTeamFilters — PcD (spec 131)', () => {
+  it('por resposta (inclui NA = não respondeu)', () => {
+    assert.deepStrictEqual(
+      applyTeamFilters(PCD_ROWS, { ...EMPTY_TEAM_FILTERS, pcd: 'SIM' }).map((x) => x.nome),
+      ['S1', 'S2'],
+    )
+    assert.deepStrictEqual(
+      applyTeamFilters(PCD_ROWS, { ...EMPTY_TEAM_FILTERS, pcd: 'NA' }).map((x) => x.nome),
+      ['X1', 'X2'],
+    )
+    assert.strictEqual(applyTeamFilters(PCD_ROWS, { ...EMPTY_TEAM_FILTERS, pcd: '' }).length, PCD_ROWS.length)
+  })
+
+  it('por tipo = quem marcou o tipo', () => {
+    assert.deepStrictEqual(
+      applyTeamFilters(PCD_ROWS, { ...EMPTY_TEAM_FILTERS, pcdTipo: 'VISUAL' }).map((x) => x.nome),
+      ['S1', 'S2'],
+    )
+    assert.deepStrictEqual(
+      applyTeamFilters(PCD_ROWS, { ...EMPTY_TEAM_FILTERS, pcdTipo: 'AUDITIVA' }).map((x) => x.nome),
+      ['S1'],
+    )
+    assert.deepStrictEqual(applyTeamFilters(PCD_ROWS, { ...EMPTY_TEAM_FILTERS, pcdTipo: 'TEA' }), [])
+  })
+})
+
+describe('buildCsv — colunas de PcD (spec 131)', () => {
+  const labels = {
+    answer: (code: string): string => ({ SIM: 'Sim', NAO: 'Não', NA: 'N/A' })[code] ?? code,
+    type: (code: string): string => ({ VISUAL: 'Visual', AUDITIVA: 'Auditiva' })[code] ?? code,
+  }
+  const cols = (line: string | undefined): readonly string[] => (line ?? '').split(';')
+
+  it('resposta e tipos saem com os rótulos injetados; vários tipos na mesma célula, separados por "; "', () => {
+    const out = buildCsv(PCD_ROWS, (c) => c, labels).split('\r\n')
+    const s1 = cols(out[1])
+    // a célula de tipos contém "; " — o split ingênuo por ';' a parte em duas.
+    assert.strictEqual(s1[9], '"Sim"')
+    assert.strictEqual(s1.slice(10).join(';'), '"Visual; Auditiva"')
+    const n1 = cols(out[3])
+    assert.strictEqual(n1[9], '"Não"')
+    assert.strictEqual(n1[10], '""')
+    assert.strictEqual(cols(out[5])[9], '"N/A"')
+  })
+
+  it('sem rótulos injetados → código cru (nunca vazio)', () => {
+    const out = buildCsv(PCD_ROWS).split('\r\n')
+    assert.ok(out[1]?.endsWith('"SIM";"VISUAL; AUDITIVA"'))
+    assert.ok(out[4]?.endsWith('"PREFIRO_NAO_RESPONDER";""'))
   })
 })

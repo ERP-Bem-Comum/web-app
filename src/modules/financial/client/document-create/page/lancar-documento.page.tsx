@@ -35,8 +35,6 @@ import {
   buildDraftInput,
   buildAdjustInput,
   buildApprovedAdjustInput,
-  approvedEditChanges,
-  approvedEditAwaitsBackend,
   approvedEditLocksFor,
   approvedBlockedMethods,
   approvedLockReasonTag,
@@ -57,7 +55,6 @@ import {
   body,
   crumb,
   errorBanner,
-  noticeBanner,
   formCol,
   resizeHandle,
   resizeHandleActive,
@@ -165,6 +162,8 @@ export function LancarDocumentoPage({ documentId }: LancarDocumentoPageProps = {
   const isAdjusting = mode === 'edit' || mode === 'approved'
   // Rascunho/criação salvam pelo command (create); edição (Aberto/Aprovado) usa o binding de ajuste.
   const errorTag = isAdjusting ? edit.errorTag : command.errorTag
+  // O texto do core-api, quando vem, é mais preciso que a tag (as recusas do Aprovado são todas 409).
+  const errorMessage = isAdjusting ? edit.errorMessage : null
   const running = isAdjusting ? edit.running : command.running
   // Travas: edição/consulta usam as travas por status; o Aprovado depende da forma ATUAL (trava do
   // complemento muda com a troca); criação/rascunho ficam 100% abertos.
@@ -180,11 +179,6 @@ export function LancarDocumentoPage({ documentId }: LancarDocumentoPageProps = {
       : undefined
   const blockedMethods =
     approvedCtx !== null && mode === 'approved' ? approvedBlockedMethods(approvedCtx) : undefined
-  // Aprovado: forma/complemento/categorização alterados ainda não salvam (core-api#1057) — avisa o porquê.
-  const approvedAwaitsBackend =
-    mode === 'approved' &&
-    edit.detail !== null &&
-    approvedEditAwaitsBackend(approvedEditChanges(controller.fields, edit.detail))
   // Bottombar: rascunho reaproveita as ações de criação (Salvar Documento / Salvar rascunho).
   const bottombarMode = mode === 'draft' ? 'create' : isAdjusting ? 'edit' : mode
 
@@ -253,7 +247,7 @@ export function LancarDocumentoPage({ documentId }: LancarDocumentoPageProps = {
     if (input !== null) edit.execute(input)
   }
 
-  // Aprovado (spec 125): só o que o backend já aceita — hoje, a descrição (core-api#1057 libera o resto).
+  // Aprovado (spec 125 / core-api#1057): descrição, forma + complemento e categorização — só o que mudou.
   const submitApprovedEdit = (): void => {
     if (edit.detail === null) return
     const input = buildApprovedAdjustInput(controller.fields, edit.detail)
@@ -287,12 +281,7 @@ export function LancarDocumentoPage({ documentId }: LancarDocumentoPageProps = {
 
       {errorTag !== null ? (
         <div className={errorBanner} role="alert">
-          {t(errorTag)}
-        </div>
-      ) : null}
-      {approvedAwaitsBackend ? (
-        <div className={noticeBanner} role="status">
-          {t('financial.edit.approved.awaitingBackend')}
+          {errorMessage ?? t(errorTag)}
         </div>
       ) : null}
 

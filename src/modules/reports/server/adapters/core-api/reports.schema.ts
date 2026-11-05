@@ -28,6 +28,10 @@ const CoreApiTeamMemberSchema = z.object({
   // Geração (core-api#1055): CÓDIGO derivado do ANO de nascimento no `partners` — a idade não basta (29 anos
   // hoje pode ser 1996 ou 1997). Ausente (core-api anterior à #1055) ou inválido → 'NA', nunca linha perdida.
   generation: z.string().trim().min(1).catch('NA'),
+  // Pessoa com Deficiência (spec 131): CÓDIGOS ('SIM'/'NAO'/'PREFIRO_NAO_RESPONDER'; tipos 'VISUAL'…). O texto
+  // de "Outra" não cruza a borda. Core-api anterior à spec 131 → não respondeu, nunca linha perdida.
+  pwdAnswer: z.string().trim().nullable().catch(null),
+  pwdTypes: z.array(z.string().trim()).catch([]),
 })
 export const CoreApiTeamReportSchema = z.object({
   team: z.array(CoreApiTeamMemberSchema),

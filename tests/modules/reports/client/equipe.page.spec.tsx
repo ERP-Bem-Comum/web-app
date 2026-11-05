@@ -54,6 +54,8 @@ const TEAM: readonly TeamMember[] = Array.from({ length: 36 }, (_v, i) => ({
   race: i % 4 === 0 ? 'INDIGENA' : 'PARDO',
   age: 25 + (i % 30),
   generation: i % 6 === 0 ? 'NA' : i % 2 === 0 ? 'GEN_Z' : 'MILLENNIAL',
+  pwdAnswer: i % 9 === 0 ? 'SIM' : i % 3 === 0 ? null : 'NAO',
+  pwdTypes: i % 9 === 0 ? ['VISUAL'] : [],
 }))
 
 function renderPage(): void {

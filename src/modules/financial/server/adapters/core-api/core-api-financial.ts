@@ -311,8 +311,14 @@ export const createCoreApiFinancialClient = (baseUrl: string): FinancialClient =
     adjust: async (input, token) => {
       const { id, ...body } = input
       const r = await resultFetch<unknown>(`${docs}/${id}`, { method: 'PATCH', body, token })
-      if (isErr(r)) return err(mapHttpError(r.error))
-      return detailToModel(r.value)
+      // A MENSAGEM viaja junto (core-api#1057): forma já trocada, código de barras gravado e título fora
+      // do Aprovado chegam todos como 409 → `conflict`, e só o texto do core-api diz qual.
+      if (isErr(r)) {
+        return err({ error: mapHttpError(r.error), message: domainMessage(r.error) })
+      }
+      const model = detailToModel(r.value)
+      if (isErr(model)) return err({ error: model.error, message: null })
+      return model
     },
     // A MENSAGEM viaja junto (mesmo padrão do `generateRemittance` abaixo). Sem ela, as quatro recusas
     // do aprovador — não cadastrado, sem permissão de aprovar, alçada insuficiente, leitura do auth

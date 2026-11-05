@@ -24,6 +24,16 @@ export type BankAccount = Readonly<{
 export type CollaboratorPixKeyType = 'cpf' | 'cnpj' | 'email' | 'phone' | 'random-key'
 export type CollaboratorPixKey = Readonly<{ keyType: CollaboratorPixKeyType; key: string }>
 
+// Pessoa com Deficiência (spec 131, core-api) — códigos do core-api; o rótulo PT é do client (i18n).
+export type PwdAnswer = 'SIM' | 'NAO' | 'PREFIRO_NAO_RESPONDER'
+export type PwdType = 'FISICA' | 'VISUAL' | 'AUDITIVA' | 'INTELECTUAL_MENTAL' | 'TEA' | 'MULTIPLA' | 'OUTRA'
+/** Resposta gravada. "Sim" sem tipo = dado anterior à spec 131, incompleto (fica aberto para preencher). */
+export type Pwd = Readonly<{
+  answer: PwdAnswer
+  types: readonly PwdType[]
+  otherDescription: string | null
+}>
+
 // Valores REAIS do enum `disableBy` do core-api (códigos legados). A UI mapeia para labels via i18n.
 export type DeactivationReason =
   | 'DESLIGAMENTO_ABC'
