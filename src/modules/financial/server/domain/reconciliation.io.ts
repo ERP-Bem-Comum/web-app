@@ -182,6 +182,20 @@ export type BankStatementImport = Readonly<{
   period: StatementPeriod
 }>
 
+// Spec 132: título vinculado à transação, vindo em lote na própria leitura do extrato. Dados do documento
+// em null quando o core-api não os resolveu; o valor conciliado vem sempre.
+export type StatementReconciledTitle = Readonly<{
+  payableId: string
+  documentNumber: string | null
+  payeeName: string | null
+  retentionType: string | null
+  dueDate: string | null
+  reconciledValueCents: string
+}>
+export type StatementTransactionReconciliation = Readonly<{
+  reconciliationId: string
+  titles: readonly StatementReconciledTitle[]
+}>
 export type StatementTransaction = Readonly<{
   id: string
   fitid: string
@@ -193,6 +207,7 @@ export type StatementTransaction = Readonly<{
   valueCents: string
   balanceAfterCents: string
   reconciliationStatus: ReconciliationStatus
+  reconciliation?: StatementTransactionReconciliation | null // spec 132
 }>
 
 // Conta-cedente da organização (#138 — GET /cedente-accounts). Saldo corrente, lastUpdated e pendingCount
@@ -310,6 +325,7 @@ export type AccountStatementPeriod = Readonly<{
   // #205: movimentos do período + contadores (p/ a aba Extrato dirigida pelo período).
   counters: StatementPeriodCounters
   movements: readonly StatementTransaction[]
+  companyName?: string | null // spec 132: nome da empresa no cabeçalho do relatório
 }>
 
 // Título conciliável (só Pago). `supplierName`/`documentNumber` chegam quando core-api#172 enriquecer.
