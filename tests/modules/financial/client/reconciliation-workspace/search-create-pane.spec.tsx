@@ -44,10 +44,8 @@ const payables: readonly PaidPayable[] = [
 const baseBinding = (over: Partial<SearchCreateBinding> = {}): SearchCreateBinding => {
   const merged: SearchCreateBinding = {
     selectedIds: new Set(),
-    treatment: null,
     selectedSumCents: 0,
     residualCents: 0,
-    canReconcile: false,
     canConfirm: false,
     reclassify: {
       canEdit: false,
@@ -72,15 +70,8 @@ const baseBinding = (over: Partial<SearchCreateBinding> = {}): SearchCreateBindi
       },
       toggle: vi.fn(),
     },
-    showTreatment: false,
-    reconType: 'Individual',
     submitting: false,
     errorTag: null,
-    costCenterRef: '',
-    observation: '',
-    costCenterOptions: [],
-    setCostCenterRef: vi.fn(),
-    setObservation: vi.fn(),
     search: '',
     setSearch: vi.fn(),
     documentType: 'all',
@@ -133,7 +124,6 @@ const baseBinding = (over: Partial<SearchCreateBinding> = {}): SearchCreateBindi
     nextPage: vi.fn(),
     totalCount: payables.length,
     toggle: vi.fn(),
-    setTreatment: vi.fn(),
     clear: vi.fn(),
     confirm: vi.fn(),
     ...over,
@@ -184,41 +174,23 @@ describe('SearchCreatePane', () => {
     expect(screen.queryByText('Fornecedor Pai')).toBeNull()
   })
 
-  it('#9.4.6: com diferença mas SEM revelar, o painel de tratamento NÃO aparece', () => {
+  it('spec 132: com diferença, não há painel de tratamento e o motivo do bloqueio aparece', () => {
     render(
       <SearchCreatePane
         binding={baseBinding({
           selectedIds: new Set(['p1']),
           selectedSumCents: 100000,
           residualCents: 50000,
-          showTreatment: false, // ainda não clicou Conciliar
+          canConfirm: false,
         })}
         payables={payables}
         extratoValueCents="150000"
       />,
     )
-    expect(screen.queryByText(tr('financial.recon.multi.diffTreat'))).toBeNull()
-    expect(screen.queryByRole('button', { name: tr('financial.recon.treatment.Interest') })).toBeNull()
-  })
-
-  it('#9.4.6: com showTreatment, mostra as opções; setTreatment ao clicar', () => {
-    const setTreatment = vi.fn()
-    render(
-      <SearchCreatePane
-        binding={baseBinding({
-          selectedIds: new Set(['p1']),
-          selectedSumCents: 100000,
-          residualCents: 50000,
-          showTreatment: true,
-          setTreatment,
-        })}
-        payables={payables}
-        extratoValueCents="150000"
-      />,
-    )
-    const juros = screen.getByRole('button', { name: tr('financial.recon.treatment.Interest') })
-    fireEvent.click(juros)
-    expect(setTreatment).toHaveBeenCalledWith('Interest')
+    expect(screen.queryByText('Tratamento da diferença')).toBeNull()
+    expect(screen.getByText(tr('financial.recon.multi.confirmBlocked'))).toBeTruthy()
+    const conciliar = screen.getByRole('button', { name: /^Conciliar/ })
+    expect((conciliar as HTMLButtonElement).disabled).toBe(true)
   })
 
   it('Conciliar bloqueado quando !canConfirm; habilitado dispara confirm', () => {

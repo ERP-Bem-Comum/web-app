@@ -95,6 +95,7 @@ export const CoreApiCedenteAccountsSchema = z.array(CoreApiCedenteAccountSchema)
 // closingBalanceCents; pendências = counters.pending; última atualização = data do último dia. Só os
 // campos que o grid/hero consomem (lines não são necessárias aqui). counters são int (NÃO string).
 export const CoreApiAccountStatementSchema = z.object({
+  companyName: z.string().trim().optional(), // spec 132
   openingBalanceCents: z.string().trim().catch('0'),
   closingBalanceCents: z.string().trim(),
   counters: z.object({
@@ -127,6 +128,24 @@ export const CoreApiAccountStatementSchema = z.object({
               valueCents: z.string().trim(),
               runningBalanceCents: z.string().trim().catch('0'),
               reconciliationStatus: z.string().trim(), // 'Pending' | 'Reconciled' | 'ManualEntry'
+              // Spec 132 (`include=reconciliation`). SEM `.catch`: se o formato vier errado a leitura falha,
+              // porque um relatório sem títulos pareceria uma transação sem títulos.
+              reconciliation: z
+                .object({
+                  reconciliationId: z.string().trim(),
+                  titles: z.array(
+                    z.object({
+                      payableId: z.string().trim(),
+                      documentNumber: z.string().trim().nullable(),
+                      payeeName: z.string().trim().nullable(),
+                      retentionType: z.string().trim().nullable(),
+                      dueDate: z.string().trim().nullable(),
+                      reconciledValueCents: z.string().trim(),
+                    }),
+                  ),
+                })
+                .nullable()
+                .optional(),
             }),
           )
           .catch([]),

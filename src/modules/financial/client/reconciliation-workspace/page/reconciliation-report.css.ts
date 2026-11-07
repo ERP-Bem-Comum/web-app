@@ -5,8 +5,9 @@
  * Relatórios) — no print o PDF contém só o relatório. O cabeçalho do relatório é um `<div>` (não `<header>`),
  * então NÃO é comido por esse `globalStyle`.
  */
-import { style, styleVariants, globalStyle } from '@vanilla-extract/css'
+import { style, globalStyle } from '@vanilla-extract/css'
 
+import { brand } from '#shared/ui/brand/grid-brand.values.ts'
 import { vars } from '#shared/ui/tokens/index.ts'
 
 // Impressão (PDF via window.print): esconde o cromo do shell (sidebar + topbar) — igual aos Relatórios.
@@ -41,7 +42,10 @@ export const screen = style({
   },
 })
 
-// Folha do relatório (card branco centralizado) — vira o corpo do PDF.
+// Impressão fiel: sem isto o navegador descarta os fundos (cabeçalho da tabela, cartões, lote).
+const printExact = { printColorAdjust: 'exact', WebkitPrintColorAdjust: 'exact' } as const
+
+// Folha do relatório — vira o corpo do PDF.
 export const sheet = style({
   maxInlineSize: '60rem',
   marginInline: 'auto',
@@ -57,131 +61,212 @@ export const sheet = style({
 export const header = style({
   display: 'flex',
   alignItems: 'flex-start',
+  justifyContent: 'space-between',
   gap: vars.space.md,
   paddingBlockEnd: vars.space.md,
   marginBlockEnd: vars.space.lg,
-  borderBlockEnd: `${vars.borderWidth.thin} solid ${vars.color.border.default}`,
+  borderBlockEnd: `${vars.borderWidth.thin} solid ${brand.color.line}`,
 })
 
 export const headText = style({ display: 'flex', flexDirection: 'column', gap: vars.space.xs })
+
+// Logo no canto superior direito.
+export const logo = style({ flexShrink: 0 })
+
+export const company = style({
+  margin: 0,
+  fontSize: vars.font.size.sm,
+  fontWeight: vars.font.weight.bold,
+  color: brand.color.ink900,
+})
 
 export const title = style({
   margin: 0,
   fontSize: vars.font.size.xl,
   fontWeight: vars.font.weight.bold,
-  color: vars.color.text.primary,
+  color: brand.color.ink900,
 })
 
 export const account = style({
   margin: 0,
   fontSize: vars.font.size.md,
   fontWeight: vars.font.weight.semibold,
-  color: vars.color.text.secondary,
+  color: brand.color.ink900,
 })
 
-// Identificação da conta COM NÚMERO (banco · Ag · C/C) — abaixo do alias.
 export const accountNumber = style({
   margin: 0,
   fontSize: vars.font.size.sm,
-  color: vars.color.text.secondary,
+  color: brand.color.ink500,
 })
 
 export const period = style({
   margin: 0,
   fontSize: vars.font.size.sm,
-  color: vars.color.text.muted,
+  fontWeight: vars.font.weight.bold,
+  color: brand.color.ink900,
 })
 
-// Totalizações — grade de 6 cards.
+export const emission = style({
+  display: 'flex',
+  flexWrap: 'wrap',
+  columnGap: vars.space.sm,
+  fontSize: vars.font.size.xs,
+  color: brand.color.ink700,
+})
+export const emissionLabel = style({ fontWeight: vars.font.weight.semibold, color: brand.color.ink500 })
+
+// Cartões de saldo: saldo inicial, saldo final, entradas, saídas.
 export const totals = style({
   display: 'grid',
-  gridTemplateColumns: 'repeat(3, 1fr)',
-  gap: vars.space.md,
+  gridTemplateColumns: 'repeat(4, 1fr)',
+  gap: vars.space.sm,
   marginBlockEnd: vars.space.lg,
-  '@media': { print: { gap: vars.space.sm } },
 })
 
 export const card = style({
+  ...printExact,
   display: 'flex',
   flexDirection: 'column',
   gap: vars.space.xs,
   padding: vars.space.md,
-  border: `${vars.borderWidth.thin} solid ${vars.color.border.subtle}`,
   borderRadius: vars.radius.md,
-  background: vars.color.surface.default,
+  background: brand.color.pageBg,
 })
 
 export const cardLabel = style({
-  fontSize: vars.font.size.xs,
-  fontWeight: vars.font.weight.medium,
-  color: vars.color.text.muted,
+  fontSize: vars.font.size['2xs'],
+  fontWeight: vars.font.weight.semibold,
+  textTransform: 'uppercase',
+  color: brand.color.ink500,
 })
 
 export const cardValue = style({
-  fontSize: vars.font.size.lg,
+  fontSize: vars.font.size.md,
   fontWeight: vars.font.weight.bold,
-  color: vars.color.text.primary,
+  color: brand.color.ink900,
   fontVariantNumeric: 'tabular-nums',
+})
+
+export const sectionTitle = style({
+  margin: 0,
+  marginBlockEnd: vars.space.sm,
+  fontSize: vars.font.size.md,
+  fontWeight: vars.font.weight.bold,
+  color: brand.color.ink900,
 })
 
 export const table = style({
   inlineSize: '100%',
   borderCollapse: 'collapse',
-  fontSize: vars.font.size.sm,
+  tableLayout: 'fixed',
+  fontSize: vars.font.size.xs,
 })
+
+// `table-header-group`: o cabeçalho repete a cada página do PDF.
+export const thead = style({ display: 'table-header-group' })
+export const tfoot = style({ display: 'table-row-group' })
+
+// O fundo fica na linha, e não em cada célula: evita o filete entre colunas no PDF.
+export const headRow = style({ ...printExact, background: brand.color.primary })
+export const footRow = style({ ...printExact, background: brand.color.primary })
 
 export const th = style({
   textAlign: 'left',
-  paddingBlock: vars.space.sm,
-  paddingInline: vars.space.sm,
-  borderBlockEnd: `${vars.borderWidth.thin} solid ${vars.color.text.secondary}`,
-  fontSize: vars.font.size.xs,
-  fontWeight: vars.font.weight.bold,
-  color: vars.color.text.secondary,
+  padding: vars.space.sm,
+  border: 'none',
+  color: vars.color.brand.onBrand,
+  fontWeight: vars.font.weight.semibold,
 })
-export const thRight = style([th, { textAlign: 'right' }])
+export const thDate = style([th, { inlineSize: '12%' }])
+export const thValue = style([th, { inlineSize: '15%', textAlign: 'right' }])
+export const thStatus = style([th, { inlineSize: '13%', whiteSpace: 'nowrap' }])
+
+export const row = style({
+  ...printExact,
+  breakInside: 'avoid',
+  selectors: { '&:nth-of-type(odd)': { background: brand.color.surfaceAlt } },
+})
+// Linha do lote em destaque, como na referência.
+export const rowBatch = style({
+  ...printExact,
+  breakInside: 'avoid',
+  background: brand.color.cadBg,
+})
 
 export const td = style({
-  paddingBlock: vars.space.xs,
-  paddingInline: vars.space.sm,
-  borderBlockEnd: `${vars.borderWidth.thin} solid ${vars.color.border.subtle}`,
-  verticalAlign: 'top',
-  color: vars.color.text.primary,
+  padding: vars.space.sm,
+  borderBlockEnd: `${vars.borderWidth.thin} solid ${brand.color.line}`,
+  color: brand.color.ink700,
+  overflowWrap: 'anywhere',
 })
 export const tdRight = style([td, { textAlign: 'right', fontVariantNumeric: 'tabular-nums' }])
 
-// Valor colorido por MOVIMENTO (entrada=verde, saída=vermelho) — cor por dado, aplicada como classe.
-export const value = styleVariants({
-  Credit: [tdRight, { color: vars.color.status.activeText }],
-  Debit: [tdRight, { color: vars.color.status.terminatedText }],
-})
-
 export const tdEmpty = style({
-  paddingBlock: vars.space.xl,
+  padding: vars.space.lg,
   textAlign: 'center',
-  color: vars.color.text.muted,
+  color: brand.color.ink500,
 })
 
-// Badge de status (Conciliado=roxo / Pendente=âmbar) — só-tokens.
-const badgeBase = style({
-  display: 'inline-block',
+// Títulos do lote: recuados, com a barra azul à esquerda.
+export const batchRow = style({ breakInside: 'avoid' })
+export const batchCell = style({
+  padding: 0,
+  paddingBlock: vars.space.xs,
+  paddingInlineStart: vars.space.sm,
+  borderBlockEnd: `${vars.borderWidth.thin} solid ${brand.color.line}`,
+})
+export const batchBar = style({
+  paddingInlineStart: vars.space.sm,
+  borderInlineStart: `${vars.borderWidth.thin} solid ${brand.color.primary}`,
+})
+export const batchTable = style({ inlineSize: '100%', borderCollapse: 'collapse', tableLayout: 'fixed' })
+export const batchTh = style({
+  ...printExact,
+  textAlign: 'left',
   paddingBlock: vars.space.xs,
   paddingInline: vars.space.sm,
-  borderRadius: vars.radius.sm,
-  fontSize: vars.font.size['2xs'],
-  fontWeight: vars.font.weight.semibold,
+  whiteSpace: 'nowrap',
+  // Azul mais claro que o da linha do lote: separa os detalhes da transação.
+  background: vars.color.partnerType.supplier.background,
+  fontWeight: vars.font.weight.bold,
+  color: brand.color.primary,
+  borderBlockEnd: `${vars.borderWidth.thin} solid ${brand.color.primary}`,
 })
-export const badge = styleVariants({
-  reconciled: [
-    badgeBase,
-    { background: vars.color.status.reconciledBg, color: vars.color.status.reconciledText },
-  ],
-  pending: [badgeBase, { background: vars.color.status.pendingBg, color: vars.color.status.pendingText }],
+export const batchThDoc = style([batchTh, { inlineSize: '19%' }])
+export const batchThDue = style([batchTh, { inlineSize: '14%' }])
+export const batchThValue = style([batchTh, { inlineSize: '20%', textAlign: 'right' }])
+export const batchTitleRow = style({
+  ...printExact,
+  selectors: { '&:nth-of-type(odd)': { background: brand.color.surfaceAlt } },
+})
+export const batchTd = style({
+  padding: vars.space.sm,
+  borderBlockEnd: `${vars.borderWidth.thin} solid ${brand.color.line}`,
+  color: brand.color.ink700,
+  overflowWrap: 'anywhere',
+})
+export const batchTdRight = style([batchTd, { textAlign: 'right', fontVariantNumeric: 'tabular-nums' }])
+
+// Faixa de totais, separada da tabela.
+export const footTd = style({
+  padding: vars.space.sm,
+  border: 'none',
+  color: vars.color.brand.onBrand,
+  fontWeight: vars.font.weight.bold,
+})
+export const footTdRight = style([footTd, { textAlign: 'right', fontVariantNumeric: 'tabular-nums' }])
+export const footLabel = style({ marginInlineEnd: vars.space.lg, textTransform: 'uppercase' })
+
+export const note = style({
+  marginBlockStart: vars.space.sm,
+  fontSize: vars.font.size['2xs'],
+  color: brand.color.ink700,
 })
 
 export const empty = style({
   padding: vars.space.xl,
   textAlign: 'center',
-  color: vars.color.text.muted,
+  color: brand.color.ink500,
   fontSize: vars.font.size.md,
 })

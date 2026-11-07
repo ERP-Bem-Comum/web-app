@@ -15,6 +15,7 @@ import * as s from '../page/reconciliation-workspace.css.ts'
 import type { MatchDetailsView } from '../reconciliation-workspace.view-model.ts'
 
 const t = createTranslator(ptBR)
+const DOT = '·'
 const CLOSE_GLYPH = '✕'
 
 export type MatchDetailsModalProps = Readonly<{
@@ -80,7 +81,7 @@ export function MatchDetailsModal({
               {manual
                 ? t('financial.recon.match.subManual')
                 : view.multi !== null
-                  ? t('financial.recon.match.subMulti')
+                  ? `${t('financial.recon.match.subMulti')} ${DOT} ${String(view.multi.count)} ${t('financial.recon.match.subMultiCount')}`
                   : t('financial.recon.match.sub')}
             </span>
           </div>
@@ -138,19 +139,12 @@ export function MatchDetailsModal({
                     <div className={s.mmMultiLine} key={`${String(i)}-${ln.documento}-${ln.valueBRL}`}>
                       {/* Headline = favorecido ou ÓRGÃO traduzido (imposto retido), coerente com o 1:1. */}
                       <div className={s.mmSideRow}>
-                        <span className={s.mmSideK}>{ln.nameTag !== null ? t(ln.nameTag) : ln.name}</span>
-                        <span className={s.mmSideV}>{ln.valueBRL}</span>
+                        <span className={s.mmMultiName}>{ln.nameTag !== null ? t(ln.nameTag) : ln.name}</span>
+                        <span className={s.mmMultiValue}>{ln.valueBRL}</span>
                       </div>
                       {ln.documento !== '—' ? <span className={s.mmMultiDoc}>{ln.documento}</span> : null}
                     </div>
                   ))}
-                  {/* Diferença (acréscimo multa/juros ou desconto) — fecha o total com o valor do extrato. */}
-                  {view.multi.differenceBRL !== null ? (
-                    <div className={s.mmSideRow}>
-                      <span className={s.mmSideK}>{t(view.multi.differenceTag)}</span>
-                      <span className={s.mmSideV}>{view.multi.differenceBRL}</span>
-                    </div>
-                  ) : null}
                   <div className={s.mmTotalRow}>
                     <span className={s.mmSideK}>{t('financial.recon.match.totalConciliado')}</span>
                     <span className={s.mmSideVAmt.doc}>{view.multi.totalBRL}</span>

@@ -1904,95 +1904,6 @@ export const pmCreateNew = style({
   selectors: { '&:hover': { background: c.teal.bg2 } },
 })
 
-// Tratamento da diferença (conciliação parcial)
-export const diffTreat = style({
-  marginBlockStart: '0.875rem',
-  paddingBlock: '1rem 1.125rem',
-  paddingInline: '1.125rem',
-  background: `linear-gradient(180deg, ${c.orange.bg} 0%, ${c.paper.default} 60%)`,
-  border: `${bw.hairline} solid ${c.orange.line}`,
-  borderRadius: '0.75rem',
-})
-export const dtHead = style({ display: 'flex', alignItems: 'center', gap: sp.md, marginBlockEnd: sp.md })
-export const dtHeadIc = style({ color: c.orange.deep, display: 'inline-flex' })
-export const dtLbl = style({
-  fontFamily: recon.font.sans,
-  fontSize: fs['2xs'],
-  fontWeight: recon.weight.bold,
-  letterSpacing: '0.08em',
-  textTransform: 'uppercase',
-  color: c.orange.deep,
-})
-export const dtAmt = style({
-  marginInlineStart: 'auto',
-  fontFamily: recon.font.mono,
-  fontSize: fs.lg,
-  fontWeight: recon.weight.bold,
-  color: c.orange.deep,
-})
-export const dtExplain = style({
-  fontFamily: recon.font.sans,
-  fontSize: '0.71875rem',
-  color: c.ink[3],
-  lineHeight: 1.5,
-  marginBlockEnd: sp.xl,
-})
-export const diffTypes = style({
-  display: 'grid',
-  gridTemplateColumns: 'repeat(5, 1fr)',
-  gap: sp.xs,
-  marginBlockEnd: '0.25rem',
-})
-const diffCardBase = {
-  display: 'flex',
-  flexDirection: 'column',
-  alignItems: 'center',
-  gap: '0.3125rem',
-  paddingBlock: sp.md,
-  paddingInline: '0.25rem',
-  background: c.paper.default,
-  border: `${bw.hairline} solid ${c.paper.rule}`,
-  borderRadius: '0.4375rem',
-  cursor: 'pointer',
-  textAlign: 'center',
-  transition: `background ${recon.tFast}, border-color ${recon.tFast}, box-shadow ${recon.tFast}`,
-} as const
-export const diffTypeCard = styleVariants({
-  off: { ...diffCardBase, selectors: { '&:hover': { borderColor: c.orange.line, background: c.orange.bg } } },
-  on: {
-    ...diffCardBase,
-    borderColor: c.orange.normal,
-    background: c.orange.bg,
-    boxShadow: `0 0 0 ${bw.thick} ${c.orange.bg}`,
-  },
-})
-const dtcIcBase = {
-  inlineSize: '1.5rem',
-  blockSize: '1.5rem',
-  borderRadius: r.sm,
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-} as const
-export const dtcIc = styleVariants({
-  off: { ...dtcIcBase, background: c.paper.warm, color: c.ink[4] },
-  on: { ...dtcIcBase, background: c.paper.default, color: c.orange.deep },
-})
-export const dtcName = styleVariants({
-  off: { fontFamily: recon.font.sans, fontSize: fs.xs, fontWeight: recon.weight.medium, color: c.ink[2] },
-  on: {
-    fontFamily: recon.font.sans,
-    fontSize: fs.xs,
-    fontWeight: recon.weight.semibold,
-    color: c.orange.deep,
-  },
-})
-export const diffExtras = style({
-  paddingBlockStart: sp.xl,
-  marginBlockStart: sp.xl,
-  borderBlockStart: `${bw.hairline} solid ${c.paper.rule}`,
-})
-
 // ── Dropdowns do header/footer (Período, Exportar) — fiel ao mock ────────────────
 export const ddWrap = style({ position: 'relative', display: 'inline-flex' })
 export const ddBackdrop = style({
@@ -2538,6 +2449,92 @@ export const extVal = styleVariants({
   out: { ...extValBase, color: c.red.deep },
   empty: { ...extValBase, color: c.ink[6], fontWeight: recon.weight.regular },
 })
+// ── Lote na aba Extrato (spec 132) ─────────────────────────────────────────────
+// A seta ocupa o vão entre o check e a data: é irmã do botão da linha, posicionada sobre ele.
+export const extBatchWrap = style({ position: 'relative' })
+export const extBatchToggle = style({
+  position: 'absolute',
+  insetBlockStart: 0,
+  // Logo após o check, afastada da data.
+  insetInlineStart: `calc(${sp['3xl']} + 1.125rem)`,
+  blockSize: '2.875rem',
+  inlineSize: '1rem',
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  padding: 0,
+  border: 'none',
+  background: 'transparent',
+  color: c.ink[3],
+  cursor: 'pointer',
+})
+export const extBatchTag = style({
+  marginInlineStart: sp.md,
+  paddingInline: sp.sm,
+  paddingBlock: '0.125rem',
+  borderRadius: recon.radius.sm,
+  background: c.paper.beige,
+  color: c.ink[3],
+  fontSize: fs.xs,
+  fontWeight: recon.weight.semibold,
+})
+export const extBatchTotal = style({ textDecoration: 'underline' })
+export const extBatchPanel = style({
+  paddingBlock: sp.md,
+  paddingInlineStart: `calc(${sp['3xl']} + 3.5rem)`,
+  paddingInlineEnd: sp['3xl'],
+  background: c.paper.warm,
+  borderBlockEnd: `${bw.hairline} solid ${c.paper.rule}`,
+})
+const extBatchCols = {
+  display: 'grid',
+  gridTemplateColumns: 'minmax(0, 1.2fr) minmax(0, 1.5fr) 7rem 8rem',
+  alignItems: 'center',
+  gap: sp.lg,
+  inlineSize: '100%',
+  paddingBlock: sp.sm,
+  paddingInline: sp.md,
+} as const
+export const extBatchGridHead = style({
+  ...extBatchCols,
+  fontFamily: recon.font.sans,
+  fontSize: fs['3xs'],
+  fontWeight: recon.weight.bold,
+  letterSpacing: '0.06em',
+  textTransform: 'uppercase',
+  color: c.ink[5],
+  borderBlockEnd: `${bw.hairline} solid ${c.paper.rule}`,
+})
+export const extBatchRow = style({
+  ...extBatchCols,
+  border: 'none',
+  borderBlockEnd: `${bw.hairline} solid ${c.paper.rule}`,
+  background: 'transparent',
+  textAlign: 'start',
+  color: c.ink[3],
+  fontFamily: recon.font.sans,
+  fontSize: fs.sm,
+  cursor: 'pointer',
+  selectors: { '&:hover': { background: c.paper.beige } },
+})
+export const extBatchDoc = style({ fontFamily: recon.font.mono })
+export const extBatchValue = style({
+  fontFamily: recon.font.mono,
+  fontWeight: recon.weight.semibold,
+  color: c.red.deep,
+  textAlign: 'end',
+})
+export const extBatchFoot = style({
+  display: 'flex',
+  justifyContent: 'space-between',
+  paddingBlock: sp.sm,
+  paddingInline: sp.md,
+  fontFamily: recon.font.sans,
+  fontSize: fs.sm,
+  fontWeight: recon.weight.semibold,
+  color: c.ink[4],
+})
+
 export const extSaldo = style({
   fontFamily: recon.font.mono,
   fontSize: fs.md,
@@ -3198,6 +3195,16 @@ export const mmSideK = style({
   fontSize: '0.71875rem',
   color: c.ink[5],
   flexShrink: 0,
+})
+// Linha de título no modal do lote: nome longo quebra; o valor nunca quebra.
+export const mmMultiName = style([mmSideK, { flexShrink: 1, minInlineSize: 0 }])
+export const mmMultiValue = style({
+  fontFamily: recon.font.mono,
+  fontSize: fs.xs,
+  fontWeight: recon.weight.medium,
+  color: c.ink[2],
+  flexShrink: 0,
+  whiteSpace: 'nowrap',
 })
 export const mmSideV = style({
   fontFamily: recon.font.mono,
