@@ -258,6 +258,8 @@ export type ListPayableTitlesInput = Readonly<{
   supplierRef?: string
   dueFrom?: string
   dueTo?: string
+  issuedFrom?: string // CAS-43: emissão do documento (filhos herdam), janela inclusiva
+  issuedTo?: string
   page: number
   pageSize: number
 }>
@@ -295,6 +297,8 @@ export type PayableCountsInput = Readonly<{
   supplierRef?: string
   dueFrom?: string
   dueTo?: string
+  issuedFrom?: string // CAS-43: mesmo recorte da lista
+  issuedTo?: string
   type?: string
 }>
 export type PayableCounts = Readonly<{

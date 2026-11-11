@@ -720,41 +720,62 @@ export const mapDocumentDetail = (
 })
 
 // ── Exportar (client-side, padrão Contratos) ──────────────────────────────────
-// + Pagamento (data da baixa, #231 — já no GridRow) e uma linha de TOTAL do Líquido ao final. Tudo
-// derivado das linhas que o cliente já tem (sem backend): o paidAt vem no /payable-titles, a soma é local.
-const CSV_HEADERS = [
-  'Tipo',
-  'Documento',
-  'Fornecedor',
-  'Vencimento',
-  'Pagamento',
-  'Líquido',
-  'Status',
-] as const
+// CAS-41: cabeçalho e células DERIVADOS do `COLUMNS` — o CSV tinha 7 colunas fixas enquanto o grid tinha
+// 11 (faltavam Contrato, Forma de pagamento, Emissão e Bruto). Coluna nova no grid entra no CSV sozinha; o
+// `switch` exaustivo em `csvCellOf` faz o typecheck cobrar a célula dela.
+// CAS-42: é o `COLUMNS` INTEIRO, nunca o recorte do seletor de colunas — esconder uma coluna é preferência
+// de leitura da tela, não um corte no arquivo exportado.
+// Mantém a linha de TOTAL do Líquido ao final. Tudo derivado das linhas que o cliente já tem.
 
-/** Monta o CSV (`;`) das linhas exibidas + linha de total do Líquido — PURO. Escapa aspas (RFC 4180). */
-export const buildDocumentsCsv = (rows: readonly GridRow[]): string => {
+/** Texto da célula do CSV para uma coluna do grid — o mesmo dado da tela, sem a decoração visual. */
+const csvCellOf = (r: GridRow, key: ColumnKey, t: (key: string) => string): string => {
+  switch (key) {
+    case 'type':
+      return r.type
+    case 'documentNumber':
+      return r.documentNumber
+    case 'supplier':
+      return r.supplier
+    case 'contract':
+      return r.contract
+    case 'paymentMethod':
+      return r.paymentMethod !== null ? t(`financial.paymentMethod.${r.paymentMethod}`) : DASH
+    case 'emissao':
+      return r.emissao
+    case 'due':
+      return r.due
+    case 'pagamento':
+      return r.pagamento
+    case 'gross':
+      return r.gross
+    case 'net':
+      return r.net
+    case 'status':
+      return r.status
+  }
+}
+
+/**
+ * Monta o CSV (`;`) das linhas recebidas, com TODAS as colunas do grid, + linha de total do Líquido — PURO.
+ * `t` resolve os rótulos (cabeçalho e forma de pagamento) pelo mesmo catálogo da tela. Escapa aspas (RFC 4180).
+ */
+export const buildDocumentsCsv = (rows: readonly GridRow[], t: (key: string) => string): string => {
   const cell = (v: string): string => `"${v.replace(/"/g, '""')}"`
-  const lines = rows.map((r) =>
-    [r.type, r.documentNumber, r.supplier, r.due, r.pagamento, r.net, r.status].map(cell).join(';'),
-  )
+  const header = COLUMNS.map((c) => t(c.labelTag)).join(';')
+  const lines = rows.map((r) => COLUMNS.map((c) => cell(csvCellOf(r, c.key, t))).join(';'))
   // Total do Líquido = soma dos centavos das linhas exportadas (ignora linhas sem valor).
   const totalCents = rows.reduce(
     (acc, r) => acc + (r.netCents !== null ? Number.parseInt(r.netCents, 10) || 0 : 0),
     0,
   )
-  const totalRow = [
-    '',
-    '',
-    `Total (${String(rows.length)} títulos)`,
-    '',
-    '',
-    centsToBRL(String(totalCents)),
-    '',
-  ]
+  const totalRow = COLUMNS.map((c) => {
+    if (c.key === 'supplier') return `Total (${String(rows.length)} títulos)`
+    if (c.key === 'net') return centsToBRL(String(totalCents))
+    return ''
+  })
     .map(cell)
     .join(';')
-  return [CSV_HEADERS.join(';'), ...lines, totalRow].join('\n')
+  return [header, ...lines, totalRow].join('\n')
 }
 
 /** Carimbo YYYY-MM-DD p/ o nome do arquivo. O relógio mora na view-model (não na view — §XI). */
