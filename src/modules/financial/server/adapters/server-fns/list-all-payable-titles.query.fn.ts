@@ -7,8 +7,8 @@
  *    #167 ficou no `GET /documents`, endpoint que o grid abandonou no #201 ao virar title-centric;
  *  - e, sobretudo, a **remessa**: título que ficou na página 2 não pode sumir do lote em silêncio.
  *
- * É interino por construção. Quando o `/payable-titles` aceitar `q` (+ `issuedFrom/To`), o filtro volta
- * para o servidor e esta fn sai — o custo de varrer as páginas some junto.
+ * É interino por construção. Quando o `/payable-titles` aceitar `q`, a busca volta para o servidor e esta
+ * fn sai — o custo de varrer as páginas some junto. (`issuedFrom/To` já é aceito desde o CAS-43.)
  *
  * RBAC `financial:read` no core-api (403 → 'forbidden'), igual à listagem paginada.
  */

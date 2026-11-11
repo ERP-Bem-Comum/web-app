@@ -12,6 +12,7 @@ import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
 import {
   contasAPagarQueryOptions,
   allPayableTitlesQueryOptions,
+  allDocumentsQueryOptions,
   payableCountsQueryOptions,
 } from './contas-a-pagar.query.ts'
 import { partnersMapQueryOptions } from './partners-map.binding.ts'
@@ -108,7 +109,8 @@ export function useContasAPagar(): ContasAPagarBinding {
       viewMode === 'document',
     ), // desligada: grid é só por título
   )
-  // #201: listagem por título — mesmos filtros (sem emissão, que o endpoint não aceita).
+  // #201: listagem por título — mesmos filtros. CAS-43: inclusive a Emissão, que o `/payable-titles`
+  // passou a aceitar (antes o filtro aparecia habilitado e era ignorado: grid e CSV fora do período).
   //
   // specs/101: busca o conjunto COMPLETO do filtro, não a página. A paginação virou recorte de EXIBIÇÃO
   // (client-side, na page): a busca textual e o filtro de imposto são client-side e antes só enxergavam a
@@ -123,6 +125,8 @@ export function useContasAPagar(): ContasAPagarBinding {
         supplierRef: filters.fornecedor,
         dueFrom: filters.vencimento?.from,
         dueTo: filters.vencimento?.to,
+        issuedFrom: filters.emissao?.from,
+        issuedTo: filters.emissao?.to,
       },
       viewMode === 'title',
     ),
@@ -130,12 +134,25 @@ export function useContasAPagar(): ContasAPagarBinding {
 
   // #201-fix: rascunho (Draft) não gera títulos → invisível no grid title-centric. Buscamos os documentos
   // Draft à parte e trocamos a fonte SÓ no chip "Rascunho" (fora do Todos: são muitos/parciais e
-  // soterrariam os títulos reais). Paginação normal do /documents?status=Draft.
+  // soterrariam os títulos reais).
+  //
+  // CAS-43/44: o conjunto COMPLETO, não a página — a paginação da tela é recorte de exibição (specs/101) e
+  // o Exportar CSV usa o conjunto inteiro; com a página como fonte, o CSV do chip saía só com ela. E com o
+  // filtro INTEIRO (vencimento/emissão/tipo, não só fornecedor): o `/counts` já aplica esse recorte no
+  // `draft`, então o número do chip e as linhas passam a contar a mesma coisa.
   const draftMode: DraftMergeMode =
     viewMode === 'title' && selectedStatus === 'Rascunho' ? 'rascunho' : 'none'
   const drafts = useQuery(
-    contasAPagarQueryOptions(
-      { page, pageSize, status: 'Rascunho', supplierRef: filters.fornecedor },
+    allDocumentsQueryOptions(
+      {
+        status: 'Rascunho',
+        type: isRetentionTipo(filters.tipo) ? undefined : filters.tipo,
+        supplierRef: filters.fornecedor,
+        dueFrom: filters.vencimento?.from,
+        dueTo: filters.vencimento?.to,
+        issuedFrom: filters.emissao?.from,
+        issuedTo: filters.emissao?.to,
+      },
       draftMode === 'rascunho',
     ),
   )
@@ -146,6 +163,8 @@ export function useContasAPagar(): ContasAPagarBinding {
     supplierRef: filters.fornecedor,
     dueFrom: filters.vencimento?.from,
     dueTo: filters.vencimento?.to,
+    issuedFrom: filters.emissao?.from, // CAS-43: o mesmo recorte da lista → chip e grid batem
+    issuedTo: filters.emissao?.to,
     type: isRetentionTipo(filters.tipo) ? undefined : filters.tipo,
   }
   const counts = useQuery(payableCountsQueryOptions(countFilters, viewMode === 'title'))

@@ -13,6 +13,7 @@ import {
   createListDocuments,
   createListPayableTitles,
   createListAllPayableTitles,
+  createListAllDocuments,
   createGetPayableCounts,
   createGetDocument,
   createGetDocumentSourceFile,
@@ -45,6 +46,8 @@ const build = () => {
     listPayableTitles: createListPayableTitles({ client }),
     // specs/101: conjunto completo do filtro (busca/seleção/remessa não podem enxergar só a página).
     listAllPayableTitles: createListAllPayableTitles({ client }),
+    // CAS-43/44: todos os rascunhos do filtro (chip "Rascunho") — o export não pode sair só com a página.
+    listAllDocuments: createListAllDocuments({ client }),
     getPayableCounts: createGetPayableCounts({ client }),
     getDocument: createGetDocument({ client }),
     getDocumentSourceFile: createGetDocumentSourceFile({ client }),

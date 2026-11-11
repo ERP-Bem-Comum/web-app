@@ -39,6 +39,19 @@ export const allPayableTitlesQueryOptions = (
   staleTime: 30_000,
 })
 
+// CAS-43/44: conjunto COMPLETO de documentos do filtro (rascunhos do chip "Rascunho"). Key sem
+// page/pageSize pelo mesmo motivo do `allPayableTitlesQueryOptions`; aninhada sob `documents/list` para as
+// mutations (criar/excluir/aprovar) invalidarem junto.
+export const allDocumentsQueryOptions = (
+  input: Omit<ListDocumentsInput, 'page' | 'pageSize'>,
+  enabled: boolean,
+) => ({
+  queryKey: ['financial', 'documents', 'list', 'all', input] as const,
+  queryFn: () => financialRepository.listAllDocuments({ ...input, page: 1, pageSize: 100 }),
+  enabled,
+  staleTime: 30_000,
+})
+
 // #536: contagem agregada por status (chips). Key aninhada sob `documents/list` — prefixo que TODAS as
 // mutations (criar/excluir/aprovar/baixar) invalidam → os contadores atualizam junto com o grid.
 export const payableCountsQueryOptions = (input: PayableCountsInput, enabled: boolean) => ({
