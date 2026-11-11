@@ -1,9 +1,16 @@
 # 132 — CSV do Contas a Pagar com todas as colunas e o filtro inteiro
 
-**Tamanho:** M · **Status:** front implementado, aguardando o core-api · **Data:** 2026-11-11
-**Linear:** CAS-40 (sub-issues CAS-41 a CAS-44)
-**Backend:** core-api `feat/payable-titles-issued-filter` — `issuedFrom`/`issuedTo` em
-`GET /financial/payable-titles` e `/payable-titles/counts`. **Merge do core-api primeiro.**
+**Tamanho:** M · **Status:** entregue (em teste no QA) · **Data:** 2026-11-11
+**Linear:** CAS-40 (sub-issues CAS-41 a CAS-44), em "Teste"
+**Backend:** core-api#1111 (merge na dev em `a3624fc5`): `issuedFrom`/`issuedTo` em
+`GET /financial/payable-titles` e `/payable-titles/counts`.
+**Front:** web-app#446 (merge na develop em `ab225508`), depois do core-api.
+
+**Em aberto com a P.O.** (registrado no CAS-40/CAS-44):
+
+- Com linhas selecionadas, o CSV exporta só a seleção. Falta confirmar se é o comportamento esperado.
+- Com Tipo = imposto, a lista de rascunhos fica vazia, mas o número do chip Rascunho conta todos (o
+  `/counts` vai sem `type`). Comportamento anterior a esta spec.
 
 ## Pedido
 
@@ -39,7 +46,7 @@ Exportar no CSV todas as colunas do grid, respeitando os filtros e considerando 
 ## Ordem de deploy
 
 Sem o core-api novo, o front é inofensivo: o core-api descarta os params desconhecidos e o filtro de
-Emissão continua ignorado, como hoje. Por isso o core-api entra primeiro.
+Emissão continua ignorado, como antes. Por isso o core-api entrou primeiro (cumprido em 11/11).
 
 ## Testes
 
