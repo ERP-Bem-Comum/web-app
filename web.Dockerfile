@@ -2,7 +2,7 @@
 #
 # Front + BFF (TanStack Start + Nitro) — multi-stage. Runtime CHAINGUARD/WOLFI (ADR-0015).
 #
-#   base    → node 24 (toolchain de build) + pnpm via corepack          [digest-pin]
+#   base    → node 24.22 (toolchain de build) + pnpm via corepack       [digest-pin]
 #   deps    → pnpm install (frozen, ignore-scripts) c/ supply-chain do pnpm-workspace.yaml (ADR-0003)
 #   build   → pnpm build → .output (servidor Nitro node-server, SELF-CONTAINED, sem node_modules)
 #   dev     → target de desenvolvimento (HMR; bind-mount de ./src vem do override do ERP-INFRA)
@@ -16,12 +16,14 @@
 # Healthcheck via `node` (sem curl/wget). Debug do container: via tailnet + logs/traces (ADR-0019).
 #
 # Atualizar digests:
-#   docker buildx imagetools inspect node:24-bookworm-slim --format '{{.Manifest.Digest}}'
+#   docker buildx imagetools inspect node:24.22-bookworm-slim --format '{{.Manifest.Digest}}'
 #   docker buildx imagetools inspect cgr.dev/chainguard/node:latest --format '{{.Manifest.Digest}}'
+# Digests de 2026-11-12 (SGM #110338 — CAs eMudhra comprometidas; só Node novo remove a confiança):
+#   base    → Node 24.22.3   ·   runtime → Node 26.13.1 (pacote apk nodejs-26 26.13.1-r0)
 # ─────────────────────────────────────────────────────────────────────────────
 
 # ── Stage 1 — base (toolchain) ───────────────────────────────────────────────
-FROM node:24-bookworm-slim@sha256:b31e7a42fdf8b8aa5f5ed477c72d694301273f1069c5a2f71d53c6482e99a2fc AS base
+FROM node:24.22-bookworm-slim@sha256:dc26ae92c9fb15cf6b1d63e20f0944b2efe0f115b20e00be48fb23fceb061c54 AS base
 # packageManager em package.json fixa a versão; corepack lê dela.
 RUN corepack enable && corepack prepare pnpm@11.5.0 --activate
 WORKDIR /app
@@ -48,7 +50,7 @@ COPY . .
 CMD ["pnpm", "dev", "--host", "0.0.0.0", "--port", "3000"]
 
 # ── Stage 5 — runtime (produção, distroless) ─────────────────────────────────
-FROM cgr.dev/chainguard/node:latest@sha256:9747b272a546629b130ff3d3af50892bbf4b0955282ed4f7809d9aaac269222f AS runtime
+FROM cgr.dev/chainguard/node:latest@sha256:8828c6e74c782babb020e684f026a7747d91a0699e7f2a2163f905c47f65e4da AS runtime
 LABEL org.opencontainers.image.title="bemcomum-web" \
       org.opencontainers.image.description="ERP Bem Comum — Front + BFF (TanStack Start)." \
       org.opencontainers.image.vendor="Envolve / Bem Comum" \
