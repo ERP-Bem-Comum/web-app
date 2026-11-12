@@ -56,6 +56,8 @@ const period: AccountStatementPeriod = {
   ],
 }
 
+const emission = { at: '06/11/2026 19:28', userName: 'Pessoa Emissora' }
+
 const readyState: ReportViewState = {
   tag: 'ready',
   report: buildReconciliationReport(period, '2026-05-01', '2026-05-31'),
@@ -72,31 +74,51 @@ describe('ReconciliationReportView (#144)', () => {
         state={readyState}
         accountLabel="Conta Corrente BB"
         accountNumber="Banco do Brasil · Ag. 1234 · C/C 56789-0"
+        accountDocument="12345678000190"
+        emission={emission}
       />,
     )
     expect(screen.getByText(tr('financial.recon.report.title'))).toBeTruthy()
     expect(screen.getByText('Conta Corrente BB')).toBeTruthy()
     expect(screen.getByText('Banco do Brasil · Ag. 1234 · C/C 56789-0')).toBeTruthy()
-    expect(screen.getByText('01/05/2026 – 31/05/2026')).toBeTruthy()
+    expect(screen.getByText('01/05/2026 a 31/05/2026')).toBeTruthy()
+    expect(screen.getByAltText('Bem Comum')).toBeTruthy()
+    expect(screen.getByText(/12\.345\.678\/0001-90/)).toBeTruthy()
+    expect(screen.getByText('06/11/2026 19:28')).toBeTruthy()
+    expect(screen.getByText('Pessoa Emissora')).toBeTruthy()
     // A impressão migrou para o item PDF do menu de export → a view não tem mais botão próprio.
     expect(screen.queryByRole('button', { name: tr('financial.recon.report.print') })).toBeNull()
   })
 
   it('omite a linha do NÚMERO quando vazia (conta não resolvida — chrome honesto)', () => {
-    render(<ReconciliationReportView state={readyState} accountLabel="Conta X" accountNumber="" />)
+    render(
+      <ReconciliationReportView
+        state={readyState}
+        accountLabel="Conta X"
+        accountNumber=""
+        accountDocument=""
+        emission={emission}
+      />,
+    )
     expect(screen.getByText('Conta X')).toBeTruthy()
     expect(screen.queryByText('Banco do Brasil · Ag. 1234 · C/C 56789-0')).toBeNull()
   })
 
-  it('renderiza os 6 totalizadores (rótulos + valores em BRL com NBSP)', () => {
-    render(<ReconciliationReportView state={readyState} accountLabel="Conta X" accountNumber="" />)
+  it('renderiza os 4 cartões de saldo (rótulos + valores em BRL com NBSP)', () => {
+    render(
+      <ReconciliationReportView
+        state={readyState}
+        accountLabel="Conta X"
+        accountNumber=""
+        accountDocument=""
+        emission={emission}
+      />,
+    )
     for (const key of [
       'financial.recon.report.opening',
       'financial.recon.report.closing',
       'financial.recon.report.totalIn',
       'financial.recon.report.totalOut',
-      'financial.recon.report.reconciled',
-      'financial.recon.report.pending',
     ]) {
       expect(screen.getByText(tr(key))).toBeTruthy()
     }
@@ -106,10 +128,19 @@ describe('ReconciliationReportView (#144)', () => {
   })
 
   it('renderiza a tabela de movimentos (cabeçalhos + linhas + status)', () => {
-    render(<ReconciliationReportView state={readyState} accountLabel="Conta X" accountNumber="" />)
+    render(
+      <ReconciliationReportView
+        state={readyState}
+        accountLabel="Conta X"
+        accountNumber=""
+        accountDocument=""
+        emission={emission}
+      />,
+    )
     expect(screen.getByText(tr('financial.recon.report.colDate'))).toBeTruthy()
     expect(screen.getByText(tr('financial.recon.report.colDescription'))).toBeTruthy()
-    expect(screen.getByText(tr('financial.recon.report.colValue'))).toBeTruthy()
+    expect(screen.getByText(tr('financial.recon.report.colIn'))).toBeTruthy()
+    expect(screen.getByText(tr('financial.recon.report.colOut'))).toBeTruthy()
     expect(screen.getByText(tr('financial.recon.report.colBalance'))).toBeTruthy()
     expect(screen.getByText(tr('financial.recon.report.colStatus'))).toBeTruthy()
     expect(screen.getByText('Recebido ACME')).toBeTruthy()
@@ -119,7 +150,15 @@ describe('ReconciliationReportView (#144)', () => {
   })
 
   it('estado honesto: sem período → "Período não informado" (sem totalizadores)', () => {
-    render(<ReconciliationReportView state={{ tag: 'no-period' }} accountLabel="Conta X" accountNumber="" />)
+    render(
+      <ReconciliationReportView
+        state={{ tag: 'no-period' }}
+        accountLabel="Conta X"
+        accountNumber=""
+        accountDocument=""
+        emission={emission}
+      />,
+    )
     expect(screen.getByText(tr('financial.recon.report.noPeriod'))).toBeTruthy()
     expect(screen.queryByText(tr('financial.recon.report.opening'))).toBeNull()
   })
@@ -129,9 +168,86 @@ describe('ReconciliationReportView (#144)', () => {
       tag: 'ready',
       report: buildReconciliationReport({ ...period, movements: [] }, '2026-05-01', '2026-05-31'),
     }
-    render(<ReconciliationReportView state={emptyState} accountLabel="Conta X" accountNumber="" />)
+    render(
+      <ReconciliationReportView
+        state={emptyState}
+        accountLabel="Conta X"
+        accountNumber=""
+        accountDocument=""
+        emission={emission}
+      />,
+    )
     expect(screen.getByText(tr('financial.recon.report.emptyMovements'))).toBeTruthy()
     // Totalizadores continuam presentes (cabeçalho + números reais do período).
     expect(screen.getByText(tr('financial.recon.report.opening'))).toBeTruthy()
+  })
+
+  it('lote: títulos abertos sob a transação, tag, total e nota; sem quem conciliou', () => {
+    const batchState: ReportViewState = {
+      tag: 'ready',
+      report: buildReconciliationReport(
+        {
+          ...period,
+          companyName: 'ASSOCIACAO BEM COMUM',
+          movements: [
+            {
+              id: 'lote',
+              fitid: '',
+              date: '2026-08-27',
+              movement: 'Debit',
+              entryType: 'Other',
+              payeeName: '',
+              memo: 'TED FORNECEDOR - DOC 24184489',
+              valueCents: '270000',
+              balanceAfterCents: '100000',
+              reconciliationStatus: 'Reconciled',
+              reconciliation: {
+                reconciliationId: 'rec',
+                titles: [
+                  {
+                    payableId: 'a',
+                    documentNumber: 'NF 101',
+                    payeeName: 'Fornecedor Alfa',
+                    retentionType: null,
+                    dueDate: '2026-08-27',
+                    reconciledValueCents: '120000',
+                  },
+                  {
+                    payableId: 'b',
+                    documentNumber: 'NF 202',
+                    payeeName: 'Fornecedor Beta',
+                    retentionType: null,
+                    dueDate: '2026-08-27',
+                    reconciledValueCents: '150000',
+                  },
+                ],
+              },
+            },
+          ],
+        },
+        '2026-08-01',
+        '2026-08-31',
+      ),
+    }
+    render(
+      <ReconciliationReportView
+        state={batchState}
+        accountLabel="Conta X"
+        accountNumber=""
+        accountDocument=""
+        emission={emission}
+      />,
+    )
+    expect(screen.getByText('ASSOCIACAO BEM COMUM')).toBeTruthy()
+    expect(screen.getByText('NF 101')).toBeTruthy()
+    expect(screen.getByText('Fornecedor Alfa')).toBeTruthy()
+    // A linha do lote traz só o histórico do extrato, sem rótulo nem quantidade.
+    expect(screen.getByText('TED FORNECEDOR - DOC 24184489')).toBeTruthy()
+    expect(screen.getByText('Conciliado*')).toBeTruthy()
+    expect(screen.getByText('Fornecedor Beta')).toBeTruthy()
+    expect(screen.getByText(tr('financial.recon.report.batch.total'))).toBeTruthy()
+    expect(screen.getByText(`* ${tr('financial.recon.report.batch.note')}`)).toBeTruthy()
+    // Sem coluna Entrada neste período (só saídas).
+    expect(screen.queryByText(tr('financial.recon.report.colIn'))).toBeNull()
   })
 })

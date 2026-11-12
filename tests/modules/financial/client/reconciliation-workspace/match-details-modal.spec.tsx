@@ -57,8 +57,6 @@ describe('MatchDetailsModal — 1 saída → N títulos', () => {
               titleLine({ valueBRL: 'R$ 200,00' }),
               titleLine({ valueBRL: 'R$ 242,00' }),
             ],
-            differenceBRL: 'R$ 190,00',
-            differenceTag: 'financial.recon.match.diffSurplus',
             totalBRL: 'R$ 932,00',
           },
         })}
@@ -94,8 +92,6 @@ describe('MatchDetailsModal — 1 saída → N títulos', () => {
               }),
               titleLine({ valueBRL: 'R$ 200,00', name: 'Padaria Central ME', documento: 'DANFE 88' }),
             ],
-            differenceBRL: null,
-            differenceTag: '',
             totalBRL: 'R$ 500,00',
           },
         })}
@@ -130,8 +126,6 @@ describe('MatchDetailsModal — 1 saída → N títulos', () => {
                 documento: '3500',
               }),
             ],
-            differenceBRL: null,
-            differenceTag: '',
             totalBRL: 'R$ 323,00',
           },
         })}

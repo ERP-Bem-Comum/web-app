@@ -342,9 +342,11 @@ export const accountStatementPeriodToModel = (
       valueCents: ln.valueCents,
       balanceAfterCents: ln.runningBalanceCents,
       reconciliationStatus: mapReconStatus(ln.reconciliationStatus),
+      reconciliation: ln.reconciliation ?? null,
     })),
   )
   return ok({
+    companyName: d.companyName ?? null,
     openingBalanceCents: d.openingBalanceCents,
     closingBalanceCents: d.closingBalanceCents,
     totalInCents: sumBy((x) => x.inCents),

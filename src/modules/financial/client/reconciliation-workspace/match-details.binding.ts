@@ -29,6 +29,8 @@ export type MatchDetailsBinding = Readonly<{
   view: MatchDetailsView | null
   reconciliationId: string | null
   openFor: (tx: StatementTransaction) => void
+  /** Spec 132: modal individual de um título do lote. O Desfazer fica no modal do lote, que desfaz tudo. */
+  openForTitle: (tx: StatementTransaction, payableId: string) => void
   close: () => void
 }>
 
@@ -41,6 +43,7 @@ export function useMatchDetails(
   sessionCounterpartyFor: (transactionId: string) => string | null,
 ): MatchDetailsBinding {
   const [tx, setTx] = useState<StatementTransaction | null>(null)
+  const [focusedPayableId, setFocusedPayableId] = useState<string | null>(null)
   // Só busca a conciliação de transação conciliada (Reconciled/ManualEntry). Pending → sem lookup.
   const lookupTxId = tx !== null && tx.reconciliationStatus !== 'Pending' ? tx.id : null
   const lookupQuery = useQuery(transactionReconciliationQueryOptions(lookupTxId))
@@ -48,7 +51,9 @@ export function useMatchDetails(
 
   const audit = lookup !== null ? matchAuditFromLookup(lookup) : null
   // Conciliação 1 saída → N títulos: monta o lado "Título" com a lista de valores conciliados (#175 items).
-  const multi = lookup !== null ? buildMatchTitles(lookup, tx?.valueCents ?? null) : null
+  const focusedItem = lookup?.items.find((item) => item.payableId === focusedPayableId) ?? null
+  const multi =
+    lookup !== null && focusedPayableId === null ? buildMatchTitles(lookup, tx?.valueCents ?? null) : null
   // A forma da conciliação (match vs nova transação) vem do `type` da reconciliation, não do status da tx.
   const isManualEntry = lookup?.type === 'ManualEntry'
   const manualType = tx !== null ? sessionManualTypeFor(tx.id) : null
@@ -56,16 +61,20 @@ export function useMatchDetails(
   // Match 1:1 (1 título): o valor conciliado já vem no lookup (items[0]); acende o "Valor conciliado" do
   // lado Título. N:1 usa `multi`; manual usa o tx.
   const singleMatchValueCents =
-    !isManualEntry && lookup !== null && lookup.items.length === 1
-      ? (lookup.items[0]?.reconciledValueCents ?? null)
-      : null
+    focusedItem !== null
+      ? focusedItem.reconciledValueCents
+      : !isManualEntry && lookup !== null && lookup.items.length === 1
+        ? (lookup.items[0]?.reconciledValueCents ?? null)
+        : null
   // Match INDIVIDUAL (não-manual, 1 item): monta o lado Título com o item enriquecido no BFF (favorecido,
   // nº doc, vencimento — interim #172). Valor conciliado = reconciledValueCents do item (preferido ao valor
   // do extrato). Multiple/Partial e ManualEntry continuam com doc=null (renderizam como hoje).
   const singleDoc =
-    !isManualEntry && lookup !== null && lookup.items.length === 1
-      ? matchDocFromItem(lookup.items[0] ?? null, lookup.items[0]?.reconciledValueCents ?? null)
-      : null
+    focusedItem !== null
+      ? matchDocFromItem(focusedItem, focusedItem.reconciledValueCents)
+      : !isManualEntry && lookup !== null && lookup.items.length === 1
+        ? matchDocFromItem(lookup.items[0] ?? null, lookup.items[0]?.reconciledValueCents ?? null)
+        : null
   const view =
     tx === null
       ? null
@@ -80,7 +89,10 @@ export function useMatchDetails(
           singleMatchValueCents,
           lookup?.category ?? null,
         )
-  const reconciliationId = tx === null ? null : (sessionIdFor(tx.id) ?? lookup?.reconciliationId ?? null)
+  const reconciliationId =
+    tx === null || focusedPayableId !== null
+      ? null
+      : (sessionIdFor(tx.id) ?? lookup?.reconciliationId ?? null)
 
   return {
     open: tx !== null,
@@ -88,10 +100,16 @@ export function useMatchDetails(
     view,
     reconciliationId,
     openFor: (t) => {
+      setFocusedPayableId(null)
+      setTx(t)
+    },
+    openForTitle: (t, payableId) => {
+      setFocusedPayableId(payableId)
       setTx(t)
     },
     close: () => {
       setTx(null)
+      setFocusedPayableId(null)
     },
   }
 }
