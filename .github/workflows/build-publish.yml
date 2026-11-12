@@ -1,15 +1,24 @@
-name: build-publish-deploy (QA)
+name: build-publish (deploy suspenso)
 
-# Pipeline de QA: builda a imagem de produção (front + BFF, target `runtime` Chainguard), publica no GHCR
-# e DEPLOYA na VPS de QA — tudo num workflow só. O deploy é um job `needs: build-push` (mesmo run), NÃO um
-# `workflow_run` separado: aquele só dispara se o arquivo estiver na branch DEFAULT (main), o que quebrava
-# o auto-deploy enquanto a develop está à frente. O ambiente NUNCA compila — só puxa (ADR-0015/0018).
+# Builda a imagem de produção (front + BFF, target `runtime` Chainguard), escaneia com o Trivy e publica no
+# GHCR (`:sha-<curto>` e, com o gate verde, `:qa`).
+#
+# ⚠️ A ETAPA DE DEPLOY ESTÁ SUSPENSA (12/11/2026). Este workflow NÃO entrega a imagem em host nenhum. O
+# `name:` diz isso de propósito: o core-api aprendeu que um workflow chamado "deploy" verde sem deployar é
+# registro que mente (`core-api/.github/workflows/qa-image.yml`, suspenso em 19/08/2026 pelo mesmo motivo).
+#
+# Por que saiu: o job `deploy-qa` entrava na tailnet com `secrets.TS_AUTHKEY` e rodava `/opt/erp-qa/deploy.sh`
+# na VPS de QA (PBE). A chave venceu em 23/09/2026 (`invalid key: API key does not exist`), e o alvo é a
+# VPS PBE, que NÃO é a homologação: a homologação é da Codebit (AWS, acompanha a branch de QA) e não
+# depende deste job. Vermelho crônico que ninguém vai tratar treina o time a ignorar workflow vermelho.
+#
+# Restaurar: o job inteiro está em `git show 3828d537:.github/workflows/build-publish.yml` (rodava depois do
+# `build-push`, no mesmo run). Antes, gerar uma auth key nova com `tag:ci` e atualizar o segredo.
 #
 # Segurança (OWASP CI/CD Top 10 — ADR-0016/0018):
 #  - actions de terceiros PINADAS POR COMMIT SHA (CICD-SEC-8); a tag legível fica no comentário ao lado.
 #  - GITHUB_TOKEN de permissão mínima POR JOB; provenance + SBOM keyless via OIDC (id-token/attestations).
 #  - trigger = push em `develop` (branch de QA), NUNCA `pull_request` de fork com segredo (CICD-SEC-4).
-#  - deploy SEM segredo longevo: tailnet (auth key tag:ci → TS_AUTHKEY); SSH por identidade (CICD-SEC-6).
 #
 # Atualizar um SHA: gh api repos/<owner>/<action>/commits/<tag> --jq .sha
 
@@ -24,8 +33,8 @@ on:
   workflow_dispatch:
 
 concurrency:
-  # Serializa por ref e NÃO cancela em andamento — um deploy de QA jamais é abortado no meio (pushes
-  # rápidos enfileiram em vez de cancelar o deploy anterior).
+  # Serializa por ref e NÃO cancela em andamento — a promoção da `:qa` nunca é abortada no meio (pushes
+  # rápidos enfileiram em vez de cancelar a publicação anterior).
   group: build-publish-deploy-${{ github.ref }}
   cancel-in-progress: false
 
@@ -126,57 +135,6 @@ jobs:
           _(aviso automático do build-publish)_"
           num=$(gh issue list --repo "$GITHUB_REPOSITORY" --state open --search "build-publish falhou in:title" --json number --jq '.[0].number // empty')
           if [ -n "$num" ]; then gh issue comment "$num" --repo "$GITHUB_REPOSITORY" --body "$msg"; else gh issue create --repo "$GITHUB_REPOSITORY" --title "$title" --body "$msg"; fi
-
-  # ── Deploy QA ────────────────────────────────────────────────────────────────
-  # Roda APÓS o build-push (mesmo run → sem o `workflow_run`, que exigiria o arquivo na branch default).
-  # Só em `develop`. Entra no tailnet (auth key tag:ci) e roda o deploy.sh da VPS por SSH/identidade.
-  #
-  # PRÉ-REQUISITOS DE INFRA (configurados 2026-06-25 via Tailscale API):
-  #   1. ✅ Auth key tag:ci → secret TS_AUTHKEY. ⚠️ EXPIRA 2026-09-23 → rotacionar (issue #92).
-  #   2. ✅ ACL: ssh tag:ci → tag:cd-target (ubuntu); nó erp-bem-comum-qa = tag:cd-target.
-  #   3. ✅ Tailscale SSH na VPS.  4. ⚠️ /opt/erp-qa/ provisionado (ERP-INFRA/platform/vps-qa).
-  deploy-qa:
-    needs: build-push
-    runs-on: ubuntu-latest
-    if: ${{ github.ref == 'refs/heads/develop' }} # só a branch de QA deploya; outro ref só builda
-    permissions:
-      contents: read # least privilege: o deploy não precisa de packages/id-token/attestations
-      issues: write # p/ o aviso de expiração da TS_AUTHKEY abrir/comentar uma issue
-    steps:
-      # Aviso de expiração roda AQUI (no pipeline de push em develop) porque schedule/workflow_dispatch
-      # do GitHub só disparam da branch DEFAULT (main) — e os workflows vivem na develop. Cadência = deploys.
-      - name: Aviso de expiração da TS_AUTHKEY (<14d, NÃO bloqueia)
-        env:
-          GH_TOKEN: ${{ github.token }}
-          KEY_EXPIRY: '2026-09-23' # ⚠️ ATUALIZAR na rotação (runbook RB-008)
-        run: |
-          days=$(( ( $(date -u -d "$KEY_EXPIRY" +%s) - $(date -u +%s) ) / 86400 ))
-          echo "TS_AUTHKEY expira em $days dia(s) ($KEY_EXPIRY)."
-          if [ "$days" -le 14 ]; then
-            echo "::warning::TS_AUTHKEY expira em $days dia(s) ($KEY_EXPIRY) — rotacionar (RB-008, #92)."
-            msg="⏰ TS_AUTHKEY (deploy QA) expira em **$days dia(s)** ($KEY_EXPIRY). Rotacionar via RB-008 do runbook + atualizar KEY_EXPIRY no build-publish.yml. (aviso automático do deploy)"
-            num=$(gh issue list --repo "$GITHUB_REPOSITORY" --state open --search "rotacionar TS_AUTHKEY in:title" --json number --jq '.[0].number // empty')
-            if [ -n "$num" ]; then gh issue comment "$num" --repo "$GITHUB_REPOSITORY" --body "$msg"; else gh issue create --repo "$GITHUB_REPOSITORY" --title "⏰ Rotacionar TS_AUTHKEY ($KEY_EXPIRY)" --body "$msg"; fi
-          fi
-
-      - name: Conectar na tailnet (efêmero, tag:ci)
-        uses: tailscale/github-action@306e68a486fd2350f2bfc3b19fcd143891a4a2d8 # v4.1.2
-        with:
-          authkey: ${{ secrets.TS_AUTHKEY }} # já é tag:ci + ephemeral → dispensa oauth/tags
-
-      - name: Deploy na VPS via Tailscale SSH (sem chave longeva)
-        run: |
-          # Identidade via tailnet/ACL (Tailscale SSH) — sem chave SSH no repo (CICD-SEC-6). deploy.sh faz
-          # `docker compose pull` da :qa + up --wait; sai !=0 se um container não ficar healthy → job vermelho.
-          # Auto-cura de disco (VPS de 10 GB): prune ANTES do pull — NÃO usa --volumes (MySQL intacto).
-          ssh -o StrictHostKeyChecking=accept-new ubuntu@erp-bem-comum-qa \
-            'docker system prune -af && /opt/erp-qa/deploy.sh'
-
-      - name: Smoke-check pós-deploy (/ready do container web)
-        run: |
-          # O `up --wait` garante /health (liveness). Aqui validamos /ready (config + sonda /api/v2 do core-api)
-          # DENTRO do container web → pega CORE_API_URL ruim / core-api fora ANTES de dar o deploy como verde.
-          ssh -o StrictHostKeyChecking=accept-new ubuntu@erp-bem-comum-qa "cd /opt/erp-qa && docker compose exec -T web node -e 'fetch(\"http://127.0.0.1:3000/ready\").then(async r=>{console.log(\"ready\", r.status, await r.text()); process.exit(r.ok ? 0 : 1)}).catch(e => {console.error(e); process.exit(1)})'"
 
 # TODO produção (AWS — ADR-0018): job `deploy-prod` com `permissions.id-token: write` +
 # aws-actions/configure-aws-credentials (assume-role OIDC, SEM chave longeva), quando a infra de prod
