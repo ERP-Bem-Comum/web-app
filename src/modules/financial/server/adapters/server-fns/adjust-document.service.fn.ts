@@ -18,7 +18,7 @@ export type AdjustDocumentFnResult =
   | Readonly<{ ok: false; error: FinancialError; message: string | null }>
 
 export const adjustDocumentFn = createServerFn({ method: 'POST' })
-  .inputValidator(AdjustDocumentInputSchema)
+  .validator(AdjustDocumentInputSchema)
   .handler(async ({ data }): Promise<AdjustDocumentFnResult> => {
     const user = await getCurrentUserFn()
     if (user === null) return { ok: false, error: 'unauthorized', message: null }

@@ -16,11 +16,10 @@ import type { PartnersError } from '#modules/partners/server/domain/errors/partn
 const ExportCollaboratorHistoryInputSchema = z.object({ id: z.uuid() })
 
 export type ExportCollaboratorHistoryFnResult =
-  | Readonly<{ ok: true; data: PartnerExportFile }>
-  | Readonly<{ ok: false; error: PartnersError }>
+  Readonly<{ ok: true; data: PartnerExportFile }> | Readonly<{ ok: false; error: PartnersError }>
 
 export const exportCollaboratorHistoryFn = createServerFn({ method: 'GET' })
-  .inputValidator(ExportCollaboratorHistoryInputSchema)
+  .validator(ExportCollaboratorHistoryInputSchema)
   .handler(async ({ data }): Promise<ExportCollaboratorHistoryFnResult> => {
     const user = await getCurrentUserFn()
     if (user === null) return { ok: false, error: 'unauthorized' }

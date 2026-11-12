@@ -13,11 +13,10 @@ import type { BatchResult } from '#modules/financial/server/domain/reconciliatio
 import type { ReconciliationError } from '#modules/financial/server/domain/errors/reconciliation.errors.ts'
 
 export type BatchReconcileFnResult =
-  | Readonly<{ ok: true; data: BatchResult }>
-  | Readonly<{ ok: false; error: ReconciliationError }>
+  Readonly<{ ok: true; data: BatchResult }> | Readonly<{ ok: false; error: ReconciliationError }>
 
 export const batchReconcileFn = createServerFn({ method: 'POST' })
-  .inputValidator(BatchReconcileInputSchema)
+  .validator(BatchReconcileInputSchema)
   .handler(async ({ data }): Promise<BatchReconcileFnResult> => {
     const user = await getCurrentUserFn()
     if (user === null) return { ok: false, error: 'unauthorized' }

@@ -18,7 +18,7 @@ export type GetCounterpartSuggestionsFnResult =
   | Readonly<{ ok: false; error: ReconciliationError }>
 
 export const getCounterpartSuggestionsFn = createServerFn({ method: 'GET' })
-  .inputValidator(GetCounterpartSuggestionsInputSchema)
+  .validator(GetCounterpartSuggestionsInputSchema)
   .handler(async ({ data }): Promise<GetCounterpartSuggestionsFnResult> => {
     const user = await getCurrentUserFn()
     if (user === null) return { ok: false, error: 'unauthorized' }

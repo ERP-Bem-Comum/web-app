@@ -18,13 +18,12 @@ import type { DocumentListResponse } from '#modules/financial/server/domain/docu
 import type { FinancialError } from '#modules/financial/server/domain/errors/financial.errors.ts'
 
 export type ListAllDocumentsFnResult =
-  | Readonly<{ ok: true; data: DocumentListResponse }>
-  | Readonly<{ ok: false; error: FinancialError }>
+  Readonly<{ ok: true; data: DocumentListResponse }> | Readonly<{ ok: false; error: FinancialError }>
 
 export const listAllDocumentsFn = createServerFn({ method: 'GET' })
   // Reusa o schema da listagem paginada: os FILTROS são os mesmos; `page`/`pageSize` são ignorados pelo
   // adapter (que varre com o teto do core-api).
-  .inputValidator(ListDocumentsInputSchema)
+  .validator(ListDocumentsInputSchema)
   .handler(async ({ data }): Promise<ListAllDocumentsFnResult> => {
     const user = await getCurrentUserFn()
     if (user === null) return { ok: false, error: 'unauthorized' }

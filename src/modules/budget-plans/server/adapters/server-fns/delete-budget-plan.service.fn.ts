@@ -17,11 +17,10 @@ import { PlanIdInputSchema } from '#modules/budget-plans/server/adapters/budget-
 import type { BudgetPlansError } from '#modules/budget-plans/server/domain/errors/budget-plans.errors.ts'
 
 export type DeleteBudgetPlanFnResult =
-  | Readonly<{ ok: true }>
-  | Readonly<{ ok: false; error: BudgetPlansError }>
+  Readonly<{ ok: true }> | Readonly<{ ok: false; error: BudgetPlansError }>
 
 export const deleteBudgetPlanFn = createServerFn({ method: 'POST' })
-  .inputValidator(PlanIdInputSchema)
+  .validator(PlanIdInputSchema)
   .handler(async ({ data }): Promise<DeleteBudgetPlanFnResult> => {
     const user = await getCurrentUserFn()
     if (user === null) return { ok: false, error: 'unauthorized' }

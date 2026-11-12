@@ -13,11 +13,10 @@ import type { PeriodClosed } from '#modules/financial/server/domain/reconciliati
 import type { ReconciliationError } from '#modules/financial/server/domain/errors/reconciliation.errors.ts'
 
 export type ClosePeriodFnResult =
-  | Readonly<{ ok: true; data: PeriodClosed }>
-  | Readonly<{ ok: false; error: ReconciliationError }>
+  Readonly<{ ok: true; data: PeriodClosed }> | Readonly<{ ok: false; error: ReconciliationError }>
 
 export const closeReconciliationPeriodFn = createServerFn({ method: 'POST' })
-  .inputValidator(ClosePeriodInputSchema)
+  .validator(ClosePeriodInputSchema)
   .handler(async ({ data }): Promise<ClosePeriodFnResult> => {
     const user = await getCurrentUserFn()
     if (user === null) return { ok: false, error: 'unauthorized' }

@@ -30,7 +30,7 @@ const ApprovedPlanItemSchema = z.object({
   version: z.string().trim(),
   programName: z.string().trim(),
   // `parentId` != null = CENÁRIO (versão-filha) — excluído da soma p/ não duplicar o plano-pai.
-  parentId: z.string().trim().nullable().optional(),
+  parentId: z.string().trim().nullish(),
 })
 
 export const ApprovedPlansResponseSchema = z.object({

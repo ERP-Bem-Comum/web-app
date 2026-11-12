@@ -14,11 +14,10 @@ import type { AccountStatementPeriod } from '#modules/financial/server/domain/re
 import type { ReconciliationError } from '#modules/financial/server/domain/errors/reconciliation.errors.ts'
 
 export type GetAccountStatementPeriodFnResult =
-  | Readonly<{ ok: true; data: AccountStatementPeriod }>
-  | Readonly<{ ok: false; error: ReconciliationError }>
+  Readonly<{ ok: true; data: AccountStatementPeriod }> | Readonly<{ ok: false; error: ReconciliationError }>
 
 export const getAccountStatementPeriodFn = createServerFn({ method: 'GET' })
-  .inputValidator(GetAccountStatementInputSchema)
+  .validator(GetAccountStatementInputSchema)
   .handler(async ({ data }): Promise<GetAccountStatementPeriodFnResult> => {
     const user = await getCurrentUserFn()
     if (user === null) return { ok: false, error: 'unauthorized' }

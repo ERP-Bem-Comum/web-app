@@ -10,11 +10,10 @@ import type { ContractsError } from '#modules/contracts/server/adapters/contract
 const GetContractInputSchema = z.object({ id: z.uuid() })
 
 export type GetContractFnResult =
-  | Readonly<{ ok: true; data: Contract }>
-  | Readonly<{ ok: false; error: ContractsError }>
+  Readonly<{ ok: true; data: Contract }> | Readonly<{ ok: false; error: ContractsError }>
 
 export const getContractFn = createServerFn({ method: 'GET' })
-  .inputValidator(GetContractInputSchema)
+  .validator(GetContractInputSchema)
   .handler(async ({ data }): Promise<GetContractFnResult> => {
     const user = await getCurrentUserFn()
     const accessToken = await resolveAccessTokenFn()

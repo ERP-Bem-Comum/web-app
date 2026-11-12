@@ -13,11 +13,10 @@ import type { DocumentDetail } from '#modules/financial/server/domain/document.i
 import type { FinancialError } from '#modules/financial/server/domain/errors/financial.errors.ts'
 
 export type RegisterManualPaymentFnResult =
-  | Readonly<{ ok: true; data: DocumentDetail }>
-  | Readonly<{ ok: false; error: FinancialError }>
+  Readonly<{ ok: true; data: DocumentDetail }> | Readonly<{ ok: false; error: FinancialError }>
 
 export const registerManualPaymentFn = createServerFn({ method: 'POST' })
-  .inputValidator(ManualPaymentInputSchema)
+  .validator(ManualPaymentInputSchema)
   .handler(async ({ data }): Promise<RegisterManualPaymentFnResult> => {
     const user = await getCurrentUserFn()
     if (user === null) return { ok: false, error: 'unauthorized' }

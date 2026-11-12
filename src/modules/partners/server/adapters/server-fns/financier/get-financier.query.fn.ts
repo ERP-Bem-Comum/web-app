@@ -6,16 +6,15 @@ import { createServerFn } from '@tanstack/react-start'
 import { isErr } from '#shared/primitives/result.ts'
 import { getCurrentUserFn, resolveAccessTokenFn } from '#modules/auth/public-api/index.ts'
 import { financierServer } from '../../financier.composition.ts'
-import { GetFinancierInputSchema } from "#modules/partners/server/adapters/financier.io-schemas.ts"
-import type { FinancierDetail } from "#modules/partners/server/domain/financier/financier.io.ts"
+import { GetFinancierInputSchema } from '#modules/partners/server/adapters/financier.io-schemas.ts'
+import type { FinancierDetail } from '#modules/partners/server/domain/financier/financier.io.ts'
 import type { PartnersError } from '#modules/partners/server/domain/errors/partners.errors.ts'
 
 export type GetFinancierFnResult =
-  | Readonly<{ ok: true; data: FinancierDetail }>
-  | Readonly<{ ok: false; error: PartnersError }>
+  Readonly<{ ok: true; data: FinancierDetail }> | Readonly<{ ok: false; error: PartnersError }>
 
 export const getFinancierFn = createServerFn({ method: 'GET' })
-  .inputValidator(GetFinancierInputSchema)
+  .validator(GetFinancierInputSchema)
   .handler(async ({ data }): Promise<GetFinancierFnResult> => {
     const user = await getCurrentUserFn()
     if (user === null) return { ok: false, error: 'unauthorized' }

@@ -69,7 +69,7 @@
   {
     "label": "web-app: test arquivo atual (node:test)",
     "command": "node",
-    "args": ["--experimental-strip-types", "--test", "$ZED_FILE"],
+    "args": ["--test", "$ZED_FILE"],
     "cwd": "$ZED_WORKTREE_ROOT",
     "tags": ["ts-test"]
   },

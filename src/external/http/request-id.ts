@@ -14,9 +14,17 @@ import { getRequest, getRequestHeader } from '@tanstack/react-start/server'
 /** Header padrão de correlação — entrada (do edge) e saída (na resposta). */
 export const REQUEST_ID_HEADER = 'x-request-id'
 
-/** Deriva o id: honra um `X-Request-Id` de entrada (edge/Caddy) ou gera UUID v4 nativo (Web Crypto). */
+/**
+ * Deriva o id: honra um `X-Request-Id` de entrada (edge/Caddy) ou gera UUID v4 nativo (Web Crypto).
+ * O vazio é checado explicitamente: desde o TanStack Start 1.169 o `getRequestHeader` segue a Web API
+ * `Headers` e devolve `''` para header presente mas vazio. Só com `??`, um `X-Request-Id:` vazio do edge
+ * viraria id em branco.
+ */
 export const deriveRequestId = createIsomorphicFn()
-  .server((): string => getRequestHeader(REQUEST_ID_HEADER) ?? crypto.randomUUID())
+  .server((): string => {
+    const incoming = getRequestHeader(REQUEST_ID_HEADER)
+    return incoming !== undefined && incoming !== '' ? incoming : crypto.randomUUID()
+  })
   .client((): string => crypto.randomUUID())
 
 /** Publica o id no request-scope (`h3Event`) para server fns/logger lerem no mesmo request. */

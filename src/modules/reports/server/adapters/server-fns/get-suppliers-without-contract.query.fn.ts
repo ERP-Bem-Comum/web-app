@@ -36,7 +36,7 @@ export type GetSuppliersWithoutContractFnResult =
   | Readonly<{ ok: false; error: ReportsError }>
 
 export const getSuppliersWithoutContractFn = createServerFn({ method: 'GET' })
-  .inputValidator(GetSuppliersWithoutContractInputSchema)
+  .validator(GetSuppliersWithoutContractInputSchema)
   .handler(async ({ data }): Promise<GetSuppliersWithoutContractFnResult> => {
     const user = await getCurrentUserFn()
     if (user === null) return { ok: false, error: 'unauthorized' }

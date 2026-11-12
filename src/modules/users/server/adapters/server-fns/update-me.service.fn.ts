@@ -11,11 +11,10 @@ import type { UserDetail } from '#modules/users/server/domain/user.io.ts'
 import type { UsersError } from '#modules/users/server/domain/errors/users.errors.ts'
 
 export type UpdateMeFnResult =
-  | Readonly<{ ok: true; data: UserDetail }>
-  | Readonly<{ ok: false; error: UsersError }>
+  Readonly<{ ok: true; data: UserDetail }> | Readonly<{ ok: false; error: UsersError }>
 
 export const updateMeFn = createServerFn({ method: 'POST' })
-  .inputValidator(UpdateMeInputSchema)
+  .validator(UpdateMeInputSchema)
   .handler(async ({ data }): Promise<UpdateMeFnResult> => {
     const user = await getCurrentUserFn()
     if (user === null) return { ok: false, error: 'unauthorized' }

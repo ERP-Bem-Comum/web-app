@@ -2,7 +2,7 @@
 #
 # Front + BFF (TanStack Start + Nitro) — multi-stage. Runtime CHAINGUARD/WOLFI (ADR-0015).
 #
-#   base    → node 24.22 (toolchain de build) + pnpm via corepack       [digest-pin]
+#   base    → node 26.13 (toolchain de build) + pnpm via corepack       [digest-pin]
 #   deps    → pnpm install (frozen, ignore-scripts) c/ supply-chain do pnpm-workspace.yaml (ADR-0003)
 #   build   → pnpm build → .output (servidor Nitro node-server, SELF-CONTAINED, sem node_modules)
 #   dev     → target de desenvolvimento (HMR; bind-mount de ./src vem do override do ERP-INFRA)
@@ -11,21 +11,32 @@
 # Por que Chainguard/Wolfi no runtime (ADR-0015): o `.output` do Nitro é JS puro (sem deps nativas em
 # runtime), então a base pode ser mínima. A Chainguard patcha as CVEs da base muito mais rápido que o
 # distroless Debian (que ficou com libssl3 vulnerável sem rebuild) — meta de zero HIGH/CRITICAL no Trivy.
-# ⚠️ O tier free só publica :latest (hoje Node 26; Node 24 fixo exige Chainguard pago). O runtime roda o
-# bundle portável do Nitro, então o major do Node do runtime ≠ do build (node:24) é aceitável.
 # Healthcheck via `node` (sem curl/wget). Debug do container: via tailnet + logs/traces (ADR-0019).
 #
+# Versão do Node — a FONTE é o `.nvmrc` (CAS-108). Build e runtime estão no MESMO major, e
+# `tests/architecture/node-version-single-source.test.ts` reprova divergência:
+#   - base:    tag SEMPRE `major.minor` do `.nvmrc`; o digest fixa o patch.
+#   - runtime: o tier free da Chainguard só publica `:latest`, então a tag não diz versão. O LABEL
+#              `br.bemcomum.node.major` declara o major esperado, e o `build-publish.yml` roda `node --version`
+#              dentro da imagem e barra a promoção da `:qa` se o major real divergir do `.nvmrc`.
+#
 # Atualizar digests:
-#   docker buildx imagetools inspect node:24.22-bookworm-slim --format '{{.Manifest.Digest}}'
+#   docker buildx imagetools inspect node:26.13-bookworm-slim --format '{{.Manifest.Digest}}'
 #   docker buildx imagetools inspect cgr.dev/chainguard/node:latest --format '{{.Manifest.Digest}}'
 # Digests de 2026-11-12 (SGM #110338 — CAs eMudhra comprometidas; só Node novo remove a confiança):
-#   base    → Node 24.22.3   ·   runtime → Node 26.13.1 (pacote apk nodejs-26 26.13.1-r0)
+#   base    → Node 26.13.1   ·   runtime → Node 26.13.1 (pacote apk nodejs-26 26.13.1-r0)
 # ─────────────────────────────────────────────────────────────────────────────
 
 # ── Stage 1 — base (toolchain) ───────────────────────────────────────────────
-FROM node:24.22-bookworm-slim@sha256:dc26ae92c9fb15cf6b1d63e20f0944b2efe0f115b20e00be48fb23fceb061c54 AS base
+FROM node:26.13-bookworm-slim@sha256:5df79989ed685e09f0a98019db4cebfb22fb9df1a53c0161664a011f7ff6b0f1 AS base
 # packageManager em package.json fixa a versão; corepack lê dela.
-RUN corepack enable && corepack prepare pnpm@11.5.0 --activate
+# O Node 25+ deixou de distribuir o corepack ("Corepack will no longer be distributed starting with
+# Node.js v25", nodejs.org/docs/v25 › corepack), e a imagem node:26 traz só o npm. A recomendação oficial
+# é instalar o módulo da comunidade. Versão EXATA, porque este `npm install -g` não passa pela política de
+# supply-chain do pnpm-workspace.yaml (ADR-0003); o mecanismo da decisão (corepack) continua o mesmo.
+RUN npm install -g corepack@0.36.0 \
+    && corepack enable \
+    && corepack prepare pnpm@11.28.11 --activate
 WORKDIR /app
 
 # ── Stage 2 — deps ───────────────────────────────────────────────────────────
@@ -55,7 +66,8 @@ LABEL org.opencontainers.image.title="bemcomum-web" \
       org.opencontainers.image.description="ERP Bem Comum — Front + BFF (TanStack Start)." \
       org.opencontainers.image.vendor="Envolve / Bem Comum" \
       org.opencontainers.image.licenses="proprietary" \
-      org.opencontainers.image.base.name="cgr.dev/chainguard/node"
+      org.opencontainers.image.base.name="cgr.dev/chainguard/node" \
+      br.bemcomum.node.major="26"
 
 # NODE_OPTIONS: heap cap p/ caber no envelope do container (default seguro p/ ~512 MB de prod;
 # o deploy (compose/IaC do ERP-INFRA) sobrescreve por ambiente — ex.: 288 na VPS QA de 448 MB).

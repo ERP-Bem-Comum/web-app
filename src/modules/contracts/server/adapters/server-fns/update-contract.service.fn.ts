@@ -8,11 +8,10 @@ import type { Contract } from '#modules/contracts/server/domain/contracts.types.
 import type { ContractsError } from '#modules/contracts/server/adapters/contracts-shared.types.ts'
 
 export type UpdateContractFnResult =
-  | Readonly<{ ok: true; data: Contract }>
-  | Readonly<{ ok: false; error: ContractsError }>
+  Readonly<{ ok: true; data: Contract }> | Readonly<{ ok: false; error: ContractsError }>
 
 export const updateContractFn = createServerFn({ method: 'POST' })
-  .inputValidator(UpdateContractInputSchema)
+  .validator(UpdateContractInputSchema)
   .handler(async ({ data }): Promise<UpdateContractFnResult> => {
     const user = await getCurrentUserFn()
     if (user === null) return { ok: false, error: 'unauthorized' }

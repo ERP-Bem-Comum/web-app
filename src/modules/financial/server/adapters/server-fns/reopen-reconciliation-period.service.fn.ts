@@ -13,11 +13,10 @@ import type { PeriodReopened } from '#modules/financial/server/domain/reconcilia
 import type { ReconciliationError } from '#modules/financial/server/domain/errors/reconciliation.errors.ts'
 
 export type ReopenPeriodFnResult =
-  | Readonly<{ ok: true; data: PeriodReopened }>
-  | Readonly<{ ok: false; error: ReconciliationError }>
+  Readonly<{ ok: true; data: PeriodReopened }> | Readonly<{ ok: false; error: ReconciliationError }>
 
 export const reopenReconciliationPeriodFn = createServerFn({ method: 'POST' })
-  .inputValidator(ReopenPeriodInputSchema)
+  .validator(ReopenPeriodInputSchema)
   .handler(async ({ data }): Promise<ReopenPeriodFnResult> => {
     const user = await getCurrentUserFn()
     if (user === null) return { ok: false, error: 'unauthorized' }
