@@ -12,11 +12,10 @@ import type { PlanejamentoListPage } from '#modules/budget-plans/server/domain/p
 import type { BudgetPlansError } from '#modules/budget-plans/server/domain/errors/budget-plans.errors.ts'
 
 export type ListBudgetPlansFnResult =
-  | Readonly<{ ok: true; data: PlanejamentoListPage }>
-  | Readonly<{ ok: false; error: BudgetPlansError }>
+  Readonly<{ ok: true; data: PlanejamentoListPage }> | Readonly<{ ok: false; error: BudgetPlansError }>
 
 export const listBudgetPlansFn = createServerFn({ method: 'GET' })
-  .inputValidator(ListBudgetPlansInputSchema)
+  .validator(ListBudgetPlansInputSchema)
   .handler(async ({ data }): Promise<ListBudgetPlansFnResult> => {
     const user = await getCurrentUserFn()
     if (user === null) return { ok: false, error: 'unauthorized' }

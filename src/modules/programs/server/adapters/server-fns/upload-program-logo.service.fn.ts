@@ -19,11 +19,10 @@ const InputSchema = z.object({
 })
 
 export type UploadProgramLogoFnResult =
-  | Readonly<{ ok: true; data: Readonly<{ logoKey: string }> }>
-  | Readonly<{ ok: false; error: ProgramsError }>
+  Readonly<{ ok: true; data: Readonly<{ logoKey: string }> }> | Readonly<{ ok: false; error: ProgramsError }>
 
 export const uploadProgramLogoFn = createServerFn({ method: 'POST' })
-  .inputValidator(InputSchema)
+  .validator(InputSchema)
   .handler(async ({ data }): Promise<UploadProgramLogoFnResult> => {
     try {
       const user = await getCurrentUserFn()

@@ -9,13 +9,12 @@ import type { Contract } from '#modules/contracts/server/domain/contracts.types.
 import type { ContractsError } from '#modules/contracts/server/adapters/contracts-shared.types.ts'
 
 export type EndContractFnResult =
-  | Readonly<{ ok: true; data: Contract }>
-  | Readonly<{ ok: false; error: ContractsError }>
+  Readonly<{ ok: true; data: Contract }> | Readonly<{ ok: false; error: ContractsError }>
 
 // Distrato (#32, CTR-HTTP-DISTRATO-DOCUMENTO) — encerra o contrato (status Terminated/Distrato):
 // valida o PDF + a data efetiva (não-futura) na borda e delega ao use-case (upload signed_termination → end).
 export const endContractFn = createServerFn({ method: 'POST' })
-  .inputValidator(EndContractInputSchema)
+  .validator(EndContractInputSchema)
   .handler(async ({ data }): Promise<EndContractFnResult> => {
     // Borda de infra: qualquer exceção inesperada (rede, bug de composição) vira Result — a UI
     // nunca recebe throw cru e a cadeia de erro segue como valor (ADR-0002).
@@ -34,7 +33,10 @@ export const endContractFn = createServerFn({ method: 'POST' })
       )
       if (isErr(validated)) {
         // Data efetiva inválida/futura → erro específico do distrato (mensagem amigável dedicada).
-        return { ok: false, error: validated.error === 'invalid-signed-at' ? 'terminate-invalid-date' : validated.error }
+        return {
+          ok: false,
+          error: validated.error === 'invalid-signed-at' ? 'terminate-invalid-date' : validated.error,
+        }
       }
 
       const r = await contractsServer().endContract(

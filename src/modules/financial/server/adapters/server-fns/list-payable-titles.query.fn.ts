@@ -14,11 +14,10 @@ import type { PayableTitleListResponse } from '#modules/financial/server/domain/
 import type { FinancialError } from '#modules/financial/server/domain/errors/financial.errors.ts'
 
 export type ListPayableTitlesFnResult =
-  | Readonly<{ ok: true; data: PayableTitleListResponse }>
-  | Readonly<{ ok: false; error: FinancialError }>
+  Readonly<{ ok: true; data: PayableTitleListResponse }> | Readonly<{ ok: false; error: FinancialError }>
 
 export const listPayableTitlesFn = createServerFn({ method: 'GET' })
-  .inputValidator(ListPayableTitlesInputSchema)
+  .validator(ListPayableTitlesInputSchema)
   .handler(async ({ data }): Promise<ListPayableTitlesFnResult> => {
     const user = await getCurrentUserFn()
     if (user === null) return { ok: false, error: 'unauthorized' }

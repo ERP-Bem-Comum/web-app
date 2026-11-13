@@ -11,11 +11,10 @@ import type { PartnerMunicipality } from '#modules/partners/server/domain/geogra
 import type { PartnersError } from '#modules/partners/server/domain/errors/partners.errors.ts'
 
 export type ListMunicipalitiesByUfFnResult =
-  | Readonly<{ ok: true; data: readonly PartnerMunicipality[] }>
-  | Readonly<{ ok: false; error: PartnersError }>
+  Readonly<{ ok: true; data: readonly PartnerMunicipality[] }> | Readonly<{ ok: false; error: PartnersError }>
 
 export const listMunicipalitiesByUfFn = createServerFn({ method: 'GET' })
-  .inputValidator(ListMunicipalitiesByUfInputSchema)
+  .validator(ListMunicipalitiesByUfInputSchema)
   .handler(async ({ data }): Promise<ListMunicipalitiesByUfFnResult> => {
     const user = await getCurrentUserFn()
     if (user === null) return { ok: false, error: 'unauthorized' }

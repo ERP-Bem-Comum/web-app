@@ -14,11 +14,10 @@ import type { BudgetGridComposed } from '#modules/budget-plans/server/applicatio
 import type { BudgetPlansError } from '#modules/budget-plans/server/domain/errors/budget-plans.errors.ts'
 
 export type GetBudgetGridFnResult =
-  | Readonly<{ ok: true; data: BudgetGridComposed }>
-  | Readonly<{ ok: false; error: BudgetPlansError }>
+  Readonly<{ ok: true; data: BudgetGridComposed }> | Readonly<{ ok: false; error: BudgetPlansError }>
 
 export const getBudgetGridFn = createServerFn({ method: 'GET' })
-  .inputValidator(GetBudgetGridInputSchema)
+  .validator(GetBudgetGridInputSchema)
   .handler(async ({ data }): Promise<GetBudgetGridFnResult> => {
     const user = await getCurrentUserFn()
     if (user === null) return { ok: false, error: 'unauthorized' }

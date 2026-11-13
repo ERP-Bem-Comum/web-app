@@ -110,6 +110,21 @@ jobs:
           exit-code: '1'
           ignore-unfixed: true # não bloqueia em CVE sem fix upstream (base distroless); revisar periodicamente
 
+      # O runtime é `cgr.dev/chainguard/node:latest`: a tag não diz versão, e o major pode mudar num re-pin
+      # do digest sem ninguém perceber. Aqui se MEDE o Node da imagem recém-construída contra o `.nvmrc`
+      # (a fonte, CAS-108), antes da promoção — imagem com major errado nunca vira `:qa`.
+      - name: Confere o major do Node na imagem contra o .nvmrc
+        run: |
+          expected="$(cut -d. -f1 .nvmrc)"
+          actual="$(docker run --rm --entrypoint node ${{ env.IMAGE }}@${{ steps.build.outputs.digest }} --version)"
+          actual_major="${actual#v}"
+          actual_major="${actual_major%%.*}"
+          if [ "$actual_major" != "$expected" ]; then
+            echo "::error file=web.Dockerfile::A imagem roda Node ${actual}, mas o .nvmrc pede o major ${expected}. Re-pinar o runtime (ou subir o .nvmrc) antes de promover a :qa."
+            exit 1
+          fi
+          echo "Node da imagem: ${actual} (major ${actual_major}, igual ao .nvmrc)."
+
       # A `:qa` só anda com o gate VERDE. `imagetools create` é retag no REGISTRY: não rebuilda, não perde
       # cache e aponta para o MESMO digest do índice, então provenance e SBOM seguem válidos. Se o Trivy
       # reprovar, este step não roda e a `:qa` continua na última build verde — o `deploy.sh` da VPS passa

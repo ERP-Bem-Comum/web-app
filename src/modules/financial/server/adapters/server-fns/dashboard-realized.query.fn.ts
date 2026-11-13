@@ -24,11 +24,10 @@ const DashboardRealizedInputSchema = z.object({
 })
 
 export type DashboardRealizedFnResult =
-  | Readonly<{ ok: true; data: DashboardRealizedResult }>
-  | Readonly<{ ok: false; error: FinancialError }>
+  Readonly<{ ok: true; data: DashboardRealizedResult }> | Readonly<{ ok: false; error: FinancialError }>
 
 export const dashboardRealizedFn = createServerFn({ method: 'GET' })
-  .inputValidator(DashboardRealizedInputSchema)
+  .validator(DashboardRealizedInputSchema)
   .handler(async ({ data }): Promise<DashboardRealizedFnResult> => {
     const user = await getCurrentUserFn()
     if (user === null) return { ok: false, error: 'unauthorized' }

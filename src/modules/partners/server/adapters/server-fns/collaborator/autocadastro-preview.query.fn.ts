@@ -16,11 +16,10 @@ import type { AutocadastroPreview } from '#modules/partners/server/domain/collab
 import type { PartnersError } from '#modules/partners/server/domain/errors/partners.errors.ts'
 
 export type AutocadastroPreviewFnResult =
-  | Readonly<{ ok: true; data: AutocadastroPreview }>
-  | Readonly<{ ok: false; error: PartnersError }>
+  Readonly<{ ok: true; data: AutocadastroPreview }> | Readonly<{ ok: false; error: PartnersError }>
 
 export const autocadastroPreviewFn = createServerFn({ method: 'GET' })
-  .inputValidator(AutocadastroPreviewInputSchema)
+  .validator(AutocadastroPreviewInputSchema)
   .handler(async ({ data }): Promise<AutocadastroPreviewFnResult> => {
     try {
       const r = await collaboratorAutocadastroServer().autocadastroPreview(data.token)

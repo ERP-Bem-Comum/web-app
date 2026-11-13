@@ -34,7 +34,7 @@ const IngestDocumentInputSchema = z.object({
 })
 
 export const ingestDocumentFn = createServerFn({ method: 'POST' })
-  .inputValidator(IngestDocumentInputSchema)
+  .validator(IngestDocumentInputSchema)
   .handler(async ({ data }): Promise<IngestDocumentFnResult> => {
     try {
       const user = await getCurrentUserFn()

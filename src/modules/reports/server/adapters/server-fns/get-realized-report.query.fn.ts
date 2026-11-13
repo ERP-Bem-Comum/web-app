@@ -21,11 +21,10 @@ const GetRealizedReportInputSchema = z.object({
 })
 
 export type GetRealizedReportFnResult =
-  | Readonly<{ ok: true; data: readonly RealizedBudgetRow[] }>
-  | Readonly<{ ok: false; error: ReportsError }>
+  Readonly<{ ok: true; data: readonly RealizedBudgetRow[] }> | Readonly<{ ok: false; error: ReportsError }>
 
 export const getRealizedReportFn = createServerFn({ method: 'GET' })
-  .inputValidator(GetRealizedReportInputSchema)
+  .validator(GetRealizedReportInputSchema)
   .handler(async ({ data }): Promise<GetRealizedReportFnResult> => {
     const user = await getCurrentUserFn()
     if (user === null) return { ok: false, error: 'unauthorized' }

@@ -18,11 +18,10 @@ import { PostBudgetResultInputSchema } from '#modules/budget-plans/server/adapte
 import type { BudgetPlansError } from '#modules/budget-plans/server/domain/errors/budget-plans.errors.ts'
 
 export type PostBudgetResultFnResult =
-  | Readonly<{ ok: true }>
-  | Readonly<{ ok: false; error: BudgetPlansError }>
+  Readonly<{ ok: true }> | Readonly<{ ok: false; error: BudgetPlansError }>
 
 export const postBudgetResultFn = createServerFn({ method: 'POST' })
-  .inputValidator(PostBudgetResultInputSchema)
+  .validator(PostBudgetResultInputSchema)
   .handler(async ({ data }): Promise<PostBudgetResultFnResult> => {
     const user = await getCurrentUserFn()
     if (user === null) return { ok: false, error: 'unauthorized' }

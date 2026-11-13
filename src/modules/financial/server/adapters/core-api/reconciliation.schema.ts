@@ -38,10 +38,10 @@ export const CoreApiPaidPayableSchema = z.object({
   dueDate: z.string().trim(), // date-only YYYY-MM-DD
   // Data de EMISSÃO (date-only YYYY-MM-DD). TOLERANTE: o core go-live já a devolve; ausente → null. Alimenta
   // o filtro de Período por Emissão na aba Buscar/Criar vários (056). Comparação por STRING (nunca new Date).
-  issueDate: z.string().trim().nullable().optional().catch(null),
+  issueDate: z.string().trim().nullish().catch(null),
   // Data de pagamento (baixa). TOLERANTE: a rota /financial/payables ainda NÃO a monta (só /payable-titles
   // tem, via #231); ausente → undefined → null no mapper. Acende quando o backend expor (core-api#265).
-  paidAt: z.string().trim().nullable().optional().catch(null),
+  paidAt: z.string().trim().nullish().catch(null),
   paymentMethod: z.string().trim(),
   supplierName: z.string().trim().nullable().catch(null),
   documentNumber: z.string().trim().nullable().catch(null),
@@ -162,8 +162,8 @@ export const CoreApiSuggestionSchema = z.object({
   criteriaBreakdown: z.array(CoreApiCriterionResultSchema).catch([]),
   // core-api#172: nativamente AUSENTES hoje (o BFF enriquece via join); tolerantes p/ quando o backend
   // enviar. `.catch(null)` mantém o parse verde mesmo sem os campos.
-  supplierName: z.string().trim().nullable().optional().catch(null),
-  documentNumber: z.string().trim().nullable().optional().catch(null),
+  supplierName: z.string().trim().nullish().catch(null),
+  documentNumber: z.string().trim().nullish().catch(null),
 })
 export type CoreApiSuggestion = z.infer<typeof CoreApiSuggestionSchema>
 export const CoreApiSuggestionsSchema = z.object({ suggestions: z.array(CoreApiSuggestionSchema) })

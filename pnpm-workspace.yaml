@@ -1,14 +1,17 @@
-# Supply-chain hardening — pnpm 11.5.0 (pinado via packageManager)
+# Supply-chain hardening — pnpm 11.28.11 (pinado via packageManager, com hash sha512 conferido pelo corepack)
 # Fonte: handbook/reference/pnpm/supply-chain-security.md + settings.md
 # Todos os settings (exceto auth/registry) vivem AQUI, nunca em .npmrc. (settings.md:8)
 
 # --- 0. Overrides de segurança (força versão corrigida em trans-deps) ---
-# undici: CVEs de DoS (WebSocket — memória ilimitada) + bypass de validação de cert TLS, faixa
-# vulnerável >=7.23.0 <7.28.0. Só entra como trans-dep de DEV (jsdom→undici, via vitest), mas o
-# audit/Trivy flagam o lockfile → força >=7.28.0 (corrigido). Pareia com o web.Dockerfile (runtime
-# Chainguard re-pinado p/ o node-gyp Wolfi). pnpm 11: overrides vivem AQUI (package.json.pnpm não é lido).
+# pnpm 11: overrides vivem AQUI (package.json.pnpm não é lido).
+# seroval: o TanStack Start desserializa o corpo de TODA server function com ele, antes do Zod e sem
+# exigir login. Até a 1.6.10 há DoS e invocação de função (GHSA-p6vx-979v-rg4c crítico, GHSA-97r2-qh9m-474h,
+# GHSA-wp97-x4hv-qvhp, GHSA-7rv5-mrxv-xcr9, GHSA-jp82-f5mq-hwhp); o mínimo que corrige tudo é 1.6.11. O
+# TanStack declara `^1.6.7`, que ainda aceita versão vulnerável, então o override é quem garante. Linha 1.8
+# porque o seroval-plugins 1.8 exige seroval ^1.8.0.
+# (O override do undici saiu: o jsdom 31 exige undici ^8.12.3, fora da faixa vulnerável >=7.23.0 <7.28.0.)
 overrides:
-  undici: '^7.28.0'
+  seroval: '^1.8.1'
 
 # --- 1. Postinstall scripts: allowlist explícita (allowBuilds) ---
 # strictDepBuilds=true (default) => deps com build NÃO listadas aqui falham o install.
@@ -34,25 +37,9 @@ blockExoticSubdeps: true
 minimumReleaseAge: 1440
 minimumReleaseAgeStrict: true
 minimumReleaseAgeIgnoreMissingTime: true
-# Exceções por VERSÃO EXATA: deps já vetadas do bootstrap, publicadas no mesmo dia
-# (TanStack publica quase diariamente). Futuras atualizações de qualquer pacote
-# — inclusive estes — ainda passam pela quarentena de 1 dia.
-minimumReleaseAgeExclude:
-  - '@eslint-zod/utils@2.1.1'
-  - '@tanstack/react-router@1.170.9'
-  - '@tanstack/react-start@1.168.16'
-  - '@tanstack/react-start-client@1.168.6'
-  - '@tanstack/react-start-rsc@0.1.15'
-  - '@tanstack/react-start-server@1.167.11'
-  - '@tanstack/router-core@1.171.7'
-  - '@tanstack/router-generator@1.167.11'
-  - '@tanstack/router-plugin@1.168.12'
-  - '@tanstack/start-client-core@1.170.5'
-  - '@tanstack/start-plugin-core@1.171.8'
-  - '@tanstack/start-server-core@1.169.6'
-  - '@tanstack/start-storage-context@1.167.9'
-  - 'electron-to-chromium@1.5.364'
-  - 'eslint-plugin-zod@4.5.3'
+# Exceções por VERSÃO EXATA (`minimumReleaseAgeExclude`) só quando uma dep vetada precisar entrar no
+# mesmo dia da publicação. A lista do bootstrap saiu na atualização de 11/2026: todas as versões
+# que ela isentava foram substituídas por versões com mais de 1 dia.
 
 # --- 4. Política de confiança (trustPolicy) ---
 # no-downgrade: bloqueia versão com evidência de confiança menor que uma anterior.

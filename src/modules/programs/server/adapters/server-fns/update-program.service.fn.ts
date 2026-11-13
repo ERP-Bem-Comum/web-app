@@ -18,11 +18,10 @@ const UpdateProgramFnInputSchema = z.object({
 })
 
 export type UpdateProgramFnResult =
-  | Readonly<{ ok: true; data: ProgramDetail }>
-  | Readonly<{ ok: false; error: ProgramsError }>
+  Readonly<{ ok: true; data: ProgramDetail }> | Readonly<{ ok: false; error: ProgramsError }>
 
 export const updateProgramFn = createServerFn({ method: 'POST' })
-  .inputValidator(UpdateProgramFnInputSchema)
+  .validator(UpdateProgramFnInputSchema)
   .handler(async ({ data }): Promise<UpdateProgramFnResult> => {
     const user = await getCurrentUserFn()
     if (user === null) return { ok: false, error: 'unauthorized' }

@@ -27,7 +27,7 @@ export type RequestPasswordResetFnResult =
   | Readonly<{ ok: false; error: AuthError; reference?: string }>
 
 export const requestPasswordResetFn = createServerFn({ method: 'POST' })
-  .inputValidator(RequestPasswordResetFnInputSchema)
+  .validator(RequestPasswordResetFnInputSchema)
   .handler(async ({ data }): Promise<RequestPasswordResetFnResult> => {
     if (
       !isSameOriginRequest({

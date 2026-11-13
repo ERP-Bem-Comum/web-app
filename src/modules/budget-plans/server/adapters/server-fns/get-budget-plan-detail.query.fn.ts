@@ -13,11 +13,10 @@ import type { PlanDetailComposed } from '#modules/budget-plans/server/domain/pla
 import type { BudgetPlansError } from '#modules/budget-plans/server/domain/errors/budget-plans.errors.ts'
 
 export type GetBudgetPlanDetailFnResult =
-  | Readonly<{ ok: true; data: PlanDetailComposed }>
-  | Readonly<{ ok: false; error: BudgetPlansError }>
+  Readonly<{ ok: true; data: PlanDetailComposed }> | Readonly<{ ok: false; error: BudgetPlansError }>
 
 export const getBudgetPlanDetailFn = createServerFn({ method: 'GET' })
-  .inputValidator(GetBudgetPlanDetailInputSchema)
+  .validator(GetBudgetPlanDetailInputSchema)
   .handler(async ({ data }): Promise<GetBudgetPlanDetailFnResult> => {
     const user = await getCurrentUserFn()
     if (user === null) return { ok: false, error: 'unauthorized' }

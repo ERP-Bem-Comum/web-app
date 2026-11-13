@@ -13,11 +13,10 @@ import type { BudgetPlanInsights } from '#modules/budget-plans/server/domain/pla
 import type { BudgetPlansError } from '#modules/budget-plans/server/domain/errors/budget-plans.errors.ts'
 
 export type GetBudgetPlanInsightsFnResult =
-  | Readonly<{ ok: true; data: BudgetPlanInsights }>
-  | Readonly<{ ok: false; error: BudgetPlansError }>
+  Readonly<{ ok: true; data: BudgetPlanInsights }> | Readonly<{ ok: false; error: BudgetPlansError }>
 
 export const getBudgetPlanInsightsFn = createServerFn({ method: 'GET' })
-  .inputValidator(PlanIdInputSchema)
+  .validator(PlanIdInputSchema)
   .handler(async ({ data }): Promise<GetBudgetPlanInsightsFnResult> => {
     const user = await getCurrentUserFn()
     if (user === null) return { ok: false, error: 'unauthorized' }

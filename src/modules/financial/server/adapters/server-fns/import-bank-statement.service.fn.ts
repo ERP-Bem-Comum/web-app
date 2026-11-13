@@ -13,11 +13,10 @@ import type { BankStatementImport } from '#modules/financial/server/domain/recon
 import type { ReconciliationError } from '#modules/financial/server/domain/errors/reconciliation.errors.ts'
 
 export type ImportStatementFnResult =
-  | Readonly<{ ok: true; data: BankStatementImport }>
-  | Readonly<{ ok: false; error: ReconciliationError }>
+  Readonly<{ ok: true; data: BankStatementImport }> | Readonly<{ ok: false; error: ReconciliationError }>
 
 export const importBankStatementFn = createServerFn({ method: 'POST' })
-  .inputValidator(ImportStatementInputSchema)
+  .validator(ImportStatementInputSchema)
   .handler(async ({ data }): Promise<ImportStatementFnResult> => {
     const user = await getCurrentUserFn()
     if (user === null) return { ok: false, error: 'unauthorized' }

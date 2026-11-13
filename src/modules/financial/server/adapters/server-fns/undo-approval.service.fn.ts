@@ -18,7 +18,7 @@ export type UndoApprovalFnResult =
   | Readonly<{ ok: false; error: FinancialError; message: string | null }>
 
 export const undoApprovalFn = createServerFn({ method: 'POST' })
-  .inputValidator(ApproveInputSchema)
+  .validator(ApproveInputSchema)
   .handler(async ({ data }): Promise<UndoApprovalFnResult> => {
     const user = await getCurrentUserFn()
     if (user === null) return { ok: false, error: 'unauthorized', message: null }

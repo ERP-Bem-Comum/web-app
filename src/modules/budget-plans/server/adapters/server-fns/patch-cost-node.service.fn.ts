@@ -17,11 +17,10 @@ import type { CostStructureTree } from '#modules/budget-plans/server/domain/cost
 import type { BudgetPlansError } from '#modules/budget-plans/server/domain/errors/budget-plans.errors.ts'
 
 export type PatchCostNodeFnResult =
-  | Readonly<{ ok: true; data: CostStructureTree }>
-  | Readonly<{ ok: false; error: BudgetPlansError }>
+  Readonly<{ ok: true; data: CostStructureTree }> | Readonly<{ ok: false; error: BudgetPlansError }>
 
 export const patchCostNodeFn = createServerFn({ method: 'POST' })
-  .inputValidator(PatchCostNodeInputSchema)
+  .validator(PatchCostNodeInputSchema)
   .handler(async ({ data }): Promise<PatchCostNodeFnResult> => {
     const user = await getCurrentUserFn()
     if (user === null) return { ok: false, error: 'unauthorized' }

@@ -14,11 +14,10 @@ import type { ConfirmCounterpartResult } from '#modules/financial/server/domain/
 import type { ReconciliationError } from '#modules/financial/server/domain/errors/reconciliation.errors.ts'
 
 export type ConfirmCounterpartFnResult =
-  | Readonly<{ ok: true; data: ConfirmCounterpartResult }>
-  | Readonly<{ ok: false; error: ReconciliationError }>
+  Readonly<{ ok: true; data: ConfirmCounterpartResult }> | Readonly<{ ok: false; error: ReconciliationError }>
 
 export const confirmCounterpartFn = createServerFn({ method: 'POST' })
-  .inputValidator(ConfirmCounterpartInputSchema)
+  .validator(ConfirmCounterpartInputSchema)
   .handler(async ({ data }): Promise<ConfirmCounterpartFnResult> => {
     const user = await getCurrentUserFn()
     if (user === null) return { ok: false, error: 'unauthorized' }
