@@ -15,15 +15,19 @@ import { getRequest, getRequestHeader } from '@tanstack/react-start/server'
 export const REQUEST_ID_HEADER = 'x-request-id'
 
 /**
- * Deriva o id: honra um `X-Request-Id` de entrada (edge/Caddy) ou gera UUID v4 nativo (Web Crypto).
- * O vazio é checado explicitamente: desde o TanStack Start 1.169 o `getRequestHeader` segue a Web API
- * `Headers` e devolve `''` para header presente mas vazio. Só com `??`, um `X-Request-Id:` vazio do edge
- * viraria id em branco.
+ * Formato aceito para um `X-Request-Id` de entrada: o UUID do edge ou um id curto de correlação. Fora disso
+ * (vazio, só espaços, gigante, com quebra de linha ou caractere de controle) o valor é descartado e um UUID
+ * novo é gerado: ele vai para o header de resposta e para os logs, e um id forjado quebraria a correlação.
+ * O vazio importa também porque, desde o TanStack Start 1.169, o `getRequestHeader` segue a Web API
+ * `Headers` e devolve `''` para header presente mas vazio.
  */
+const ACCEPTED_REQUEST_ID = /^[A-Za-z0-9._-]{1,128}$/
+
+/** Deriva o id: honra um `X-Request-Id` de entrada válido (edge/Caddy) ou gera UUID v4 nativo (Web Crypto). */
 export const deriveRequestId = createIsomorphicFn()
   .server((): string => {
     const incoming = getRequestHeader(REQUEST_ID_HEADER)
-    return incoming !== undefined && incoming !== '' ? incoming : crypto.randomUUID()
+    return incoming !== undefined && ACCEPTED_REQUEST_ID.test(incoming) ? incoming : crypto.randomUUID()
   })
   .client((): string => crypto.randomUUID())
 

@@ -50,6 +50,7 @@ as alternativas **rejeitadas** e por quê. É a fonte que um dev novo (ou um age
 | [0020](./0020-baseurls-runtime-bff-only.md)          | core-api público via HTTPS, mas browser só fala com o BFF; base URLs em env runtime (nunca `VITE_`)                                          | Accepted (035)                               |
 | [0021](./0021-client-document-reader-by-template.md) | Leitura de documento fiscal no client por gabarito (XML por leiaute + PDF por camada de texto), aditiva à ingestão do BFF; client vence      | Accepted                                     |
 | [0022](./0022-contract-number-user-informed.md)      | Número do contrato digitado pela usuária na criação não é "inventado no front"; o backend valida e grava (supersedes parcial do 0013)        | Accepted                                     |
+| [0023](./0023-toolchain-single-source-node26-ts7.md) | Toolchain em versão única: Node 26 do `.nvmrc`, pnpm com hash, corepack por tarball, TS 7 lado a lado (supersedes parcial do 0015 e 0003)    | Accepted                                     |
 
 > Próximos ADRs a registrar conforme as decisões surgirem (ex.: i18n, módulo de usuários Zero Trust).
 > Decisões já tomadas e ainda não "adritizadas" vivem na constituição e em `specs/*/research.md`.

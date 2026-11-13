@@ -18,7 +18,9 @@ export const ContractListFiltersSchema = z.object({
   contractStatus: z.enum(Object.values(ContractStatus) as [string, ...string[]]).optional(),
   // `z.boolean()`, não `z.coerce.boolean()`: o coerce faz `Boolean("false") === true` e inverteria o filtro.
   // O TanStack Router já entrega booleano (o parse padrão do search faz JSON.parse em `?vencendo=false`).
-  vencendo: z.boolean().optional(),
+  // `.catch(undefined)`: valor que não é booleano (`?vencendo=1`, link antigo) desliga o filtro em vez de
+  // derrubar a rota inteira no `validateSearch`.
+  vencendo: z.boolean().optional().catch(undefined),
   minValue: z.coerce.number().min(0).optional(),
   maxValue: z.coerce.number().min(0).optional(),
   order: z.enum(['ASC', 'DESC']).default('DESC'),

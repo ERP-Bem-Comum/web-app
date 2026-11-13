@@ -230,7 +230,12 @@ describe('NODE-VERSION-SINGLE-SOURCE — a imagem real é medida antes de virar 
   const BUILD_PUBLISH = '.github/workflows/build-publish.yml'
 
   it('build-publish confere o major do Node dentro da imagem ANTES de promover a :qa', () => {
+    // Só as linhas que NÃO são comentário: o step tem um comentário que cita `.nvmrc` e `node --version`, e
+    // casar no arquivo inteiro deixaria o teste verde mesmo com o comando apagado ou o número fixado à mão.
     const body = read(BUILD_PUBLISH)
+      .split('\n')
+      .filter((line) => !/^\s*#/.test(line))
+      .join('\n')
     const check = body.search(/--entrypoint node\b[^\n]*--version/)
     const promote = body.search(/--tag \$\{\{ env\.IMAGE \}\}:qa/)
     assert.ok(
@@ -246,8 +251,9 @@ describe('NODE-VERSION-SINGLE-SOURCE — a imagem real é medida antes de virar 
     )
     assert.match(
       body,
-      /\.nvmrc/,
-      `${BUILD_PUBLISH}: a conferência do major precisa ler o .nvmrc, não repetir o número.`,
+      /expected="\$\(cut -d\. -f1 \.nvmrc\)"/,
+      `${BUILD_PUBLISH}: a conferência do major precisa ler o .nvmrc (\`expected="$(cut -d. -f1 .nvmrc)"\`), ` +
+        'não repetir o número.',
     )
   })
 })

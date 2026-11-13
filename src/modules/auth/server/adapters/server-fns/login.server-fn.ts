@@ -5,7 +5,7 @@
  * ({ ok:false, error }) — o repository do client converte em QueryError/tag.
  */
 import { createServerFn } from '@tanstack/react-start'
-import { getRequestHeader, setResponseHeader } from '@tanstack/react-start/server'
+import { appendResponseHeader, getRequestHeader } from '@tanstack/react-start/server'
 import * as z from 'zod'
 
 import { isErr } from '#shared/primitives/result.ts'
@@ -56,7 +56,8 @@ export const loginFn = createServerFn({ method: 'POST' })
 
       const session = r.value
       const maxAgeSeconds = Math.max(0, Math.floor((session.refreshExpiresAt - Date.now()) / 1000))
-      setResponseHeader(
+      // append, não set: no TanStack Start 1.169 o `setResponseHeader('set-cookie')` substitui TODOS os cookies.
+      appendResponseHeader(
         'Set-Cookie',
         serializeCookie(
           buildSessionCookie(session.sessionId, { persistent: session.persistent, maxAgeSeconds }),

@@ -3,7 +3,7 @@
  * (revoga no core-api + apaga a sessão), e limpa o cookie. Idempotente (sem cookie → só responde ok).
  */
 import { createServerFn } from '@tanstack/react-start'
-import { getCookie, getRequestHeader, setResponseHeader } from '@tanstack/react-start/server'
+import { appendResponseHeader, getCookie, getRequestHeader } from '@tanstack/react-start/server'
 
 import { isOk } from '#shared/primitives/result.ts'
 import { isSameOriginRequest } from '#shared/http/csrf-origin.ts'
@@ -11,24 +11,27 @@ import { SESSION_COOKIE_NAME, clearSessionCookieHeader } from '#external/session
 import type { SessionId } from '#modules/auth/server/domain/session/session.types.ts'
 import { authServer } from '#modules/auth/server/adapters/auth.composition.ts'
 
-export const logoutFn = createServerFn({ method: 'POST' }).handler(async (): Promise<Readonly<{ ok: true }>> => {
-  // CSRF de origem (FR-011) — mesma proteção do login; complementa o CSRF global do Start (src/start.ts).
-  if (
-    !isSameOriginRequest({
-      origin: getRequestHeader('origin') ?? null,
-      host: getRequestHeader('host') ?? null,
-      secFetchSite: getRequestHeader('sec-fetch-site') ?? null,
-    })
-  ) {
-    throw new Error('forbidden')
-  }
+export const logoutFn = createServerFn({ method: 'POST' }).handler(
+  async (): Promise<Readonly<{ ok: true }>> => {
+    // CSRF de origem (FR-011) — mesma proteção do login; complementa o CSRF global do Start (src/start.ts).
+    if (
+      !isSameOriginRequest({
+        origin: getRequestHeader('origin') ?? null,
+        host: getRequestHeader('host') ?? null,
+        secFetchSite: getRequestHeader('sec-fetch-site') ?? null,
+      })
+    ) {
+      throw new Error('forbidden')
+    }
 
-  const sessionId = getCookie(SESSION_COOKIE_NAME)
-  if (sessionId !== undefined) {
-    const server = authServer()
-    const got = await server.store.get(sessionId)
-    await server.logout(sessionId as SessionId, isOk(got) ? got.value.refreshToken : '')
-  }
-  setResponseHeader('Set-Cookie', clearSessionCookieHeader())
-  return { ok: true }
-})
+    const sessionId = getCookie(SESSION_COOKIE_NAME)
+    if (sessionId !== undefined) {
+      const server = authServer()
+      const got = await server.store.get(sessionId)
+      await server.logout(sessionId as SessionId, isOk(got) ? got.value.refreshToken : '')
+    }
+    // append, não set: no TanStack Start 1.169 o `setResponseHeader('set-cookie')` substitui TODOS os cookies.
+    appendResponseHeader('Set-Cookie', clearSessionCookieHeader())
+    return { ok: true }
+  },
+)

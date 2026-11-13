@@ -29,12 +29,18 @@
 
 # ── Stage 1 — base (toolchain) ───────────────────────────────────────────────
 FROM node:26.13-bookworm-slim@sha256:5df79989ed685e09f0a98019db4cebfb22fb9df1a53c0161664a011f7ff6b0f1 AS base
-# packageManager em package.json fixa a versão; corepack lê dela.
+# packageManager em package.json fixa a versão (com sha512); corepack lê dela e confere o hash.
 # O Node 25+ deixou de distribuir o corepack ("Corepack will no longer be distributed starting with
-# Node.js v25", nodejs.org/docs/v25 › corepack), e a imagem node:26 traz só o npm. A recomendação oficial
-# é instalar o módulo da comunidade. Versão EXATA, porque este `npm install -g` não passa pela política de
-# supply-chain do pnpm-workspace.yaml (ADR-0003); o mecanismo da decisão (corepack) continua o mesmo.
-RUN npm install -g corepack@0.36.0 \
+# Node.js v25", nodejs.org/docs/v25 › corepack). A recomendação oficial é o módulo da comunidade (ADR-0023).
+# Sem npm (ADR-0003): o tarball vem direto do registry e o BuildKit confere o sha256 ANTES de usar. É JS
+# puro (independe da arquitetura) e não tem script de instalação. sha512 conferido contra o `integrity`
+# do registry em 2026-11-12. Para atualizar: baixar o .tgz novo e trocar versão e `--checksum`.
+ADD --checksum=sha256:9128cfe26aee0c99f4fc68c15c6b8b12309a68be0de2c012cdfea2a463cb722f \
+    https://registry.npmjs.org/corepack/-/corepack-0.36.0.tgz /tmp/corepack.tgz
+RUN mkdir -p /usr/local/lib/corepack \
+    && tar -xzf /tmp/corepack.tgz -C /usr/local/lib/corepack --strip-components=1 \
+    && rm /tmp/corepack.tgz \
+    && ln -s /usr/local/lib/corepack/dist/corepack.js /usr/local/bin/corepack \
     && corepack enable \
     && corepack prepare pnpm@11.28.11 --activate
 WORKDIR /app
