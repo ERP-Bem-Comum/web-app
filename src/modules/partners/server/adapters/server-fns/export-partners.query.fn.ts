@@ -21,11 +21,10 @@ const ExportPartnersInputSchema = z.object({
 })
 
 export type ExportPartnersFnResult =
-  | Readonly<{ ok: true; data: PartnerExportFile }>
-  | Readonly<{ ok: false; error: PartnersError }>
+  Readonly<{ ok: true; data: PartnerExportFile }> | Readonly<{ ok: false; error: PartnersError }>
 
 export const exportPartnersFn = createServerFn({ method: 'GET' })
-  .inputValidator(ExportPartnersInputSchema)
+  .validator(ExportPartnersInputSchema)
   .handler(async ({ data }): Promise<ExportPartnersFnResult> => {
     const user = await getCurrentUserFn()
     if (user === null) return { ok: false, error: 'unauthorized' }

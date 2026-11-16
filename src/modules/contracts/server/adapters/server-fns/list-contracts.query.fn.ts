@@ -12,11 +12,10 @@ import type { ListContractsResponse } from '#modules/contracts/server/domain/con
 import type { ContractsError } from '#modules/contracts/server/adapters/contracts-shared.types.ts'
 
 export type ListContractsFnResult =
-  | Readonly<{ ok: true; data: ListContractsResponse }>
-  | Readonly<{ ok: false; error: ContractsError }>
+  Readonly<{ ok: true; data: ListContractsResponse }> | Readonly<{ ok: false; error: ContractsError }>
 
 export const listContractsFn = createServerFn({ method: 'GET' })
-  .inputValidator(ListContractsInputSchema)
+  .validator(ListContractsInputSchema)
   .handler(async ({ data }): Promise<ListContractsFnResult> => {
     const user = await getCurrentUserFn()
     if (user === null) return { ok: false, error: 'unauthorized' }

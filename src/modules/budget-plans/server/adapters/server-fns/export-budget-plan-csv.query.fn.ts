@@ -13,11 +13,10 @@ import type { BudgetPlanCsv } from '#modules/budget-plans/server/domain/plan-act
 import type { BudgetPlansError } from '#modules/budget-plans/server/domain/errors/budget-plans.errors.ts'
 
 export type ExportBudgetPlanCsvFnResult =
-  | Readonly<{ ok: true; data: BudgetPlanCsv }>
-  | Readonly<{ ok: false; error: BudgetPlansError }>
+  Readonly<{ ok: true; data: BudgetPlanCsv }> | Readonly<{ ok: false; error: BudgetPlansError }>
 
 export const exportBudgetPlanCsvFn = createServerFn({ method: 'GET' })
-  .inputValidator(PlanIdInputSchema)
+  .validator(PlanIdInputSchema)
   .handler(async ({ data }): Promise<ExportBudgetPlanCsvFnResult> => {
     const user = await getCurrentUserFn()
     if (user === null) return { ok: false, error: 'unauthorized' }

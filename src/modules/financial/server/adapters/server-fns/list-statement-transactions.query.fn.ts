@@ -17,7 +17,7 @@ export type ListTransactionsFnResult =
   | Readonly<{ ok: false; error: ReconciliationError }>
 
 export const listStatementTransactionsFn = createServerFn({ method: 'GET' })
-  .inputValidator(ListTransactionsInputSchema)
+  .validator(ListTransactionsInputSchema)
   .handler(async ({ data }): Promise<ListTransactionsFnResult> => {
     const user = await getCurrentUserFn()
     if (user === null) return { ok: false, error: 'unauthorized' }

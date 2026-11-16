@@ -13,7 +13,7 @@ import type { FinancialError } from '#modules/financial/server/domain/errors/fin
 export type CancelDocumentFnResult = Readonly<{ ok: true }> | Readonly<{ ok: false; error: FinancialError }>
 
 export const cancelDocumentFn = createServerFn({ method: 'POST' })
-  .inputValidator(CancelInputSchema)
+  .validator(CancelInputSchema)
   .handler(async ({ data }): Promise<CancelDocumentFnResult> => {
     const user = await getCurrentUserFn()
     if (user === null) return { ok: false, error: 'unauthorized' }

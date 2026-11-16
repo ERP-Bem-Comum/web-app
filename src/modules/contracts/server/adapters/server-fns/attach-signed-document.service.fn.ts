@@ -9,11 +9,10 @@ import type { Contract } from '#modules/contracts/server/domain/contracts.types.
 import type { ContractsError } from '#modules/contracts/server/adapters/contracts-shared.types.ts'
 
 export type AttachSignedDocumentFnResult =
-  | Readonly<{ ok: true; data: Contract }>
-  | Readonly<{ ok: false; error: ContractsError }>
+  Readonly<{ ok: true; data: Contract }> | Readonly<{ ok: false; error: ContractsError }>
 
 export const attachSignedDocumentFn = createServerFn({ method: 'POST' })
-  .inputValidator(AttachSignedDocumentInputSchema)
+  .validator(AttachSignedDocumentInputSchema)
   .handler(async ({ data }): Promise<AttachSignedDocumentFnResult> => {
     try {
       const user = await getCurrentUserFn()

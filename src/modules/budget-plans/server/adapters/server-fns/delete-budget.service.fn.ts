@@ -13,7 +13,7 @@ import type { BudgetPlansError } from '#modules/budget-plans/server/domain/error
 export type DeleteBudgetFnResult = Readonly<{ ok: true }> | Readonly<{ ok: false; error: BudgetPlansError }>
 
 export const deleteBudgetFn = createServerFn({ method: 'POST' })
-  .inputValidator(DeleteBudgetInputSchema)
+  .validator(DeleteBudgetInputSchema)
   .handler(async ({ data }): Promise<DeleteBudgetFnResult> => {
     const user = await getCurrentUserFn()
     if (user === null) return { ok: false, error: 'unauthorized' }

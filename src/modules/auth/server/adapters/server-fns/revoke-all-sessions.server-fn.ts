@@ -6,7 +6,7 @@
  * §IX: o token NUNCA volta ao browser — a fn devolve só `{ ok: true }`.
  */
 import { createServerFn } from '@tanstack/react-start'
-import { getCookie, getRequestHeader, setResponseHeader } from '@tanstack/react-start/server'
+import { appendResponseHeader, getCookie, getRequestHeader } from '@tanstack/react-start/server'
 
 import { isOk } from '#shared/primitives/result.ts'
 import { isSameOriginRequest } from '#shared/http/csrf-origin.ts'
@@ -46,7 +46,8 @@ export const revokeAllSessionsFn = createServerFn({ method: 'POST' }).handler(
     // A sessão atual também morreu no backend → mesmo cleanup do logout: apaga a sessão local e o cookie.
     const got = await server.store.get(sessionId)
     await server.logout(sessionId as SessionId, isOk(got) ? got.value.refreshToken : '')
-    setResponseHeader('Set-Cookie', clearSessionCookieHeader())
+    // append, não set: no TanStack Start 1.169 o `setResponseHeader('set-cookie')` substitui TODOS os cookies.
+    appendResponseHeader('Set-Cookie', clearSessionCookieHeader())
     return { ok: true }
   },
 )

@@ -4,7 +4,7 @@
  * morreu, limpa o cookie. Token NUNCA vai ao client — só o userId.
  */
 import { createServerFn } from '@tanstack/react-start'
-import { getCookie, setResponseHeader } from '@tanstack/react-start/server'
+import { appendResponseHeader, getCookie } from '@tanstack/react-start/server'
 
 import { isErr, isOk } from '#shared/primitives/result.ts'
 import { SESSION_COOKIE_NAME, clearSessionCookieHeader } from '#external/session/cookie.ts'
@@ -19,7 +19,9 @@ export const getCurrentUserFn = createServerFn({ method: 'GET' }).handler(
     const server = authServer()
     const resolved = await server.resolveSession(sessionId as SessionId)
     if (isErr(resolved)) {
-      setResponseHeader('Set-Cookie', clearSessionCookieHeader())
+      // append, não set: no TanStack Start 1.169 o `setResponseHeader('set-cookie')` substitui TODOS os
+      // cookies da resposta, e esta fn também roda no SSR, onde a resposta é a do HTML (TanStack #8834).
+      appendResponseHeader('Set-Cookie', clearSessionCookieHeader())
       return null
     }
 

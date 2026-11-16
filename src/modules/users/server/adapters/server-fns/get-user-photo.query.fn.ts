@@ -11,7 +11,7 @@ import { usersServer } from '../users.composition.ts'
 import type { GetUserPhotoFnResult } from './get-my-photo.query.fn.ts'
 
 export const getUserPhotoFn = createServerFn({ method: 'GET' })
-  .inputValidator(z.object({ id: z.string().trim().min(1) }))
+  .validator(z.object({ id: z.string().trim().min(1) }))
   .handler(async ({ data }): Promise<GetUserPhotoFnResult> => {
     try {
       const user = await getCurrentUserFn()

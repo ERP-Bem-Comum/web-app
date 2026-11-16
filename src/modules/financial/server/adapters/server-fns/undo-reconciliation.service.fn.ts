@@ -13,11 +13,10 @@ import type { ReconciliationUndone } from '#modules/financial/server/domain/reco
 import type { ReconciliationError } from '#modules/financial/server/domain/errors/reconciliation.errors.ts'
 
 export type UndoReconciliationFnResult =
-  | Readonly<{ ok: true; data: ReconciliationUndone }>
-  | Readonly<{ ok: false; error: ReconciliationError }>
+  Readonly<{ ok: true; data: ReconciliationUndone }> | Readonly<{ ok: false; error: ReconciliationError }>
 
 export const undoReconciliationFn = createServerFn({ method: 'POST' })
-  .inputValidator(UndoReconciliationInputSchema)
+  .validator(UndoReconciliationInputSchema)
   .handler(async ({ data }): Promise<UndoReconciliationFnResult> => {
     const user = await getCurrentUserFn()
     if (user === null) return { ok: false, error: 'unauthorized' }

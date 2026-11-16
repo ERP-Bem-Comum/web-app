@@ -12,11 +12,10 @@ import type { UserDetail } from '#modules/users/server/domain/user.io.ts'
 import type { UsersError } from '#modules/users/server/domain/errors/users.errors.ts'
 
 export type GetUserFnResult =
-  | Readonly<{ ok: true; data: UserDetail }>
-  | Readonly<{ ok: false; error: UsersError }>
+  Readonly<{ ok: true; data: UserDetail }> | Readonly<{ ok: false; error: UsersError }>
 
 export const getUserFn = createServerFn({ method: 'GET' })
-  .inputValidator(z.object({ id: z.string().trim().min(1) }))
+  .validator(z.object({ id: z.string().trim().min(1) }))
   .handler(async ({ data }): Promise<GetUserFnResult> => {
     const user = await getCurrentUserFn()
     if (user === null) return { ok: false, error: 'unauthorized' }

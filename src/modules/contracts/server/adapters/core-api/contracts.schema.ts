@@ -29,19 +29,18 @@ const ProgramDtoSchema = z
       .object({ name: z.string().trim(), sigla: z.string().trim(), programNumber: z.number() })
       .nullable(),
   })
-  .nullable()
-  .optional()
+  .nullish()
 
 const ContractMetaShape = {
-  classification: z.enum(['CT', 'OS']).nullable().optional(),
-  programId: z.uuid().nullable().optional(),
-  budgetPlanId: z.uuid().nullable().optional(),
-  categorizacao: z.string().trim().nullable().optional(),
-  centroDeCusto: z.string().trim().nullable().optional(),
+  classification: z.enum(['CT', 'OS']).nullish(),
+  programId: z.uuid().nullish(),
+  budgetPlanId: z.uuid().nullish(),
+  categorizacao: z.string().trim().nullish(),
+  centroDeCusto: z.string().trim().nullish(),
   // #502/S3: refs da árvore do plano ecoados crus (opacos; drift/backend antigo → null).
-  costCenterRef: z.string().trim().nullable().optional(),
-  categoryRef: z.string().trim().nullable().optional(),
-  subcategoryRef: z.string().trim().nullable().optional(),
+  costCenterRef: z.string().trim().nullish(),
+  categoryRef: z.string().trim().nullish(),
+  subcategoryRef: z.string().trim().nullish(),
   program: ProgramDtoSchema,
 }
 
@@ -106,7 +105,7 @@ const AmendmentDtoSchema = z.discriminatedUnion('kind', [
     description: z.string().trim(),
     status: z.string().trim(),
     createdAt: z.string().trim(),
-    signedAt: z.string().trim().nullable().optional(),
+    signedAt: z.string().trim().nullish(),
     kind: z.literal('Addition'),
     impactValueCents: z.int(),
   }),
@@ -117,7 +116,7 @@ const AmendmentDtoSchema = z.discriminatedUnion('kind', [
     description: z.string().trim(),
     status: z.string().trim(),
     createdAt: z.string().trim(),
-    signedAt: z.string().trim().nullable().optional(),
+    signedAt: z.string().trim().nullish(),
     kind: z.literal('Suppression'),
     impactValueCents: z.int(),
   }),
@@ -128,7 +127,7 @@ const AmendmentDtoSchema = z.discriminatedUnion('kind', [
     description: z.string().trim(),
     status: z.string().trim(),
     createdAt: z.string().trim(),
-    signedAt: z.string().trim().nullable().optional(),
+    signedAt: z.string().trim().nullish(),
     kind: z.literal('TermChange'),
     newEndDate: z.string().trim(),
   }),
@@ -139,7 +138,7 @@ const AmendmentDtoSchema = z.discriminatedUnion('kind', [
     description: z.string().trim(),
     status: z.string().trim(),
     createdAt: z.string().trim(),
-    signedAt: z.string().trim().nullable().optional(),
+    signedAt: z.string().trim().nullish(),
     kind: z.literal('Misc'),
   }),
 ])
@@ -188,9 +187,9 @@ export const CoreApiContractorSchema = z.object({
 const detailMetaShape = {
   // O backend devolve null (não ausente) quando vazios — precisa aceitar null, senão o parse do
   // detalhe inteiro falha e cai no fallback de list-item (perdendo contractor/documents/etc.).
-  observations: z.string().trim().nullable().optional(),
-  email: z.string().trim().nullable().optional(),
-  telephone: z.string().trim().nullable().optional(),
+  observations: z.string().trim().nullish(),
+  email: z.string().trim().nullish(),
+  telephone: z.string().trim().nullish(),
   contractor: CoreApiContractorSchema.nullable().optional(),
 }
 

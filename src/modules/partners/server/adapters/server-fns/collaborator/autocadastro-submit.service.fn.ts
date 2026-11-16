@@ -18,11 +18,10 @@ import { collaboratorAutocadastroServer } from '../../collaborator-autocadastro.
 import type { PartnersError } from '#modules/partners/server/domain/errors/partners.errors.ts'
 
 export type AutocadastroSubmitFnResult =
-  | Readonly<{ ok: true }>
-  | Readonly<{ ok: false; error: PartnersError }>
+  Readonly<{ ok: true }> | Readonly<{ ok: false; error: PartnersError }>
 
 export const autocadastroSubmitFn = createServerFn({ method: 'POST' })
-  .inputValidator(AutocadastroSubmitInputSchema)
+  .validator(AutocadastroSubmitInputSchema)
   .handler(async ({ data }): Promise<AutocadastroSubmitFnResult> => {
     if (
       !isSameOriginRequest({

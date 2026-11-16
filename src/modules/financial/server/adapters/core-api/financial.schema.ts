@@ -13,7 +13,7 @@ export const CoreApiPayableSchema = z.object({
   valueCents: z.string().trim(),
   status: z.string().trim(),
   // core-api#1057: quando a forma do título foi trocada depois da aprovação (null = nunca). Drift → null.
-  paymentMethodChangedAt: z.string().trim().nullable().optional().catch(null),
+  paymentMethodChangedAt: z.string().trim().nullish().catch(null),
 })
 export type CoreApiPayable = z.infer<typeof CoreApiPayableSchema>
 
@@ -143,7 +143,7 @@ export const CoreApiTimelineEntrySchema = z.object({
   actor: z.string().trim().nullable().catch(null),
   // Spec 119 / core-api#61: motivo do marco (desfazimentos; baixa manual opcional). Tolerante: core-api
   // anterior não manda o campo → null.
-  reason: z.string().trim().nullable().optional().catch(null),
+  reason: z.string().trim().nullish().catch(null),
   changes: z
     .array(
       z.object({

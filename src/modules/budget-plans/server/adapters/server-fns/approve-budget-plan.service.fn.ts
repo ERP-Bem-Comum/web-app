@@ -13,11 +13,10 @@ import type { LifecyclePlan } from '#modules/budget-plans/server/domain/plan-act
 import type { BudgetPlansError } from '#modules/budget-plans/server/domain/errors/budget-plans.errors.ts'
 
 export type ApproveBudgetPlanFnResult =
-  | Readonly<{ ok: true; data: LifecyclePlan }>
-  | Readonly<{ ok: false; error: BudgetPlansError }>
+  Readonly<{ ok: true; data: LifecyclePlan }> | Readonly<{ ok: false; error: BudgetPlansError }>
 
 export const approveBudgetPlanFn = createServerFn({ method: 'POST' })
-  .inputValidator(PlanIdInputSchema)
+  .validator(PlanIdInputSchema)
   .handler(async ({ data }): Promise<ApproveBudgetPlanFnResult> => {
     const user = await getCurrentUserFn()
     if (user === null) return { ok: false, error: 'unauthorized' }

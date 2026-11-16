@@ -31,7 +31,7 @@ export type GenerateRemittanceFnResult =
   | Readonly<{ ok: false; error: FinancialError; message: string | null }>
 
 export const generateRemittanceFn = createServerFn({ method: 'POST' })
-  .inputValidator(
+  .validator(
     z.object({
       cedenteAccountId: z.uuid(),
       // Mesmo teto do pré-voo (200): o operador confere e gera a MESMA seleção, e um limite diferente

@@ -11,11 +11,10 @@ import type { CreatedProgram } from '#modules/programs/server/domain/program.io.
 import type { ProgramsError } from '#modules/programs/server/domain/errors/programs.errors.ts'
 
 export type CreateProgramFnResult =
-  | Readonly<{ ok: true; data: CreatedProgram }>
-  | Readonly<{ ok: false; error: ProgramsError }>
+  Readonly<{ ok: true; data: CreatedProgram }> | Readonly<{ ok: false; error: ProgramsError }>
 
 export const createProgramFn = createServerFn({ method: 'POST' })
-  .inputValidator(CreateProgramInputSchema)
+  .validator(CreateProgramInputSchema)
   .handler(async ({ data }): Promise<CreateProgramFnResult> => {
     const user = await getCurrentUserFn()
     if (user === null) return { ok: false, error: 'unauthorized' }

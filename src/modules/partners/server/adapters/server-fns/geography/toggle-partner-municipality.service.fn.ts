@@ -12,11 +12,10 @@ import type { PartnerMunicipality } from '#modules/partners/server/domain/geogra
 import type { PartnersError } from '#modules/partners/server/domain/errors/partners.errors.ts'
 
 export type TogglePartnerMunicipalityFnResult =
-  | Readonly<{ ok: true; data: PartnerMunicipality }>
-  | Readonly<{ ok: false; error: PartnersError }>
+  Readonly<{ ok: true; data: PartnerMunicipality }> | Readonly<{ ok: false; error: PartnersError }>
 
 export const togglePartnerMunicipalityFn = createServerFn({ method: 'POST' })
-  .inputValidator(TogglePartnerMunicipalityInputSchema)
+  .validator(TogglePartnerMunicipalityInputSchema)
   .handler(async ({ data }): Promise<TogglePartnerMunicipalityFnResult> => {
     const user = await getCurrentUserFn()
     if (user === null) return { ok: false, error: 'unauthorized' }

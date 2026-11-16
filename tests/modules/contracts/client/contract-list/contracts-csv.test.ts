@@ -63,7 +63,7 @@ describe('buildContractsCsv — prefixo pela classificação', () => {
       mk({ classification: 'Contrato', contractCode: '0124/2024' } as Partial<ContractRow>),
     ])
     const [, os, ct] = csv.split('\n')
-    assert.ok(os?.startsWith('"OS 0123/2024"'), os)
-    assert.ok(ct?.startsWith('"CT 0124/2024"'), ct)
+    assert.ok(os?.startsWith('"OS 0123/2024"'), `linha recebida: ${String(os)}`)
+    assert.ok(ct?.startsWith('"CT 0124/2024"'), `linha recebida: ${String(ct)}`)
   })
 })

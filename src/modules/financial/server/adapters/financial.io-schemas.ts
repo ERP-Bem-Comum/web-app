@@ -106,8 +106,8 @@ export const AdjustDocumentInputSchema = z.object({
   interestCents: CentsSchema.optional(),
   retentions: z.array(RetentionItemSchema).readonly().optional(),
   dueDate: DateSchema.optional(),
-  description: z.string().trim().max(500).nullable().optional(),
-  paymentDetail: z.string().trim().min(1).max(255).nullable().optional(), // #284: editar o complemento; null = limpar
+  description: z.string().trim().max(500).nullish(),
+  paymentDetail: z.string().trim().min(1).max(255).nullish(), // #284: editar o complemento; null = limpar
   paymentMethod: z.enum(PAYMENT_METHODS).optional(), // core-api#1057: só no Aprovado
   taxonomy: z
     .object({

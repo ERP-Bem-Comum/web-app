@@ -13,11 +13,10 @@ import type { DocumentDetail } from '#modules/financial/server/domain/document.i
 import type { FinancialError } from '#modules/financial/server/domain/errors/financial.errors.ts'
 
 export type CreateDocumentFnResult =
-  | Readonly<{ ok: true; data: DocumentDetail }>
-  | Readonly<{ ok: false; error: FinancialError }>
+  Readonly<{ ok: true; data: DocumentDetail }> | Readonly<{ ok: false; error: FinancialError }>
 
 export const createDocumentFn = createServerFn({ method: 'POST' })
-  .inputValidator(CreateDocumentInputSchema)
+  .validator(CreateDocumentInputSchema)
   .handler(async ({ data }): Promise<CreateDocumentFnResult> => {
     const user = await getCurrentUserFn()
     if (user === null) return { ok: false, error: 'unauthorized' }

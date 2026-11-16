@@ -12,11 +12,10 @@ import type { UserListResponse } from '#modules/users/server/domain/user.io.ts'
 import type { UsersError } from '#modules/users/server/domain/errors/users.errors.ts'
 
 export type ListUsersFnResult =
-  | Readonly<{ ok: true; data: UserListResponse }>
-  | Readonly<{ ok: false; error: UsersError }>
+  Readonly<{ ok: true; data: UserListResponse }> | Readonly<{ ok: false; error: UsersError }>
 
 export const listUsersFn = createServerFn({ method: 'GET' })
-  .inputValidator(ListUsersInputSchema)
+  .validator(ListUsersInputSchema)
   .handler(async ({ data }): Promise<ListUsersFnResult> => {
     const user = await getCurrentUserFn()
     if (user === null) return { ok: false, error: 'unauthorized' }

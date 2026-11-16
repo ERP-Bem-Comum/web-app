@@ -24,7 +24,7 @@ export type SearchPartnersFnResult =
   | Readonly<{ ok: false; error: PartnerSearchError }>
 
 export const searchPartnersFn = createServerFn({ method: 'GET' })
-  .inputValidator(SearchPartnersInputSchema)
+  .validator(SearchPartnersInputSchema)
   .handler(async ({ data }): Promise<SearchPartnersFnResult> => {
     const user = await getCurrentUserFn()
     const token = await resolveAccessTokenFn()

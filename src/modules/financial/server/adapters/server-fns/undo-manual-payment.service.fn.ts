@@ -19,7 +19,7 @@ export type UndoManualPaymentFnResult =
   | Readonly<{ ok: false; error: FinancialError; message: string | null }>
 
 export const undoManualPaymentFn = createServerFn({ method: 'POST' })
-  .inputValidator(UndoPayableInputSchema)
+  .validator(UndoPayableInputSchema)
   .handler(async ({ data }): Promise<UndoManualPaymentFnResult> => {
     const user = await getCurrentUserFn()
     if (user === null) return { ok: false, error: 'unauthorized', message: null }
