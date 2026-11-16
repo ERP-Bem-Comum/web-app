@@ -100,6 +100,7 @@ export type AccountStatementPeriod = Readonly<{
   // #205: movimentos do período (linhas com saldo corrente por linha) + contadores p/ a aba Extrato.
   counters: StatementPeriodCounters
   movements: readonly StatementTransaction[]
+  companyName?: string | null // spec 132: nome da empresa no cabeçalho do relatório
 }>
 
 export type CreateCedenteAccountInput = Readonly<{
@@ -211,6 +212,20 @@ export type BankStatementImport = Readonly<{
   duplicatesDiscarded: number
   period: StatementPeriod
 }>
+// Spec 132: título vinculado à transação, vindo em lote na própria leitura do extrato. Dados do documento
+// em null quando o core-api não os resolveu; o valor conciliado vem sempre.
+export type StatementReconciledTitle = Readonly<{
+  payableId: string
+  documentNumber: string | null
+  payeeName: string | null
+  retentionType: string | null
+  dueDate: string | null
+  reconciledValueCents: string
+}>
+export type StatementTransactionReconciliation = Readonly<{
+  reconciliationId: string
+  titles: readonly StatementReconciledTitle[]
+}>
 export type StatementTransaction = Readonly<{
   id: string
   fitid: string
@@ -222,6 +237,7 @@ export type StatementTransaction = Readonly<{
   valueCents: string
   balanceAfterCents: string
   reconciliationStatus: ReconciliationStatus
+  reconciliation?: StatementTransactionReconciliation | null // spec 132
 }>
 export type PaidPayable = Readonly<{
   id: string

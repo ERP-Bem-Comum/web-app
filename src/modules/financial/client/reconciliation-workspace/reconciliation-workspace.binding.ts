@@ -151,6 +151,9 @@ export type WorkspaceBinding = Readonly<{
       conciliados: number
       pendentes: number
     }>
+    // Spec 132: lotes abertos na lista (UI-state, por transação).
+    expandedIds: ReadonlySet<string>
+    toggleExpanded: (transactionId: string) => void
   }>
   // #205: saldo do PERÍODO selecionado (abertura acumulada até `from` → fechamento + entradas/saídas).
   // `data` null enquanto carrega ou se o período não resolve (ex.: personalizado incompleto).
@@ -257,6 +260,7 @@ export function useReconciliationWorkspace(routeAccountRef: string): WorkspaceBi
   // #205: extrato por período — resolve o preset/intervalo do header em from/to e busca o saldo do período.
   // `now` estável (sessão) p/ não recalcular o intervalo a cada render.
   const [periodNow] = useState(() => new Date())
+  const [expandedBatchIds, setExpandedBatchIds] = useState<ReadonlySet<string>>(() => new Set())
   const periodRange = resolvePeriodRange(
     headerMenusBinding.period,
     headerMenusBinding.customStart,
@@ -581,6 +585,14 @@ export function useReconciliationWorkspace(routeAccountRef: string): WorkspaceBi
   const conferencia = deriveConferencia(periodBalance.data)
   const c = periodBalance.data?.counters ?? null
   const extrato = {
+    expandedIds: expandedBatchIds,
+    toggleExpanded: (transactionId: string) => {
+      setExpandedBatchIds((prev) => {
+        const next = new Set(prev)
+        if (!next.delete(transactionId)) next.add(transactionId)
+        return next
+      })
+    },
     hasStatement: periodRange !== null, // "pronto" = há período resolvido (idle só sem período)
     days: groupExtratoDays(extratoItems),
     totals: extratoTotals(extratoItems),

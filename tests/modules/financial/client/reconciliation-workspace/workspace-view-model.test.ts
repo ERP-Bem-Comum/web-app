@@ -21,7 +21,6 @@ import {
   sumCentsOf,
   residualCents,
   canReconcileMulti,
-  deriveReconType,
   requiresDestination,
   filterExtrato,
   extratoTotals,
@@ -250,18 +249,11 @@ describe('balanceamento N:1 / parcial (US3)', () => {
     assert.equal(residualCents(15000, 16000), -1000)
   })
 
-  it('canReconcileMulti: precisa de ≥1 título e (bate OU diferença classificada)', () => {
-    assert.equal(canReconcileMulti(0, 0, false), false) // nada selecionado
-    assert.equal(canReconcileMulti(2, 0, false), true) // bate exatamente
-    assert.equal(canReconcileMulti(1, 3000, false), false) // diferença sem classificar → bloqueia
-    assert.equal(canReconcileMulti(1, 3000, true), true) // diferença classificada → libera
-  })
-
-  it('deriveReconType: difference→Partial; senão 1→Individual, ≥2→Multiple', () => {
-    assert.equal(deriveReconType(1, false), 'Individual')
-    assert.equal(deriveReconType(2, false), 'Multiple')
-    assert.equal(deriveReconType(1, true), 'Partial')
-    assert.equal(deriveReconType(3, true), 'Partial')
+  it('canReconcileMulti: precisa de ≥1 título e a soma bater exatamente (spec 132)', () => {
+    assert.equal(canReconcileMulti(0, 0), false) // nada selecionado
+    assert.equal(canReconcileMulti(2, 0), true) // bate exatamente
+    assert.equal(canReconcileMulti(1, 3000), false) // diferença → bloqueia
+    assert.equal(canReconcileMulti(1, -3000), false) // selecionou a mais → bloqueia
   })
 })
 
@@ -449,8 +441,6 @@ describe('modal Detalhes da conciliação — matchDetailsView', () => {
     const multi = {
       count: 3,
       lines: [{ valueBRL: 'R$ 300,00', name: 'Fornecedor A', nameTag: null, documento: 'NF-1' }],
-      differenceBRL: null,
-      differenceTag: '',
       totalBRL: 'R$ 742,00',
     }
     const v = matchDetailsView(base, null, null, multi)
@@ -539,37 +529,7 @@ describe('buildMatchTitles (1 saída → N títulos, #175 items)', () => {
       '74200',
     )
     assert.equal(r?.count, 3)
-    assert.equal(r?.differenceBRL, null)
-    assert.equal(r?.differenceTag, '')
     assert.equal(r?.totalBRL, centsToBRL('74200'))
-  })
-
-  it('extrato MAIOR que a soma: diferença = ACRÉSCIMO (multa/juros); total = extrato (caso da P.O.)', () => {
-    // 3 títulos = R$ 30,50; extrato = R$ 220,50 → diferença R$ 190,00 a mais
-    const r = buildMatchTitles(
-      lookup([
-        { payableId: 'p1', reconciledValueCents: '850' },
-        { payableId: 'p2', reconciledValueCents: '1200' },
-        { payableId: 'p3', reconciledValueCents: '1000' },
-      ]),
-      '22050',
-    )
-    assert.equal(r?.differenceBRL, centsToBRL('19000'))
-    assert.equal(r?.differenceTag, 'financial.recon.match.diffSurplus')
-    assert.equal(r?.totalBRL, centsToBRL('22050'))
-  })
-
-  it('extrato MENOR que a soma: diferença = DESCONTO', () => {
-    const r = buildMatchTitles(
-      lookup([
-        { payableId: 'p1', reconciledValueCents: '3000' },
-        { payableId: 'p2', reconciledValueCents: '2000' },
-      ]),
-      '4500',
-    )
-    assert.equal(r?.differenceBRL, centsToBRL('500'))
-    assert.equal(r?.differenceTag, 'financial.recon.match.diffDiscount')
-    assert.equal(r?.totalBRL, centsToBRL('4500'))
   })
 
   it('#357: linhas surfam favorecido + nº do documento do item enriquecido', () => {

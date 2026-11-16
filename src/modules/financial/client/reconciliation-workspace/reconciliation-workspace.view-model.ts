@@ -12,6 +12,7 @@ import type {
   PaidPayable,
   ReconciliationAccount,
   ReconciliationPeriod,
+  StatementReconciledTitle,
   StatementTransaction,
   SuggestionBand,
   TransactionReconciliation,
@@ -40,6 +41,7 @@ export type {
   ReconciliationAccount,
   ReconciliationPeriod,
   ExportFormat,
+  StatementReconciledTitle,
   DifferenceTreatment,
   ManualEntryType,
 } from '#modules/financial/client/data/model/reconciliation.model.ts'
@@ -376,17 +378,11 @@ export const residualCents = (txValueCents: number, selectedSumCents: number): n
   txValueCents - selectedSumCents
 
 /**
- * Pode conciliar (gating do botão): ≥1 título selecionado E (bate exatamente OU a diferença foi
- * classificada). O backend revalida (422 reconciliation-not-balanced), mas a UI nunca deixa enviar
- * desbalanceado (SC-004).
+ * Pode conciliar (gating do botão): ≥1 título selecionado E a soma bate exatamente com a transação
+ * (decisão da P.O., spec 132). O backend revalida (422 reconciliation-not-balanced).
  */
-export const canReconcileMulti = (selectedCount: number, residual: number, hasTreatment: boolean): boolean =>
-  selectedCount >= 1 && (residual === 0 || hasTreatment)
-
-/** Tipo derivado (espelha o backend `deriveType`): com diferença → Partial; senão 1→Individual, ≥2→Multiple. */
-export type ReconType = 'Individual' | 'Multiple' | 'Partial'
-export const deriveReconType = (selectedCount: number, hasDifference: boolean): ReconType =>
-  hasDifference ? 'Partial' : selectedCount > 1 ? 'Multiple' : 'Individual'
+export const canReconcileMulti = (selectedCount: number, residual: number): boolean =>
+  selectedCount >= 1 && residual === 0
 
 /**
  * Por que o "Conciliar" do lançamento manual está travado — `null` = liberado. PURA.
@@ -836,10 +832,7 @@ export type MatchTitleLine = Readonly<{
 export type MatchTitlesView = Readonly<{
   count: number
   lines: readonly MatchTitleLine[]
-  // Diferença (extrato − Σtítulos): acréscimo (multa/juros) ou desconto. null quando não há diferença.
-  differenceBRL: string | null
-  differenceTag: string // i18n da linha de diferença ('' quando não há)
-  totalBRL: string // total conciliado = VALOR DO EXTRATO (= Σtítulos + diferença)
+  totalBRL: string // total conciliado = VALOR DO EXTRATO
 }>
 export type MatchDetailsView = Readonly<{
   isManualEntry: boolean
@@ -907,11 +900,19 @@ export const matchDocFromItem = (
 
 /**
  * Lado "Título" do modal quando UMA saída foi conciliada com VÁRIOS títulos (#175 com >1 item): contagem +
- * valor por título + DIFERENÇA (acréscimo multa/juros ou desconto) + total = VALOR DO EXTRATO. null quando há
- * só 1 item (usa `doc`). A diferença é derivada do extrato − Σtítulos (auto-consistente: o total bate com o
- * extrato exibido à esquerda); o TIPO exato da diferença (multa/juros/desconto/tarifa) ainda não vem no
- * lookup do core-api — então o rótulo só distingue acréscimo × desconto pelo sinal.
+ * valor por título + total = VALOR DO EXTRATO. null quando há só 1 item (usa `doc`). Não existe linha de
+ * diferença: a conciliação só ocorre com os totais batendo (spec 132).
  */
+/** Títulos de um LOTE (mais de um título), ou [] quando a transação não é lote (spec 132). PURA. */
+export const batchTitlesOf = (tx: StatementTransaction): readonly StatementReconciledTitle[] => {
+  const titles = tx.reconciliation?.titles ?? []
+  return titles.length > 1 ? titles : []
+}
+
+/** Soma dos valores conciliados dos títulos, em centavos (string, sem perder precisão). PURA. */
+export const titlesTotalCents = (titles: readonly StatementReconciledTitle[]): string =>
+  String(titles.reduce((acc, title) => acc + BigInt(title.reconciledValueCents), 0n))
+
 export const buildMatchTitles = (
   r: TransactionReconciliation,
   extratoCents: string | null,
@@ -919,8 +920,6 @@ export const buildMatchTitles = (
   if (r.items.length <= 1) return null
   const subtotalCents = r.items.reduce((acc, it) => acc + Number(it.reconciledValueCents), 0)
   const extrato = extratoCents !== null && extratoCents !== '' ? Number(extratoCents) : subtotalCents
-  const diffCents = extrato - subtotalCents
-  const hasDiff = diffCents !== 0
   return {
     count: r.items.length,
     // Cada linha surfa favorecido/órgão + nº do documento do item enriquecido no BFF (#357); mesma regra do
@@ -931,12 +930,6 @@ export const buildMatchTitles = (
       nameTag: retentionAgencyTag(it.retentionType),
       documento: it.documentNumber ?? MATCH_DASH,
     })),
-    differenceBRL: hasDiff ? centsToBRL(String(Math.abs(diffCents))) : null,
-    differenceTag: hasDiff
-      ? diffCents > 0
-        ? 'financial.recon.match.diffSurplus'
-        : 'financial.recon.match.diffDiscount'
-      : '',
     totalBRL: centsToBRL(String(extrato)),
   }
 }
