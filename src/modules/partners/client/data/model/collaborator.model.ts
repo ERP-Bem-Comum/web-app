@@ -193,6 +193,7 @@ export type CollaboratorDetail = CollaboratorListItem &
     cpf: string
     startOfContract: string
     employmentRelationship: EmploymentRelationship
+    deactivationReason?: DeactivationReason // só quando inativo; ausente = ativo ou motivo legado
     // Dados do cadastro completo (2ª etapa) — opcionais: ausentes enquanto só pré-cadastrado.
     rg?: string
     dateOfBirth?: string

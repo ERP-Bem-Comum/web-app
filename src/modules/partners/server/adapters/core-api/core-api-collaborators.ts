@@ -81,6 +81,18 @@ const registrationFromApi = (s: 'PreRegistration' | 'Complete'): RegistrationSta
   s === 'Complete' ? 'complete' : 'pre-registration'
 const activationFromApi = (active: boolean): ActivationStatus => (active ? 'active' : 'inactive')
 
+// Motivo de inativação: só os 4 motivos de RH. `LEGACY_MIGRATION` (marcador do ETL, sem causa real) e
+// qualquer valor desconhecido viram ausente — a tela mostra só "Inativo".
+const DEACTIVATION_REASONS: ReadonlySet<string> = new Set<DeactivationReason>([
+  'DESLIGAMENTO_ABC',
+  'FALECIMENTO',
+  'TEMPO_CONTRATO_FINALIZADO',
+  'SOLICITACAO_RESCISAO_CONTRATUAL',
+])
+const isDeactivationReason = (v: string): v is DeactivationReason => DEACTIVATION_REASONS.has(v)
+const deactivationReasonFromApi = (v: string | null | undefined): DeactivationReason | undefined =>
+  v !== null && v !== undefined && isDeactivationReason(v) ? v : undefined
+
 const itemToModel = (c: CoreApiCollaboratorItem): CollaboratorListItem => ({
   id: c.id,
   name: c.name,
@@ -102,6 +114,7 @@ const detailToModel = (raw: unknown): Result<CollaboratorDetail, PartnersError> 
     cpf: c.cpf,
     startOfContract: c.startOfContract,
     employmentRelationship: c.employmentRelationship,
+    deactivationReason: c.active ? undefined : deactivationReasonFromApi(c.disableBy),
     // Dados do cadastro completo (null/'' legado → undefined).
     rg: u(c.rg),
     dateOfBirth: u(c.dateOfBirth),

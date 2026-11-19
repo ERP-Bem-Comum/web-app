@@ -782,6 +782,26 @@ export const ptBR: Catalog = {
   'partners.collaborators.detail.title': 'Detalhe do Colaborador',
   'partners.collaborators.detail.exportHistory': 'Exportar histórico',
   'partners.collaborators.detail.exportHistory.loading': 'Exportando…',
+  // Inativar / reativar colaborador (spec 133). Motivo obrigatório na inativação (valores do core-api).
+  'partners.collaborators.actions.deactivate': 'Inativar',
+  'partners.collaborators.actions.reactivate': 'Reativar',
+  'partners.collaborators.deactivate.title': 'Inativar colaborador',
+  'partners.collaborators.deactivate.message':
+    'O colaborador deixa de aparecer como ativo. É possível reativá-lo depois.',
+  'partners.collaborators.deactivate.reasonLabel': 'Motivo',
+  'partners.collaborators.deactivate.reasonPlaceholder': 'Selecione o motivo',
+  'partners.collaborators.deactivate.confirm': 'Inativar',
+  'partners.collaborators.reactivate.title': 'Reativar colaborador',
+  'partners.collaborators.reactivate.message': 'Tem certeza que deseja reativar este colaborador?',
+  'partners.collaborators.reactivate.confirm': 'Reativar',
+  // eslint-disable-next-line no-secrets/no-secrets -- chave i18n (código de enum), não é segredo
+  'partners.collaborators.deactivationReason.DESLIGAMENTO_ABC': 'Desligamento pela ABC',
+  'partners.collaborators.deactivationReason.FALECIMENTO': 'Falecimento',
+  // eslint-disable-next-line no-secrets/no-secrets -- chave i18n (código de enum), não é segredo
+  'partners.collaborators.deactivationReason.TEMPO_CONTRATO_FINALIZADO': 'Tempo de contrato finalizado',
+  // eslint-disable-next-line no-secrets/no-secrets -- chave i18n (código de enum), não é segredo
+  'partners.collaborators.deactivationReason.SOLICITACAO_RESCISAO_CONTRATUAL':
+    'Solicitação de rescisão contratual',
   'partners.collaborators.detail.section.prefilled': 'Dados pré-preenchidos pela ABC:',
   'partners.collaborators.detail.section.complete': 'Complete seu cadastro:',
   'partners.collaborators.detail.field.rg': 'RG',
