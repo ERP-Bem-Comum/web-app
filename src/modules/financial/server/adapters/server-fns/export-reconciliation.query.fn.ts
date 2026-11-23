@@ -14,11 +14,10 @@ import type { ReconciliationExport } from '#modules/financial/server/domain/reco
 import type { ReconciliationError } from '#modules/financial/server/domain/errors/reconciliation.errors.ts'
 
 export type ExportReconciliationFnResult =
-  | Readonly<{ ok: true; data: ReconciliationExport }>
-  | Readonly<{ ok: false; error: ReconciliationError }>
+  Readonly<{ ok: true; data: ReconciliationExport }> | Readonly<{ ok: false; error: ReconciliationError }>
 
 export const exportReconciliationFn = createServerFn({ method: 'GET' })
-  .inputValidator(ExportReconciliationInputSchema)
+  .validator(ExportReconciliationInputSchema)
   .handler(async ({ data }): Promise<ExportReconciliationFnResult> => {
     const user = await getCurrentUserFn()
     if (user === null) return { ok: false, error: 'unauthorized' }

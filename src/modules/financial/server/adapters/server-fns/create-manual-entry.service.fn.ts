@@ -13,11 +13,10 @@ import type { ManualEntryCreated } from '#modules/financial/server/domain/reconc
 import type { ReconciliationError } from '#modules/financial/server/domain/errors/reconciliation.errors.ts'
 
 export type ManualEntryFnResult =
-  | Readonly<{ ok: true; data: ManualEntryCreated }>
-  | Readonly<{ ok: false; error: ReconciliationError }>
+  Readonly<{ ok: true; data: ManualEntryCreated }> | Readonly<{ ok: false; error: ReconciliationError }>
 
 export const createManualEntryFn = createServerFn({ method: 'POST' })
-  .inputValidator(ManualEntryInputSchema)
+  .validator(ManualEntryInputSchema)
   .handler(async ({ data }): Promise<ManualEntryFnResult> => {
     const user = await getCurrentUserFn()
     if (user === null) return { ok: false, error: 'unauthorized' }

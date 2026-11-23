@@ -23,8 +23,16 @@ import {
   deriveDetailStatus,
   paymentComplementLabelTag,
   mapDocumentDetail,
+  COLUMNS,
   type CategorizationResolvers,
 } from '../../../../../src/modules/financial/client/contas-a-pagar-list/contas-a-pagar.view-model.ts'
+import {
+  NO_HIDDEN_COLUMNS,
+  toggleHiddenColumn,
+  visibleColumnsOf,
+} from '../../../../../src/modules/financial/client/contas-a-pagar-list/column-visibility.view-model.ts'
+import { createTranslator } from '../../../../../src/shared/i18n/index.ts'
+import { ptBR } from '../../../../../src/shared/i18n/catalog.pt-BR.ts'
 import { ok, err } from '../../../../../src/shared/primitives/result.ts'
 import type {
   DocumentListResponse,
@@ -161,17 +169,61 @@ describe('pageInfo', () => {
 })
 
 describe('buildDocumentsCsv', () => {
-  it('cabeçalho (com Pagamento) + linhas com `;`, valores entre aspas (RFC 4180)', () => {
-    const csv = buildDocumentsCsv(buildRows([summary()], supplierName))
-    const [header, row] = csv.split('\n')
-    assert.equal(header, 'Tipo;Documento;Fornecedor;Vencimento;Pagamento;Líquido;Status')
-    // Vencimento → Pagamento ("—" sem paidAt em modo documento) → Líquido → Status
-    assert.ok(row?.startsWith('"NFS-e";"0847";"Bambu Educação";"10/07/2026";"—";'))
-    assert.ok(row?.endsWith(';"Aberto"'))
+  // Intl (pt-BR) usa NBSP entre "R$" e o número — normaliza p/ comparar.
+  const norm = (s: string): string => s.replace(/\s/g, ' ')
+  const csvT = createTranslator(ptBR)
+  const contractOf = (ref: string | null): string | null => (ref === 'c1' ? '0003/2026' : null)
+
+  it('CAS-41: cabeçalho = TODAS as colunas do grid, na ordem do seletor', () => {
+    const csv = buildDocumentsCsv(buildRows([summary()], supplierName), csvT)
+    const [header] = csv.split('\n')
+    assert.equal(
+      header,
+      'Tipo;Documento;Fornecedor;Contrato;Forma Pag.;Emissão;Vencimento;Pagamento;Bruto;Líquido;Status',
+    )
+    // Derivado do COLUMNS: coluna nova no grid entra no CSV sem ninguém lembrar.
+    assert.equal(header, COLUMNS.map((c) => csvT(c.labelTag)).join(';'))
+  })
+
+  it('CAS-41: a linha traz Contrato, Forma de pagamento (rótulo PT), Emissão e Bruto', () => {
+    const rows = buildRows([summary({ contractRef: 'c1' })], supplierName, undefined, undefined, contractOf)
+    const [, row] = buildDocumentsCsv(rows, csvT).split('\n')
+    const cells = norm(row ?? '').split(';')
+    assert.equal(cells.length, COLUMNS.length)
+    assert.deepEqual(cells, [
+      '"NFS-e"',
+      '"0847"',
+      '"Bambu Educação"',
+      '"0003/2026"',
+      '"PIX"',
+      '"01/07/2026"',
+      '"10/07/2026"',
+      '"—"',
+      '"R$ 1.600,00"',
+      '"R$ 1.500,00"',
+      '"Aberto"',
+    ])
+  })
+
+  it('forma de pagamento ausente sai "—" (não a chave i18n crua)', () => {
+    const [, row] = buildDocumentsCsv(
+      buildRows([summary({ paymentMethod: null })], supplierName),
+      csvT,
+    ).split('\n')
+    assert.equal(row?.split(';')[4], '"—"')
+  })
+
+  it('CAS-42: coluna OCULTA no grid continua no CSV (o export ignora o seletor de colunas)', () => {
+    const hidden = toggleHiddenColumn(toggleHiddenColumn(NO_HIDDEN_COLUMNS, 'gross'), 'contract')
+    assert.equal(visibleColumnsOf(hidden).length, COLUMNS.length - 2) // o grid perdeu as duas…
+    const [header] = buildDocumentsCsv(buildRows([summary()], supplierName), csvT).split('\n')
+    assert.equal(header?.split(';').length, COLUMNS.length) // …o CSV, não
+    assert.ok(header?.includes('Bruto'))
+    assert.ok(header?.includes('Contrato'))
   })
 
   it('escapa aspas internas duplicando-as', () => {
-    const csv = buildDocumentsCsv(buildRows([summary({ documentNumber: 'A"B' })], supplierName))
+    const csv = buildDocumentsCsv(buildRows([summary({ documentNumber: 'A"B' })], supplierName), csvT)
     assert.ok(csv.includes('"A""B"'))
   })
 
@@ -181,10 +233,13 @@ describe('buildDocumentsCsv', () => {
       [summary({ id: 'a', netValueCents: '150000' }), summary({ id: 'b', netValueCents: '249999' })],
       supplierName,
     )
-    const lines = buildDocumentsCsv(rows).split('\n')
+    const lines = buildDocumentsCsv(rows, csvT).split('\n')
     const total = lines[lines.length - 1] ?? ''
-    assert.ok(total.includes('Total (2 títulos)'))
-    assert.ok(total.replace(/\s/g, ' ').includes('R$ 3.999,99'))
+    const cells = norm(total).split(';')
+    // Mesma largura do cabeçalho; rótulo sob Fornecedor e soma sob Líquido.
+    assert.equal(cells.length, COLUMNS.length)
+    assert.equal(cells[COLUMNS.findIndex((c) => c.key === 'supplier')], '"Total (2 títulos)"')
+    assert.equal(cells[COLUMNS.findIndex((c) => c.key === 'net')], '"R$ 3.999,99"')
   })
 })
 

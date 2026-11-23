@@ -106,8 +106,8 @@ export const AdjustDocumentInputSchema = z.object({
   interestCents: CentsSchema.optional(),
   retentions: z.array(RetentionItemSchema).readonly().optional(),
   dueDate: DateSchema.optional(),
-  description: z.string().trim().max(500).nullable().optional(),
-  paymentDetail: z.string().trim().min(1).max(255).nullable().optional(), // #284: editar o complemento; null = limpar
+  description: z.string().trim().max(500).nullish(),
+  paymentDetail: z.string().trim().min(1).max(255).nullish(), // #284: editar o complemento; null = limpar
   paymentMethod: z.enum(PAYMENT_METHODS).optional(), // core-api#1057: só no Aprovado
   taxonomy: z
     .object({
@@ -171,21 +171,27 @@ export const ListDocumentsInputSchema = z.object({
   pageSize: z.int().min(1).max(100).default(20),
 })
 
-// #201: listagem por título (sem emissão; o endpoint filtra por status/tipo/fornecedor/vencimento).
 // #536: input da contagem agregada (chips) — mesmos filtros da lista, sem status/paginação.
+// CAS-43: + Emissão (issuedFrom/issuedTo). Sem estas chaves o Zod as DESCARTAVA em silêncio e o filtro de
+// Emissão, habilitado na tela, não chegava ao core-api — grid, chips e CSV saíam fora do período.
 export const PayableCountsInputSchema = z.object({
   supplierRef: z.uuid().optional(),
   dueFrom: DateSchema.optional(),
   dueTo: DateSchema.optional(),
+  issuedFrom: DateSchema.optional(), // janela inclusiva; cada extremo vale sozinho
+  issuedTo: DateSchema.optional(),
   type: z.string().trim().optional(), // documentType — o core-api valida o enum
 })
 
+// #201: listagem por título. CAS-43: o `/payable-titles` aceita Emissão desde o core-api do CAS-40.
 export const ListPayableTitlesInputSchema = z.object({
   status: z.enum(DOCUMENT_STATUSES).optional(),
   type: z.string().trim().optional(),
   supplierRef: z.uuid().optional(),
   dueFrom: DateSchema.optional(),
   dueTo: DateSchema.optional(),
+  issuedFrom: DateSchema.optional(),
+  issuedTo: DateSchema.optional(),
   page: z.int().min(1).default(1),
   pageSize: z.int().min(1).max(100).default(20),
 })

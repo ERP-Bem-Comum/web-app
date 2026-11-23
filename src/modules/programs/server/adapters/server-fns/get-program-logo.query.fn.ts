@@ -16,7 +16,7 @@ export type GetProgramLogoFnResult =
   | Readonly<{ ok: false; error: ProgramsError }>
 
 export const getProgramLogoFn = createServerFn({ method: 'GET' })
-  .inputValidator(z.object({ id: z.string().trim().min(1) }))
+  .validator(z.object({ id: z.string().trim().min(1) }))
   .handler(async ({ data }): Promise<GetProgramLogoFnResult> => {
     try {
       const user = await getCurrentUserFn()

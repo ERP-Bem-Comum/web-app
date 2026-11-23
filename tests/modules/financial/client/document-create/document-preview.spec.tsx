@@ -141,7 +141,10 @@ describe('DocumentPreview — web view (com arquivo)', () => {
     )
     // Não usa mais o visualizador nativo (que injeta barra + miniaturas); render próprio em canvas.
     expect(container.querySelector('iframe')).toBeNull()
-    const img = screen.getByRole('img')
+    // `hidden: true`: no jsdom 31 (o 29 ignorava) o estilo calculado avalia `@media`, com a janela fixa em 1024 px (sem
+    // opção para mudar). A coluna de preview some abaixo de 75rem DE PROPÓSITO (`previewCol`), então no
+    // jsdom ela fica "inacessível". O que este teste confere é o papel e o rótulo, não o layout responsivo.
+    const img = screen.getByRole('img', { hidden: true })
     expect(img.getAttribute('aria-label')).toBe(tr('financial.create.preview.frameLabel'))
     // O ARQUIVO (bytes) + o zoom inicial (100%) são propagados ao binding do canvas (não a blob URL).
     expect(mockUsePdfCanvas).toHaveBeenCalledWith(pdfFile, 100)

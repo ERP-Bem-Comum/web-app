@@ -13,11 +13,10 @@ import type { RejectedSuggestion } from '#modules/financial/server/domain/reconc
 import type { ReconciliationError } from '#modules/financial/server/domain/errors/reconciliation.errors.ts'
 
 export type RejectSuggestionFnResult =
-  | Readonly<{ ok: true; data: RejectedSuggestion }>
-  | Readonly<{ ok: false; error: ReconciliationError }>
+  Readonly<{ ok: true; data: RejectedSuggestion }> | Readonly<{ ok: false; error: ReconciliationError }>
 
 export const rejectSuggestionFn = createServerFn({ method: 'POST' })
-  .inputValidator(RejectSuggestionInputSchema)
+  .validator(RejectSuggestionInputSchema)
   .handler(async ({ data }): Promise<RejectSuggestionFnResult> => {
     const user = await getCurrentUserFn()
     if (user === null) return { ok: false, error: 'unauthorized' }

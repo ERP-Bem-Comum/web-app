@@ -31,8 +31,9 @@ CORE_API_URL=http://localhost:3001/api/v2 pnpm dev   # → http://localhost:3000
 - **Imagem**: [`web.Dockerfile`](./web.Dockerfile) — multi-stage, runtime **distroless** non-root (ADR-0015);
   `pnpm build` → `.output` (servidor Nitro self-contained).
 - **CI**: [`build-publish.yml`](./.github/workflows/build-publish.yml) publica
-  `ghcr.io/erp-bem-comum/bemcomum-web:qa` (provenance + SBOM); [`deploy-qa.yml`](./.github/workflows/deploy-qa.yml)
-  faz o deploy via **Tailscale**. O ambiente **só puxa** a imagem — nunca compila (ADR-0018).
+  `ghcr.io/erp-bem-comum/bemcomum-web:qa` (provenance + SBOM, com gate Trivy). **O deploy na VPS de QA
+  está suspenso desde 12/11/2026**: o workflow não entrega a imagem em host nenhum (o motivo está no
+  cabeçalho do arquivo). O ambiente **só puxa** a imagem — nunca compila (ADR-0018).
 - **Observabilidade** (ADR-0019): logs JSON em stdout; `X-Request-Id` em toda resposta; `/health` (liveness)
   e `/ready` (readiness).
 

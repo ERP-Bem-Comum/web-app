@@ -39,7 +39,7 @@ export type ExportDropdownProps = Readonly<{
 }>
 
 const downloadCsv = (rows: readonly GridRow[]): void => {
-  const blob = new Blob([buildDocumentsCsv(rows)], { type: 'text/csv;charset=utf-8;' })
+  const blob = new Blob([buildDocumentsCsv(rows, t)], { type: 'text/csv;charset=utf-8;' })
   const url = URL.createObjectURL(blob)
   const link = document.createElement('a')
   link.href = url

@@ -13,11 +13,10 @@ import { DeleteStatementInputSchema } from '#modules/financial/server/adapters/r
 import type { ReconciliationError } from '#modules/financial/server/domain/errors/reconciliation.errors.ts'
 
 export type DeleteBankStatementFnResult =
-  | Readonly<{ ok: true }>
-  | Readonly<{ ok: false; error: ReconciliationError }>
+  Readonly<{ ok: true }> | Readonly<{ ok: false; error: ReconciliationError }>
 
 export const deleteBankStatementFn = createServerFn({ method: 'POST' })
-  .inputValidator(DeleteStatementInputSchema)
+  .validator(DeleteStatementInputSchema)
   .handler(async ({ data }): Promise<DeleteBankStatementFnResult> => {
     const user = await getCurrentUserFn()
     if (user === null) return { ok: false, error: 'unauthorized' }

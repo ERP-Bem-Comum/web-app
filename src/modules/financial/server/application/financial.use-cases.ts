@@ -66,6 +66,12 @@ export type FinancialClient = Readonly<{
     input: ListPayableTitlesInput,
     token: string,
   ) => Promise<Result<PayableTitleListResponse, FinancialError>>
+  // CAS-43/44: TODOS os documentos do filtro (o BFF pagina o `/documents`) — os rascunhos do chip
+  // "Rascunho", que não têm título e por isso não vêm do `/payable-titles`.
+  listAllDocuments: (
+    input: ListDocumentsInput,
+    token: string,
+  ) => Promise<Result<DocumentListResponse, FinancialError>>
   getById: (id: string, token: string) => Promise<Result<DocumentDetail, FinancialError>>
   // #568: comprovante-fonte (bytes base64 + mimeType) — o BFF busca COM o token; o browser nunca acessa.
   getSourceFile: (id: string, token: string) => Promise<Result<DocumentSourceFile, FinancialError>>
@@ -144,6 +150,11 @@ export const createListAllPayableTitles =
   (deps: Deps) =>
   (input: ListPayableTitlesInput, token: string): Promise<Result<PayableTitleListResponse, FinancialError>> =>
     deps.client.listAllPayableTitles(input, token)
+
+export const createListAllDocuments =
+  (deps: Deps) =>
+  (input: ListDocumentsInput, token: string): Promise<Result<DocumentListResponse, FinancialError>> =>
+    deps.client.listAllDocuments(input, token)
 
 export const createGetPayableCounts =
   (deps: Deps) =>

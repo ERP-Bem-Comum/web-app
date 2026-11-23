@@ -5,6 +5,7 @@
 import { listDocumentsFn } from '#modules/financial/server/adapters/server-fns/list-documents.query.fn.ts'
 import { listPayableTitlesFn } from '#modules/financial/server/adapters/server-fns/list-payable-titles.query.fn.ts'
 import { listAllPayableTitlesFn } from '#modules/financial/server/adapters/server-fns/list-all-payable-titles.query.fn.ts'
+import { listAllDocumentsFn } from '#modules/financial/server/adapters/server-fns/list-all-documents.query.fn.ts'
 import { listPayableCountsFn } from '#modules/financial/server/adapters/server-fns/list-payable-counts.query.fn.ts'
 import { generateRemittanceFn } from '#modules/financial/server/adapters/server-fns/generate-remittance.service.fn.ts'
 import { previewRemittanceFn } from '#modules/financial/server/adapters/server-fns/preview-remittance.query.fn.ts'
@@ -31,6 +32,7 @@ export const financialRepository = createFinancialRepository({
   listPayableTitlesFn: (opts) => listPayableTitlesFn(opts),
   payableCountsFn: (opts) => listPayableCountsFn(opts),
   listAllPayableTitlesFn: (opts) => listAllPayableTitlesFn(opts),
+  listAllDocumentsFn: (opts) => listAllDocumentsFn(opts),
   previewRemittanceFn: (opts) => previewRemittanceFn(opts),
   generateRemittanceFn: (opts) => generateRemittanceFn(opts),
   downloadRemittanceFileFn: (opts) => downloadRemittanceFileFn(opts),

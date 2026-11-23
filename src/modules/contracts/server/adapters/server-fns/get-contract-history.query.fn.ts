@@ -14,7 +14,7 @@ export type GetContractHistoryFnResult =
   | Readonly<{ ok: false; error: ContractsError }>
 
 export const getContractHistoryFn = createServerFn({ method: 'GET' })
-  .inputValidator(GetHistoryInputSchema)
+  .validator(GetHistoryInputSchema)
   .handler(async ({ data }): Promise<GetContractHistoryFnResult> => {
     const user = await getCurrentUserFn()
     if (user === null) return { ok: false, error: 'unauthorized' }

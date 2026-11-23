@@ -13,11 +13,10 @@ import type { PayableCounts } from '#modules/financial/server/domain/document.io
 import type { FinancialError } from '#modules/financial/server/domain/errors/financial.errors.ts'
 
 export type PayableCountsFnResult =
-  | Readonly<{ ok: true; data: PayableCounts }>
-  | Readonly<{ ok: false; error: FinancialError }>
+  Readonly<{ ok: true; data: PayableCounts }> | Readonly<{ ok: false; error: FinancialError }>
 
 export const listPayableCountsFn = createServerFn({ method: 'GET' })
-  .inputValidator(PayableCountsInputSchema)
+  .validator(PayableCountsInputSchema)
   .handler(async ({ data }): Promise<PayableCountsFnResult> => {
     const user = await getCurrentUserFn()
     if (user === null) return { ok: false, error: 'unauthorized' }

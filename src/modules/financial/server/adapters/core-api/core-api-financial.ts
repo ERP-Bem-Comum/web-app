@@ -58,6 +58,8 @@ const buildCountsQuery = (input: PayableCountsInput): string => {
   if (input.supplierRef !== undefined) p.set('supplierRef', input.supplierRef)
   if (input.dueFrom !== undefined) p.set('dueFrom', input.dueFrom)
   if (input.dueTo !== undefined) p.set('dueTo', input.dueTo)
+  if (input.issuedFrom !== undefined) p.set('issuedFrom', input.issuedFrom) // CAS-43
+  if (input.issuedTo !== undefined) p.set('issuedTo', input.issuedTo)
   return p.toString()
 }
 
@@ -69,6 +71,8 @@ const buildTitlesQuery = (input: ListPayableTitlesInput): string => {
   if (input.supplierRef !== undefined) p.set('supplierRef', input.supplierRef)
   if (input.dueFrom !== undefined) p.set('dueFrom', input.dueFrom)
   if (input.dueTo !== undefined) p.set('dueTo', input.dueTo)
+  if (input.issuedFrom !== undefined) p.set('issuedFrom', input.issuedFrom) // CAS-43
+  if (input.issuedTo !== undefined) p.set('issuedTo', input.issuedTo)
   p.set('page', String(input.page))
   p.set('pageSize', String(input.pageSize))
   return p.toString()
@@ -178,6 +182,35 @@ export const createCoreApiFinancialClient = (baseUrl: string): FinancialClient =
         )
         if (isErr(r)) return err(mapHttpError(r.error))
         const next = payableTitlesToModel(r.value)
+        if (isErr(next)) return next
+        items.push(...next.value.items)
+      }
+
+      return ok({ items, page: 1, pageSize: items.length, total })
+    },
+    // CAS-43/44: TODOS os documentos do filtro (na prática, os rascunhos do chip "Rascunho"). Rascunho não
+    // gera título, então não vem do `/payable-titles`; vinha do `/documents` PAGINADO e o CSV saía só com
+    // a página visível. Mesmo desenho do `listAllPayableTitles`: sequencial, teto de segurança, e erro em
+    // qualquer página vira erro-valor (nunca um conjunto parcial silencioso).
+    listAllDocuments: async (input, token): Promise<Result<DocumentListResponse, FinancialError>> => {
+      const fetchPage = async (page: number): Promise<Result<DocumentListResponse, FinancialError>> => {
+        const r = await resultFetch<unknown>(
+          `${docs}?${buildListQuery({ ...input, page, pageSize: MAX_CORE_API_PAGE_SIZE })}`,
+          { token },
+        )
+        return isErr(r) ? err(mapHttpError(r.error)) : listToModel(r.value)
+      }
+      const head = await fetchPage(1)
+      if (isErr(head)) return head
+
+      const { total } = head.value
+      const items = [...head.value.items]
+      const pages = Math.min(
+        Math.ceil(total / MAX_CORE_API_PAGE_SIZE),
+        Math.ceil(MAX_ALL_TITLES / MAX_CORE_API_PAGE_SIZE),
+      )
+      for (let page = 2; page <= pages; page++) {
+        const next = await fetchPage(page)
         if (isErr(next)) return next
         items.push(...next.value.items)
       }

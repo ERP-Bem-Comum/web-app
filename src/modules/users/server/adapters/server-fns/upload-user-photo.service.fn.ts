@@ -18,7 +18,7 @@ const InputSchema = z.object({
 })
 
 export const uploadUserPhotoFn = createServerFn({ method: 'POST' })
-  .inputValidator(InputSchema)
+  .validator(InputSchema)
   .handler(async ({ data }): Promise<UploadPhotoFnResult> => {
     try {
       const user = await getCurrentUserFn()

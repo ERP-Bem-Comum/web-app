@@ -12,11 +12,10 @@ import type { ProgramListResponse } from '#modules/programs/server/domain/progra
 import type { ProgramsError } from '#modules/programs/server/domain/errors/programs.errors.ts'
 
 export type ListProgramsFnResult =
-  | Readonly<{ ok: true; data: ProgramListResponse }>
-  | Readonly<{ ok: false; error: ProgramsError }>
+  Readonly<{ ok: true; data: ProgramListResponse }> | Readonly<{ ok: false; error: ProgramsError }>
 
 export const listProgramsFn = createServerFn({ method: 'GET' })
-  .inputValidator(ListProgramsInputSchema)
+  .validator(ListProgramsInputSchema)
   .handler(async ({ data }): Promise<ListProgramsFnResult> => {
     const user = await getCurrentUserFn()
     if (user === null) return { ok: false, error: 'unauthorized' }

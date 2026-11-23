@@ -8,12 +8,12 @@ import * as z from 'zod'
 import type * as D from '../domain/geography/geography.io.ts'
 
 export const TogglePartnerStateInputSchema = z.object({
-  uf: z.string().trim().min(2).max(2),
+  uf: z.string().trim().length(2),
   isPartner: z.boolean(),
 })
 
 export const ListMunicipalitiesByUfInputSchema = z.object({
-  uf: z.string().trim().min(2).max(2),
+  uf: z.string().trim().length(2),
 })
 
 export const TogglePartnerMunicipalityInputSchema = z.object({
@@ -22,9 +22,18 @@ export const TogglePartnerMunicipalityInputSchema = z.object({
 })
 
 type AssertEqual<A, B> = [A] extends [B] ? true : never
- 
-const _g_toggleState: AssertEqual<z.infer<typeof TogglePartnerStateInputSchema>, D.TogglePartnerStateInput> = true
-const _g_listMun: AssertEqual<z.infer<typeof ListMunicipalitiesByUfInputSchema>, D.ListMunicipalitiesByUfInput> = true
-const _g_toggleMun: AssertEqual<z.infer<typeof TogglePartnerMunicipalityInputSchema>, D.TogglePartnerMunicipalityInput> = true
- 
+
+const _g_toggleState: AssertEqual<
+  z.infer<typeof TogglePartnerStateInputSchema>,
+  D.TogglePartnerStateInput
+> = true
+const _g_listMun: AssertEqual<
+  z.infer<typeof ListMunicipalitiesByUfInputSchema>,
+  D.ListMunicipalitiesByUfInput
+> = true
+const _g_toggleMun: AssertEqual<
+  z.infer<typeof TogglePartnerMunicipalityInputSchema>,
+  D.TogglePartnerMunicipalityInput
+> = true
+
 void [_g_toggleState, _g_listMun, _g_toggleMun]

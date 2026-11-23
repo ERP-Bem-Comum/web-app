@@ -13,11 +13,10 @@ import type { DocumentListResponse } from '#modules/financial/server/domain/docu
 import type { FinancialError } from '#modules/financial/server/domain/errors/financial.errors.ts'
 
 export type ListDocumentsFnResult =
-  | Readonly<{ ok: true; data: DocumentListResponse }>
-  | Readonly<{ ok: false; error: FinancialError }>
+  Readonly<{ ok: true; data: DocumentListResponse }> | Readonly<{ ok: false; error: FinancialError }>
 
 export const listDocumentsFn = createServerFn({ method: 'GET' })
-  .inputValidator(ListDocumentsInputSchema)
+  .validator(ListDocumentsInputSchema)
   .handler(async ({ data }): Promise<ListDocumentsFnResult> => {
     const user = await getCurrentUserFn()
     if (user === null) return { ok: false, error: 'unauthorized' }

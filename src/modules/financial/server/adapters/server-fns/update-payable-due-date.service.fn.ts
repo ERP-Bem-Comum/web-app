@@ -13,11 +13,10 @@ import type { DocumentDetail } from '#modules/financial/server/domain/document.i
 import type { FinancialError } from '#modules/financial/server/domain/errors/financial.errors.ts'
 
 export type UpdatePayableDueDateFnResult =
-  | Readonly<{ ok: true; data: DocumentDetail }>
-  | Readonly<{ ok: false; error: FinancialError }>
+  Readonly<{ ok: true; data: DocumentDetail }> | Readonly<{ ok: false; error: FinancialError }>
 
 export const updatePayableDueDateFn = createServerFn({ method: 'POST' })
-  .inputValidator(UpdatePayableDueDateInputSchema)
+  .validator(UpdatePayableDueDateInputSchema)
   .handler(async ({ data }): Promise<UpdatePayableDueDateFnResult> => {
     const user = await getCurrentUserFn()
     if (user === null) return { ok: false, error: 'unauthorized' }

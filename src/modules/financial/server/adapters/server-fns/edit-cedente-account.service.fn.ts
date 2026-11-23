@@ -13,11 +13,10 @@ import type { CedenteAccount } from '#modules/financial/server/domain/reconcilia
 import type { ReconciliationError } from '#modules/financial/server/domain/errors/reconciliation.errors.ts'
 
 export type EditCedenteAccountFnResult =
-  | Readonly<{ ok: true; data: CedenteAccount }>
-  | Readonly<{ ok: false; error: ReconciliationError }>
+  Readonly<{ ok: true; data: CedenteAccount }> | Readonly<{ ok: false; error: ReconciliationError }>
 
 export const editCedenteAccountFn = createServerFn({ method: 'POST' })
-  .inputValidator(EditCedenteAccountInputSchema)
+  .validator(EditCedenteAccountInputSchema)
   .handler(async ({ data }): Promise<EditCedenteAccountFnResult> => {
     const user = await getCurrentUserFn()
     if (user === null) return { ok: false, error: 'unauthorized' }

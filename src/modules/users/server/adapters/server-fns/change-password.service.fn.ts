@@ -10,12 +10,10 @@ import { usersServer } from '../users.composition.ts'
 import { ChangePasswordInputSchema } from '#modules/users/server/adapters/users.io-schemas.ts'
 import type { UsersError } from '#modules/users/server/domain/errors/users.errors.ts'
 
-export type ChangePasswordFnResult =
-  | Readonly<{ ok: true }>
-  | Readonly<{ ok: false; error: UsersError }>
+export type ChangePasswordFnResult = Readonly<{ ok: true }> | Readonly<{ ok: false; error: UsersError }>
 
 export const changePasswordFn = createServerFn({ method: 'POST' })
-  .inputValidator(ChangePasswordInputSchema)
+  .validator(ChangePasswordInputSchema)
   .handler(async ({ data }): Promise<ChangePasswordFnResult> => {
     const user = await getCurrentUserFn()
     if (user === null) return { ok: false, error: 'unauthorized' }

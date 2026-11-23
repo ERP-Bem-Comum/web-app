@@ -33,11 +33,10 @@ const GetCashflowReportInputSchema = z.object({
 })
 
 export type GetCashflowReportFnResult =
-  | Readonly<{ ok: true; data: CashflowReport }>
-  | Readonly<{ ok: false; error: ReportsError }>
+  Readonly<{ ok: true; data: CashflowReport }> | Readonly<{ ok: false; error: ReportsError }>
 
 export const getCashflowReportFn = createServerFn({ method: 'GET' })
-  .inputValidator(GetCashflowReportInputSchema)
+  .validator(GetCashflowReportInputSchema)
   .handler(async ({ data }): Promise<GetCashflowReportFnResult> => {
     const user = await getCurrentUserFn()
     if (user === null) return { ok: false, error: 'unauthorized' }

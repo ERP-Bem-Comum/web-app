@@ -1,4 +1,5 @@
 import js from '@eslint/js'
+import { defineConfig, globalIgnores } from 'eslint/config'
 import tseslint from 'typescript-eslint'
 import reactHooks from 'eslint-plugin-react-hooks'
 import pluginQuery from '@tanstack/eslint-plugin-query'
@@ -36,8 +37,18 @@ const boundaryElements = [
   { type: 'client-data', pattern: 'src/modules/*/client/data', ...F },
   { type: 'client-domain', pattern: 'src/modules/*/client/domain', ...F },
   { type: 'client-view-model', mode: 'file', pattern: 'src/modules/*/client/**/*.view-model.ts', ...F },
-  { type: 'client-data-options', mode: 'file', pattern: 'src/modules/*/client/**/*.{mutation,query}.ts', ...F },
-  { type: 'client-usecase', mode: 'file', pattern: 'src/modules/*/client/**/*.{use-case,composition}.ts', ...F },
+  {
+    type: 'client-data-options',
+    mode: 'file',
+    pattern: 'src/modules/*/client/**/*.{mutation,query}.ts',
+    ...F,
+  },
+  {
+    type: 'client-usecase',
+    mode: 'file',
+    pattern: 'src/modules/*/client/**/*.{use-case,composition}.ts',
+    ...F,
+  },
   { type: 'client-controller', mode: 'file', pattern: 'src/modules/*/client/**/*.controller.ts', ...F },
   { type: 'client-binding', mode: 'file', pattern: 'src/modules/*/client/**/*.binding.ts', ...F },
   { type: 'client-ui', mode: 'file', pattern: 'src/modules/*/client/**/*.{page,component}.tsx', ...F },
@@ -53,9 +64,18 @@ const boundaryRules = [
   // atom ↛ molecule ↛ organism; ninguém importa "para cima". (ds-* listados antes de shared-ui.)
   { from: { type: 'ds-tokens' }, allow: { to: { type: ['shared', 'ds-tokens'] } } },
   { from: { type: 'ds-atom' }, allow: { to: { type: ['shared', 'ds-tokens', 'ds-atom'] } } },
-  { from: { type: 'ds-molecule' }, allow: { to: { type: ['shared', 'ds-tokens', 'ds-atom', 'ds-molecule'] } } },
-  { from: { type: 'ds-organism' }, allow: { to: { type: ['shared', 'ds-tokens', 'ds-atom', 'ds-molecule', 'ds-organism'] } } },
-  { from: { type: 'shared-ui' }, allow: { to: { type: ['shared', 'shared-ui', 'ds-tokens', 'ds-atom', 'ds-molecule', 'ds-organism'] } } },
+  {
+    from: { type: 'ds-molecule' },
+    allow: { to: { type: ['shared', 'ds-tokens', 'ds-atom', 'ds-molecule'] } },
+  },
+  {
+    from: { type: 'ds-organism' },
+    allow: { to: { type: ['shared', 'ds-tokens', 'ds-atom', 'ds-molecule', 'ds-organism'] } },
+  },
+  {
+    from: { type: 'shared-ui' },
+    allow: { to: { type: ['shared', 'shared-ui', 'ds-tokens', 'ds-atom', 'ds-molecule', 'ds-organism'] } },
+  },
   { from: { type: 'external' }, allow: { to: { type: ['shared', 'external'] } } }, // server-only; nunca módulos
 
   // --- SERVER (DDD): domain puro → application → adapters ---
@@ -64,7 +84,10 @@ const boundaryRules = [
   { from: { type: 'server-application' }, allow: { to: { type: 'shared' } } },
   { from: { type: 'server-application' }, allow: sameFeature(['server-domain', 'server-application']) },
   { from: { type: 'server-adapters' }, allow: { to: { type: ['shared', 'external', 'public-api'] } } },
-  { from: { type: 'server-adapters' }, allow: sameFeature(['server-domain', 'server-application', 'server-adapters']) },
+  {
+    from: { type: 'server-adapters' },
+    allow: sameFeature(['server-domain', 'server-application', 'server-adapters']),
+  },
 
   // --- CLIENT (MVVM AGNÓSTICO, ADR-0009): núcleo agnóstico (data/domain/view-model/options) × adapter (binding/controller/ui) ---
   // data (COMPARTILHADO): Repository = PORTA → server function (server-adapters da MESMA feature). Não toca server/domain|application.
@@ -77,49 +100,88 @@ const boundaryRules = [
   { from: { type: 'client-domain' }, allow: sameFeature(['client-data', 'client-domain']) },
   // data-options (*.mutation/*.query, AGNÓSTICO): shared + data/domain própria (define queryFn/mutationFn → repository).
   { from: { type: 'client-data-options' }, allow: { to: { type: 'shared' } } },
-  { from: { type: 'client-data-options' }, allow: sameFeature(['client-data', 'client-domain', 'client-data-options']) },
+  {
+    from: { type: 'client-data-options' },
+    allow: sameFeature(['client-data', 'client-domain', 'client-data-options']),
+  },
   // view-model (AGNÓSTICO, objeto puro): shared + public-api + data/domain/options/view-model própria. SEM React (bloco anti-react).
   { from: { type: 'client-view-model' }, allow: { to: { type: ['shared', 'public-api'] } } },
-  { from: { type: 'client-view-model' }, allow: sameFeature(['client-data', 'client-domain', 'client-data-options', 'client-view-model']) },
+  {
+    from: { type: 'client-view-model' },
+    allow: sameFeature(['client-data', 'client-domain', 'client-data-options', 'client-view-model']),
+  },
   // usecase (transitional → vira efeito do command): shared + public-api + data/domain/usecase/view-model própria.
   { from: { type: 'client-usecase' }, allow: { to: { type: ['shared', 'public-api'] } } },
-  { from: { type: 'client-usecase' }, allow: sameFeature(['client-data', 'client-domain', 'client-usecase', 'client-view-model']) },
+  {
+    from: { type: 'client-usecase' },
+    allow: sameFeature(['client-data', 'client-domain', 'client-usecase', 'client-view-model']),
+  },
   // controller (ADAPTER, form local): shared + public-api + data própria (Zod schema).
   { from: { type: 'client-controller' }, allow: { to: { type: ['shared', 'public-api'] } } },
   { from: { type: 'client-controller' }, allow: sameFeature(['client-data', 'client-controller']) },
   // binding (ADAPTER): liga o framework ao núcleo. shared + public-api + data/options/view-model/usecase/binding própria.
   { from: { type: 'client-binding' }, allow: { to: { type: ['shared', 'public-api'] } } },
-  { from: { type: 'client-binding' }, allow: sameFeature(['client-data', 'client-domain', 'client-data-options', 'client-view-model', 'client-usecase', 'client-binding']) },
+  {
+    from: { type: 'client-binding' },
+    allow: sameFeature([
+      'client-data',
+      'client-domain',
+      'client-data-options',
+      'client-view-model',
+      'client-usecase',
+      'client-binding',
+    ]),
+  },
   // ui (View burra): shared + design system + public-api + binding/controller/view-model(tipos)/domain(formatadores
   // e tipos PUROS)/ui própria. NÃO importa server/data/repository direto. (domain liberado pós-C2: é o núcleo puro.)
   { from: { type: 'client-ui' }, allow: { to: { type: ['shared', 'shared-ui', 'public-api'] } } },
-  { from: { type: 'client-ui' }, allow: sameFeature(['client-binding', 'client-controller', 'client-view-model', 'client-domain', 'client-ui']) },
+  {
+    from: { type: 'client-ui' },
+    allow: sameFeature([
+      'client-binding',
+      'client-controller',
+      'client-view-model',
+      'client-domain',
+      'client-ui',
+    ]),
+  },
 
   // --- public-api: re-exporta as camadas do PRÓPRIO módulo (client p/ consumo externo) ---
   { from: { type: 'public-api' }, allow: { to: { type: 'shared' } } },
   {
     from: { type: 'public-api' },
-    allow: sameFeature(['server-domain', 'server-application', 'server-adapters', 'client-data', 'client-domain', 'client-data-options', 'client-view-model', 'client-usecase', 'client-controller', 'client-binding', 'client-ui']),
+    allow: sameFeature([
+      'server-domain',
+      'server-application',
+      'server-adapters',
+      'client-data',
+      'client-domain',
+      'client-data-options',
+      'client-view-model',
+      'client-usecase',
+      'client-controller',
+      'client-binding',
+      'client-ui',
+    ]),
   },
 ]
 
-export default tseslint.config(
+// `defineConfig` do próprio ESLint: o `tseslint.config()` está @deprecated no typescript-eslint 8.
+export default defineConfig(
   // Não lintar: build, gerados e o submódulo do backend (tem lint próprio).
-  {
-    ignores: [
-      'dist/**',
-      '.output/**',
-      '.nitro/**',
-      '.tanstack/**',
-      'node_modules/**',
-      'core-api/**',
-      '**/routeTree.gen.ts',
-      // E2E (Playwright): runtime/tsconfig próprios, fora das camadas/boundaries do app.
-      // Transpilado e validado pelo próprio Playwright em runtime (ver e2e/README.md).
-      'e2e/**',
-      'playwright.config.ts',
-    ],
-  },
+  globalIgnores([
+    'dist/**',
+    '.output/**',
+    '.nitro/**',
+    '.tanstack/**',
+    'node_modules/**',
+    'core-api/**',
+    '**/routeTree.gen.ts',
+    // E2E (Playwright): runtime/tsconfig próprios, fora das camadas/boundaries do app.
+    // Transpilado e validado pelo próprio Playwright em runtime (ver e2e/README.md).
+    'e2e/**',
+    'playwright.config.ts',
+  ]),
 
   // Base JS + TypeScript estrito com checagem de tipos (arquiteture.md: strict máximo).
   js.configs.recommended,
@@ -150,8 +212,30 @@ export default tseslint.config(
       pluginQuery.configs['flat/recommended'],
       pluginRouter.configs['flat/recommended'],
       pluginStart.configs['flat/recommended'],
-      pluginZod.configs.recommended, // boas práticas Zod 4 (no-any-schema, prefer-meta, z.uuid, etc.)
+      // boas práticas Zod 4 (no-any-schema, prefer-meta, z.uuid, etc.). No plugin 5 o `recommended` encolheu
+      // (perdeu prefer-meta, prefer-strict-object, array-style…); strict + stylistic mantém o que valia.
+      pluginZod.configs.strict,
+      pluginZod.configs.stylistic,
     ],
+  },
+
+  // Regras novas da atualização de 11/2026 (eslint-plugin-zod 5, typescript-eslint 8.72), cada uma com o porquê.
+  {
+    files: ['**/*.{ts,tsx}'],
+    rules: {
+      // Um estilo só, e é o que o código já usa: `z.infer<>` (o `z.output<>` que o preset prefere é o mesmo tipo).
+      'zod/consistent-schema-output-type-style': ['error', { style: 'infer' }],
+      // A regra existe para o schema ser "hoistável" pelo `zod-compiler`, que o projeto não usa.
+      // `z.enum(Object.values(X))` deriva o enum da constante de domínio, que é a fonte única.
+      'zod/no-dynamic-schema-value': 'off',
+      // Falso positivo aqui: acusa também `z.array().min(1).max(N)`, que é lista de tamanho variável com teto
+      // (o teto é a defesa do GHSA-mrhx-c7xc-m3w5), não tupla.
+      'zod/prefer-tuple-over-array-length': 'off',
+      // O 8.72 passou a acusar `void x` em identificador, e a regra não tem opção para isso. Aqui o `void` é o
+      // idiom das asserções de tipo em compilação (`const _g: AssertEqual<A, B> = true; void _g`), que o
+      // `noUnusedLocals` exige.
+      '@typescript-eslint/no-meaningless-void-operator': 'off',
+    },
   },
 
   // Regras do projeto: invariantes (arquiteture.md), migração TS 6→7 e segurança fina.
@@ -163,7 +247,10 @@ export default tseslint.config(
       // --- Invariantes de tipo (TS handbook + arquiteture.md) ---
       '@typescript-eslint/no-explicit-any': 'error',
       // Params/vars prefixados com `_` são intencionalmente não-usados (assinatura exigida pelo tipo).
-      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_', caughtErrors: 'none' }],
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        { argsIgnorePattern: '^_', varsIgnorePattern: '^_', caughtErrors: 'none' },
+      ],
       '@typescript-eslint/consistent-type-imports': ['error', { fixStyle: 'inline-type-imports' }],
       '@typescript-eslint/consistent-type-exports': 'error',
       '@typescript-eslint/switch-exhaustiveness-check': 'error',
@@ -171,13 +258,30 @@ export default tseslint.config(
       // --- Migração saudável 6 → 7 (espelha erasableSyntaxOnly) + XSS no JSX ---
       'no-restricted-syntax': [
         'error',
-        { selector: 'TSEnumDeclaration', message: 'enum não é apagável (TS native / strip-types). Use union de literais + objeto `as const`.' },
-        { selector: 'TSModuleDeclaration[kind="namespace"]', message: 'namespace com runtime não é apagável. Use módulos ESM.' },
-        { selector: 'TSParameterProperty', message: 'parameter property não é apagável. Declare o campo explicitamente.' },
+        {
+          selector: 'TSEnumDeclaration',
+          message:
+            'enum não é apagável (TS native / strip-types). Use union de literais + objeto `as const`.',
+        },
+        {
+          selector: 'TSModuleDeclaration[kind="namespace"]',
+          message: 'namespace com runtime não é apagável. Use módulos ESM.',
+        },
+        {
+          selector: 'TSParameterProperty',
+          message: 'parameter property não é apagável. Declare o campo explicitamente.',
+        },
         { selector: 'TSImportEquals', message: '`import =` é CommonJS. Use import ESM.' },
-        { selector: 'JSXAttribute[name.name="dangerouslySetInnerHTML"]', message: 'dangerouslySetInnerHTML é vetor de XSS — evite ou sanitize e desabilite por linha.' },
+        {
+          selector: 'JSXAttribute[name.name="dangerouslySetInnerHTML"]',
+          message: 'dangerouslySetInnerHTML é vetor de XSS — evite ou sanitize e desabilite por linha.',
+        },
         // H5 (fecha A5): invalidateQueries() sem argumento invalida o app inteiro. Passe { queryKey } escopado.
-        { selector: "CallExpression[callee.property.name='invalidateQueries'][arguments.length=0]", message: 'invalidateQueries() sem escopo invalida o app inteiro. Passe { queryKey } escopado (ver A5).' },
+        {
+          selector: "CallExpression[callee.property.name='invalidateQueries'][arguments.length=0]",
+          message:
+            'invalidateQueries() sem escopo invalida o app inteiro. Passe { queryKey } escopado (ver A5).',
+        },
       ],
 
       // --- Segurança da informação ---
@@ -226,15 +330,40 @@ export default tseslint.config(
       // ⚠ flat config substitui (não mescla): re-inclui os selectors globais TS 6→7 + XSS.
       'no-restricted-syntax': [
         'error',
-        { selector: 'TSEnumDeclaration', message: 'enum não é apagável (TS native / strip-types). Use union de literais + objeto `as const`.' },
-        { selector: 'TSModuleDeclaration[kind="namespace"]', message: 'namespace com runtime não é apagável. Use módulos ESM.' },
-        { selector: 'TSParameterProperty', message: 'parameter property não é apagável. Declare o campo explicitamente.' },
+        {
+          selector: 'TSEnumDeclaration',
+          message:
+            'enum não é apagável (TS native / strip-types). Use union de literais + objeto `as const`.',
+        },
+        {
+          selector: 'TSModuleDeclaration[kind="namespace"]',
+          message: 'namespace com runtime não é apagável. Use módulos ESM.',
+        },
+        {
+          selector: 'TSParameterProperty',
+          message: 'parameter property não é apagável. Declare o campo explicitamente.',
+        },
         { selector: 'TSImportEquals', message: '`import =` é CommonJS. Use import ESM.' },
-        { selector: 'JSXAttribute[name.name="dangerouslySetInnerHTML"]', message: 'dangerouslySetInnerHTML é vetor de XSS — evite ou sanitize e desabilite por linha.' },
-        { selector: 'CallExpression[callee.name=/^use(Query|Mutation|InfiniteQuery|Queries|SuspenseQuery)$/]', message: 'View burra (§XI MVVM): data-hooks do TanStack Query vivem na ViewModel (*.view-model.ts), não na page/component.' },
-        { selector: 'CallExpression[callee.name="useReducer"]', message: 'View burra (§XI MVVM): estado complexo (useReducer) vive na ViewModel/Controller, não na page/component.' },
+        {
+          selector: 'JSXAttribute[name.name="dangerouslySetInnerHTML"]',
+          message: 'dangerouslySetInnerHTML é vetor de XSS — evite ou sanitize e desabilite por linha.',
+        },
+        {
+          selector: 'CallExpression[callee.name=/^use(Query|Mutation|InfiniteQuery|Queries|SuspenseQuery)$/]',
+          message:
+            'View burra (§XI MVVM): data-hooks do TanStack Query vivem na ViewModel (*.view-model.ts), não na page/component.',
+        },
+        {
+          selector: 'CallExpression[callee.name="useReducer"]',
+          message:
+            'View burra (§XI MVVM): estado complexo (useReducer) vive na ViewModel/Controller, não na page/component.',
+        },
         // H1 (fecha C1): relógio no render quebra pureza/SSR. `new Date()` SEM args = "agora" não-determinístico.
-        { selector: "NewExpression[callee.name='Date']:not([arguments.length>0])", message: 'Relógio no render quebra pureza/SSR (§XI). Receba `now`/data derivada por prop da ViewModel/Controller.' },
+        {
+          selector: "NewExpression[callee.name='Date']:not([arguments.length>0])",
+          message:
+            'Relógio no render quebra pureza/SSR (§XI). Receba `now`/data derivada por prop da ViewModel/Controller.',
+        },
       ],
     },
   },
@@ -246,9 +375,23 @@ export default tseslint.config(
     rules: {
       'no-restricted-imports': [
         'error',
-        { patterns: [
-          { group: ['**/server/**', '**/client/data/**', '**/*.use-case', '**/*.server-fn', '**/*.query.fn', '**/*.service.fn', '**/*.repository'], message: 'View burra (§XI MVVM): page/component não importa server/data/use-case/repository — receba tudo do binding/ViewModel por props.' },
-        ] },
+        {
+          patterns: [
+            {
+              group: [
+                '**/server/**',
+                '**/client/data/**',
+                '**/*.use-case',
+                '**/*.server-fn',
+                '**/*.query.fn',
+                '**/*.service.fn',
+                '**/*.repository',
+              ],
+              message:
+                'View burra (§XI MVVM): page/component não importa server/data/use-case/repository — receba tudo do binding/ViewModel por props.',
+            },
+          ],
+        },
       ],
     },
   },
@@ -264,9 +407,15 @@ export default tseslint.config(
     rules: {
       'no-restricted-imports': [
         'error',
-        { patterns: [
-          { group: ['react', 'react-dom', 'react/*', '@tanstack/react-*'], message: 'Núcleo agnóstico (ADR-0009): proibido React / @tanstack/react-* — só @tanstack/query-core e tipos. O framework entra só no *.binding.ts.' },
-        ] },
+        {
+          patterns: [
+            {
+              group: ['react', 'react-dom', 'react/*', '@tanstack/react-*'],
+              message:
+                'Núcleo agnóstico (ADR-0009): proibido React / @tanstack/react-* — só @tanstack/query-core e tipos. O framework entra só no *.binding.ts.',
+            },
+          ],
+        },
       ],
     },
   },
@@ -277,7 +426,15 @@ export default tseslint.config(
     rules: {
       'no-restricted-imports': [
         'error',
-        { paths: [{ name: 'zod', message: 'Domínio é puro (DDD/Evans p.59). Schemas Zod vivem em adapters/ (server) ou data/ (client).' }] },
+        {
+          paths: [
+            {
+              name: 'zod',
+              message:
+                'Domínio é puro (DDD/Evans p.59). Schemas Zod vivem em adapters/ (server) ou data/ (client).',
+            },
+          ],
+        },
       ],
     },
   },
@@ -338,19 +495,44 @@ export default tseslint.config(
       'no-restricted-syntax': [
         'error',
         // hex cru (#fff, #32C6F4, #aabbccdd) em qualquer literal string
-        { selector: 'Literal[value=/#(?:[0-9a-fA-F]{3,4}){1,2}\\b/]', message: 'Cor crua proibida (design system). Use vars.color.* de #shared/ui/tokens.' },
+        {
+          selector: 'Literal[value=/#(?:[0-9a-fA-F]{3,4}){1,2}\\b/]',
+          message: 'Cor crua proibida (design system). Use vars.color.* de #shared/ui/tokens.',
+        },
         // medida em px crua ("8px", "1.5px")
-        { selector: 'Literal[value=/^-?\\d*\\.?\\d+px$/]', message: 'Medida em px crua proibida (design system). Use vars.space.*/vars.radius.* de #shared/ui/tokens.' },
+        {
+          selector: 'Literal[value=/^-?\\d*\\.?\\d+px$/]',
+          message:
+            'Medida em px crua proibida (design system). Use vars.space.*/vars.radius.* de #shared/ui/tokens.',
+        },
         // rgb()/rgba()/hsl()/hsla() cruas
-        { selector: 'Literal[value=/(?:rgb|rgba|hsl|hsla)\\(/i]', message: 'Cor crua (rgb/hsl) proibida (design system). Use vars.color.* de #shared/ui/tokens.' },
+        {
+          selector: 'Literal[value=/(?:rgb|rgba|hsl|hsla)\\(/i]',
+          message: 'Cor crua (rgb/hsl) proibida (design system). Use vars.color.* de #shared/ui/tokens.',
+        },
         // MESMAS proibições dentro de template literals (`2px solid ${vars...}`) — o seletor
         // `Literal` não casa `TemplateLiteral`; sem isto, qualquer px/hex/rgb cru ao lado de uma
         // interpolação fura a governança silenciosamente. `TemplateElement` = trechos literais.
-        { selector: 'TemplateElement[value.raw=/#(?:[0-9a-fA-F]{3,4}){1,2}\\b/]', message: 'Cor crua proibida (design system). Use vars.color.* de #shared/ui/tokens.' },
-        { selector: 'TemplateElement[value.raw=/-?\\d*\\.?\\d+px\\b/]', message: 'Medida em px crua proibida (design system). Use vars.space.*/vars.radius.* de #shared/ui/tokens.' },
-        { selector: 'TemplateElement[value.raw=/(?:rgb|rgba|hsl|hsla)\\(/i]', message: 'Cor crua (rgb/hsl) proibida (design system). Use vars.color.* de #shared/ui/tokens.' },
+        {
+          selector: 'TemplateElement[value.raw=/#(?:[0-9a-fA-F]{3,4}){1,2}\\b/]',
+          message: 'Cor crua proibida (design system). Use vars.color.* de #shared/ui/tokens.',
+        },
+        {
+          selector: 'TemplateElement[value.raw=/-?\\d*\\.?\\d+px\\b/]',
+          message:
+            'Medida em px crua proibida (design system). Use vars.space.*/vars.radius.* de #shared/ui/tokens.',
+        },
+        {
+          selector: 'TemplateElement[value.raw=/(?:rgb|rgba|hsl|hsla)\\(/i]',
+          message: 'Cor crua (rgb/hsl) proibida (design system). Use vars.color.* de #shared/ui/tokens.',
+        },
         // H4 (fecha M3): propriedades físicas quebram RTL. Use logical properties.
-        { selector: "Property[key.name=/^(paddingLeft|paddingRight|marginLeft|marginRight|left|right|borderLeft|borderRight)$/]", message: 'Use logical properties (paddingInline/marginInlineStart/insetInlineStart/borderInlineStart…) — RTL-safe (M3/H4).' },
+        {
+          selector:
+            'Property[key.name=/^(paddingLeft|paddingRight|marginLeft|marginRight|left|right|borderLeft|borderRight)$/]',
+          message:
+            'Use logical properties (paddingInline/marginInlineStart/insetInlineStart/borderInlineStart…) — RTL-safe (M3/H4).',
+        },
       ],
     },
   },

@@ -19,7 +19,7 @@ export type GetDocumentTimelineFnResult =
   | Readonly<{ ok: false; error: FinancialError }>
 
 export const getDocumentTimelineFn = createServerFn({ method: 'GET' })
-  .inputValidator(z.object({ id: z.uuid() }))
+  .validator(z.object({ id: z.uuid() }))
   .handler(async ({ data }): Promise<GetDocumentTimelineFnResult> => {
     const user = await getCurrentUserFn()
     if (user === null) return { ok: false, error: 'unauthorized' }
