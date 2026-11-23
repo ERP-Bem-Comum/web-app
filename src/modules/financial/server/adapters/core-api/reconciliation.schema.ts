@@ -144,8 +144,7 @@ export const CoreApiAccountStatementSchema = z.object({
                     }),
                   ),
                 })
-                .nullable()
-                .optional(),
+                .nullish(),
             }),
           )
           .catch([]),
