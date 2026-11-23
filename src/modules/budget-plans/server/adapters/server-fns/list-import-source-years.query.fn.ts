@@ -11,10 +11,11 @@ import { ListImportSourceYearsInputSchema } from '#modules/budget-plans/server/a
 import type { BudgetPlansError } from '#modules/budget-plans/server/domain/errors/budget-plans.errors.ts'
 
 export type ListImportSourceYearsFnResult =
-  Readonly<{ ok: true; data: readonly number[] }> | Readonly<{ ok: false; error: BudgetPlansError }>
+  | Readonly<{ ok: true; data: readonly number[] }>
+  | Readonly<{ ok: false; error: BudgetPlansError }>
 
 export const listImportSourceYearsFn = createServerFn({ method: 'GET' })
-  .validator(ListImportSourceYearsInputSchema)
+  .inputValidator(ListImportSourceYearsInputSchema)
   .handler(async ({ data }): Promise<ListImportSourceYearsFnResult> => {
     const user = await getCurrentUserFn()
     if (user === null) return { ok: false, error: 'unauthorized' }
