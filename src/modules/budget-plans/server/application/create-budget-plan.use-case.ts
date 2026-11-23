@@ -10,8 +10,11 @@ import type { Result } from '#shared/primitives/result.ts'
 import type { BudgetPlansError } from '#modules/budget-plans/server/domain/errors/budget-plans.errors.ts'
 import type { BudgetPlanStatus } from '#modules/budget-plans/server/domain/planejamento-list.io.ts'
 
-/** Comando de criação (contrato real do core: ano inteiro + `programRef` do catálogo do budget-plans). */
-export type CreateBudgetPlanCommand = Readonly<{ year: number; programRef: string }>
+/**
+ * Comando de criação (contrato real do core: ano inteiro + `programRef` do catálogo do budget-plans).
+ * `importFromYear` (spec 134): ano de origem — o core copia a última versão APROVADA daquele ano+programa.
+ */
+export type CreateBudgetPlanCommand = Readonly<{ year: number; programRef: string; importFromYear?: number }>
 
 /** Plano recém-criado (resposta 201 do core). `version` chega string; o front só precisa saber que persistiu. */
 export type CreatedBudgetPlan = Readonly<{

@@ -24,15 +24,18 @@ import {
   createPlanInitialForm,
   validateCreatePlan,
   createErrorTag,
-  IMPORT_YEARS,
+  toCreateInput,
+  importYearsState,
   type CreatePlanForm,
   type CreatePlanError,
+  type ImportYearsState,
 } from '#modules/budget-plans/client/planejamento/create-plan.view-model.ts'
 
-// A VIEW não importa `data/`/view-model direto (§XI MVVM) — os anos de import passam pela camada de binding.
-export { IMPORT_YEARS }
-
 const EMPTY_OPTIONS: readonly BudgetPlanProgramOption[] = []
+
+/** Chave dos anos de origem por programa (spec 134). Exportada p/ teste e invalidação. */
+export const importSourceYearsQueryKey = (programRef: string) =>
+  ['budget-plans', 'import-source-years', programRef] as const
 
 /**
  * Opções de PROGRAMA para o modal "Criar Plano" — programas REAIS ATIVO do módulo `programs`, mapeados p/
@@ -55,6 +58,8 @@ export type CreatePlanController = Readonly<{
   form: CreatePlanForm
   errorTag: CreatePlanError | null
   submitting: boolean
+  /** Spec 134 — situação do seletor "Criar a partir do ano de" (anos com plano APROVADO do programa). */
+  importYears: ImportYearsState
   setYear: (v: string) => void
   setProgram: (v: string) => void
   toggleImport: (v: boolean) => void
@@ -72,6 +77,18 @@ export function useCreatePlan(onCreated: () => void): CreatePlanController {
     setForm(createPlanInitialForm)
     setErrorTag(null)
   }
+
+  // Spec 134: os anos de origem dependem do PROGRAMA e só interessam com "Importar dados" ligado. Falha → `null`
+  // (o seletor diz que não carregou, em vez de parecer "nenhum plano aprovado").
+  const yearsQuery = useQuery({
+    queryKey: importSourceYearsQueryKey(form.program),
+    queryFn: async (): Promise<readonly number[] | null> => {
+      const r = await budgetPlansRepository.listImportSourceYears(form.program)
+      return isOk(r) ? r.value : null
+    },
+    enabled: form.importData && form.program !== '',
+    staleTime: 60_000,
+  })
 
   const mutation = useMutation({
     mutationFn: budgetPlansRepository.create,
@@ -94,19 +111,23 @@ export function useCreatePlan(onCreated: () => void): CreatePlanController {
     form,
     errorTag,
     submitting: mutation.isPending,
+    importYears: importYearsState(form.program, form.year, yearsQuery.data),
     setYear: (v) => {
       setForm((f) => ({ ...f, year: v }))
       setErrorTag(null)
     },
     setProgram: (v) => {
-      setForm((f) => ({ ...f, program: v }))
+      // Os anos de origem são do programa: trocar o programa invalida o ano já escolhido.
+      setForm((f) => ({ ...f, program: v, importFromYear: '' }))
       setErrorTag(null)
     },
     toggleImport: (v) => {
       setForm((f) => ({ ...f, importData: v, importFromYear: v ? f.importFromYear : '' }))
+      setErrorTag(null)
     },
     setImportFromYear: (v) => {
       setForm((f) => ({ ...f, importFromYear: v }))
+      setErrorTag(null)
     },
     reset,
     submit: () => {
@@ -116,10 +137,7 @@ export function useCreatePlan(onCreated: () => void): CreatePlanController {
         return
       }
       // Zod é a fonte da forma: `programRef` precisa ser um UUID válido (blinda contra estado inválido).
-      const parsed = CreateBudgetPlanInputSchema.safeParse({
-        year: Number(form.year),
-        programRef: form.program,
-      })
+      const parsed = CreateBudgetPlanInputSchema.safeParse(toCreateInput(form))
       if (!parsed.success) {
         setErrorTag('budget-plans.create.requiredProgram')
         return

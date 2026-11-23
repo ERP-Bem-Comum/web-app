@@ -25,7 +25,11 @@ export const createBudgetPlanFn = createServerFn({ method: 'POST' })
     if (accessToken === null) return { ok: false, error: 'unauthorized' }
 
     const r = await budgetPlansServer().createBudgetPlan(
-      { year: data.year, programRef: data.programRef },
+      {
+        year: data.year,
+        programRef: data.programRef,
+        ...(data.importFromYear !== undefined ? { importFromYear: data.importFromYear } : {}),
+      },
       accessToken,
     )
     return isErr(r) ? { ok: false, error: r.error } : { ok: true, data: r.value }

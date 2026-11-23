@@ -17,10 +17,16 @@ import { planejamentoListQueryKey } from '#modules/budget-plans/client/planejame
 import { useCreatePlan } from '#modules/budget-plans/client/planejamento/create-plan.binding.ts'
 
 vi.mock('#modules/budget-plans/client/data/repository/budget-plans.repository.instance.ts', () => ({
-  budgetPlansRepository: { create: vi.fn(), getProgramOptions: vi.fn(), listBudgetPlans: vi.fn() },
+  budgetPlansRepository: {
+    create: vi.fn(),
+    getProgramOptions: vi.fn(),
+    listBudgetPlans: vi.fn(),
+    listImportSourceYears: vi.fn(),
+  },
 }))
 
 const mockedCreate = vi.mocked(budgetPlansRepository.create)
+const mockedYears = vi.mocked(budgetPlansRepository.listImportSourceYears)
 
 const REF = 'a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d'
 const CREATED = {
@@ -99,5 +105,126 @@ describe('useCreatePlan (POST /budget-plans)', () => {
 
     expect(result.current.errorTag).toBe('budget-plans.create.requiredProgram')
     expect(mockedCreate).not.toHaveBeenCalled()
+  })
+})
+
+// Spec 134 (core-api#1092) — "Criar a partir do ano de": o ano escolhido CHEGA ao repository (antes era descartado).
+describe('useCreatePlan — criar a partir de outro ano (spec 134)', () => {
+  it('importar ligado → busca os anos do programa e envia importFromYear', async () => {
+    mockedYears.mockResolvedValue(ok([2026, 2025]))
+    mockedCreate.mockResolvedValue(ok({ ...CREATED, totalInCents: 235_000 }))
+    const onCreated = vi.fn()
+    const { result } = setup(onCreated)
+
+    act(() => {
+      result.current.setYear('2027')
+      result.current.setProgram(REF)
+      result.current.toggleImport(true)
+    })
+    await waitFor(() => {
+      expect(result.current.importYears).toEqual({ kind: 'ready', years: [2026, 2025] })
+    })
+    expect(mockedYears).toHaveBeenCalledWith(REF)
+
+    act(() => {
+      result.current.setImportFromYear('2026')
+    })
+    act(() => {
+      result.current.submit()
+    })
+
+    await waitFor(() => {
+      expect(onCreated).toHaveBeenCalledTimes(1)
+    })
+    expect(mockedCreate.mock.calls[0]?.[0]).toEqual({ year: 2027, programRef: REF, importFromYear: 2026 })
+  })
+
+  it('importar desligado → não busca anos e não envia importFromYear', async () => {
+    mockedCreate.mockResolvedValue(ok(CREATED))
+    const onCreated = vi.fn()
+    const { result } = setup(onCreated)
+
+    act(() => {
+      result.current.setYear('2027')
+      result.current.setProgram(REF)
+    })
+    act(() => {
+      result.current.submit()
+    })
+
+    await waitFor(() => {
+      expect(onCreated).toHaveBeenCalledTimes(1)
+    })
+    expect(mockedYears).not.toHaveBeenCalled()
+    expect(mockedCreate.mock.calls[0]?.[0]).toEqual({ year: 2027, programRef: REF })
+  })
+
+  it('importar ligado sem ano escolhido → required, sem chamar o create', () => {
+    mockedYears.mockResolvedValue(ok([2026]))
+    const { result } = setup(vi.fn())
+
+    act(() => {
+      result.current.setYear('2027')
+      result.current.setProgram(REF)
+      result.current.toggleImport(true)
+    })
+    act(() => {
+      result.current.submit()
+    })
+
+    expect(result.current.errorTag).toBe('budget-plans.create.requiredImportYear')
+    expect(mockedCreate).not.toHaveBeenCalled()
+  })
+
+  it('trocar o programa limpa o ano de origem já escolhido', () => {
+    mockedYears.mockResolvedValue(ok([2026]))
+    const { result } = setup(vi.fn())
+
+    act(() => {
+      result.current.setProgram(REF)
+      result.current.toggleImport(true)
+      result.current.setImportFromYear('2026')
+    })
+    act(() => {
+      result.current.setProgram('b1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d')
+    })
+
+    expect(result.current.form.importFromYear).toBe('')
+  })
+
+  it('origem sem plano aprovado (409 do core) → mensagem própria, NÃO "já existe"', async () => {
+    mockedYears.mockResolvedValue(ok([2026]))
+    mockedCreate.mockResolvedValue(err('budget-plan-import-source-not-approved'))
+    const onCreated = vi.fn()
+    const { result } = setup(onCreated)
+
+    act(() => {
+      result.current.setYear('2027')
+      result.current.setProgram(REF)
+      result.current.toggleImport(true)
+      result.current.setImportFromYear('2026')
+    })
+    act(() => {
+      result.current.submit()
+    })
+
+    await waitFor(() => {
+      expect(result.current.errorTag).toBe('budget-plans.create.importSourceNotApproved')
+    })
+    expect(onCreated).not.toHaveBeenCalled()
+  })
+
+  it('falha ao ler os anos → failed (o seletor não finge "nenhum plano")', async () => {
+    mockedYears.mockResolvedValue(err('unexpected'))
+    const { result } = setup(vi.fn())
+
+    act(() => {
+      result.current.setProgram(REF)
+      result.current.toggleImport(true)
+    })
+
+    await waitFor(() => {
+      expect(result.current.importYears).toEqual({ kind: 'failed' })
+    })
   })
 })

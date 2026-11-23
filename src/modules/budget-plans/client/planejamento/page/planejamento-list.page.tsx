@@ -17,7 +17,6 @@ import type {
 import {
   useCreatePlan,
   useCreateProgramOptions,
-  IMPORT_YEARS,
 } from '#modules/budget-plans/client/planejamento/create-plan.binding.ts'
 import type { CreatePlanError } from '#modules/budget-plans/client/planejamento/create-plan.view-model.ts'
 import {
@@ -296,7 +295,7 @@ export function PlanejamentoListPage(): ReactNode {
         errorTag={createPlan.errorTag}
         submitting={createPlan.submitting}
         programOptions={createProgramOptions}
-        importYears={IMPORT_YEARS}
+        importYears={createPlan.importYears}
         labels={{
           title: t('budget-plans.create.title'),
           close: t('budget-plans.create.close'),
@@ -305,6 +304,11 @@ export function PlanejamentoListPage(): ReactNode {
           programPlaceholder: t('budget-plans.create.programPlaceholder'),
           importData: t('budget-plans.create.importData'),
           importFromYear: t('budget-plans.create.importFromYear'),
+          importFromYearPlaceholder: t('budget-plans.create.importFromYearPlaceholder'),
+          importNeedsProgram: t('budget-plans.create.importNeedsProgram'),
+          importLoading: t('budget-plans.create.importLoading'),
+          importEmpty: t('budget-plans.create.importEmpty'),
+          importFailed: t('budget-plans.create.importFailed'),
           add: t('budget-plans.create.add'),
           cancel: t('budget-plans.create.cancel'),
         }}
