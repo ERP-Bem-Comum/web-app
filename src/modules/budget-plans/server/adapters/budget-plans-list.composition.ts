@@ -12,6 +12,7 @@ import {
   type ResolveUserNames,
 } from '#modules/budget-plans/server/application/list-budget-plans.use-case.ts'
 import { createCreateBudgetPlan } from '#modules/budget-plans/server/application/create-budget-plan.use-case.ts'
+import { createListImportSourceYears } from '#modules/budget-plans/server/application/list-import-source-years.use-case.ts'
 import { createListBudgetPlanOptions } from '#modules/budget-plans/server/application/list-budget-plan-options.use-case.ts'
 import { createGetBudgetPlanDetail } from '#modules/budget-plans/server/application/get-budget-plan-detail.use-case.ts'
 import { createGetBudgetGrid } from '#modules/budget-plans/server/application/get-budget-grid.use-case.ts'
@@ -56,6 +57,7 @@ const build = () => {
   return {
     listBudgetPlans: createListBudgetPlans({ client, resolveUserNames }),
     createBudgetPlan: createCreateBudgetPlan({ client }),
+    listImportSourceYears: createListImportSourceYears({ client }),
     listProgramOptions: createListBudgetPlanOptions({ client }),
     getPlanDetail: createGetBudgetPlanDetail({ client }),
     getBudgetGrid: createGetBudgetGrid({ client }),

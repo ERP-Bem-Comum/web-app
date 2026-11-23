@@ -136,9 +136,14 @@ export const actionErrorTag = (error: BudgetPlansError): string => {
       return 'budget-plans.action.error.notDeletable'
     case 'invalid-input':
       return 'budget-plans.action.error.invalidInput'
+    // Spec 134: os três `import`/`orphan` só vêm do `POST /budget-plans` (modal Adicionar). Calibração/cenário
+    // mapeiam o 409 por STATUS, então o órfão deles ainda chega como `not-approved`/`scenery-needs-draft`.
     case 'budget-plan-already-exists':
     case 'budget-plan-not-editable': // escrita de estrutura (feature 061) — não ocorre nas ações do menu
     case 'cost-node-not-found': // PATCH de nó (feature 075) — idem: só o modal §1.5 edita a árvore
+    case 'budget-plan-import-same-year':
+    case 'budget-plan-import-source-not-approved':
+    case 'budget-result-orphan-subcategory':
     case 'unexpected':
       return 'budget-plans.action.error.unexpected'
     default: {

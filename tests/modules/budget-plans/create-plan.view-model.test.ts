@@ -9,6 +9,8 @@ import {
   validateCreatePlan,
   createErrorTag,
   createPlanInitialForm,
+  toCreateInput,
+  importYearsState,
   type CreatePlanForm,
 } from '#modules/budget-plans/client/planejamento/create-plan.view-model.ts'
 
@@ -66,5 +68,85 @@ describe('createErrorTag — 403 não vira "tente novamente"', () => {
     assert.equal(createErrorTag('budget-plan-already-exists'), 'budget-plans.create.conflict')
     assert.equal(createErrorTag('unexpected'), 'budget-plans.create.unexpected')
     assert.equal(createErrorTag('unauthorized'), 'budget-plans.create.unexpected')
+  })
+})
+
+// Spec 134 (core-api#1092) — "Criar a partir do ano de".
+describe('validateCreatePlan — importar de outro ano (spec 134)', () => {
+  it('importar ligado sem ano de origem → requiredImportYear', () => {
+    assert.equal(
+      validateCreatePlan(formWith({ year: '2027', program: REF, importData: true, importFromYear: '' })),
+      'budget-plans.create.requiredImportYear',
+    )
+  })
+  it('ano de origem = ano do plano → importSameYear', () => {
+    assert.equal(
+      validateCreatePlan(formWith({ year: '2027', program: REF, importData: true, importFromYear: '2027' })),
+      'budget-plans.create.importSameYear',
+    )
+  })
+  it('importar ligado com ano diferente → null', () => {
+    assert.equal(
+      validateCreatePlan(formWith({ year: '2027', program: REF, importData: true, importFromYear: '2026' })),
+      null,
+    )
+  })
+  it('importar DESLIGADO ignora o ano de origem', () => {
+    assert.equal(
+      validateCreatePlan(formWith({ year: '2027', program: REF, importData: false, importFromYear: '2027' })),
+      null,
+    )
+  })
+})
+
+describe('toCreateInput (spec 134)', () => {
+  it('importar ligado → manda importFromYear numérico', () => {
+    assert.deepEqual(
+      toCreateInput(formWith({ year: '2027', program: REF, importData: true, importFromYear: '2026' })),
+      { year: 2027, programRef: REF, importFromYear: 2026 },
+    )
+  })
+  it('importar desligado → sem a chave (plano nasce vazio)', () => {
+    const input = toCreateInput(
+      formWith({ year: '2027', program: REF, importData: false, importFromYear: '2026' }),
+    )
+    assert.deepEqual(input, { year: 2027, programRef: REF })
+    assert.equal('importFromYear' in input, false)
+  })
+})
+
+describe('importYearsState (spec 134)', () => {
+  it('sem programa → needs-program (mesmo com anos em cache)', () => {
+    assert.deepEqual(importYearsState('', '2027', [2026]), { kind: 'needs-program' })
+  })
+  it('carregando → loading', () => {
+    assert.deepEqual(importYearsState(REF, '2027', undefined), { kind: 'loading' })
+  })
+  it('falha na leitura → failed (não "nenhum plano")', () => {
+    assert.deepEqual(importYearsState(REF, '2027', null), { kind: 'failed' })
+  })
+  it('tira o ano do próprio plano novo da lista', () => {
+    assert.deepEqual(importYearsState(REF, '2026', [2026, 2025]), { kind: 'ready', years: [2025] })
+  })
+  it('só sobra o próprio ano → empty', () => {
+    assert.deepEqual(importYearsState(REF, '2026', [2026]), { kind: 'empty' })
+  })
+  it('nenhum aprovado → empty', () => {
+    assert.deepEqual(importYearsState(REF, '2027', []), { kind: 'empty' })
+  })
+})
+
+describe('createErrorTag — erros da importação (spec 134)', () => {
+  it('mesmo ano → importSameYear', () => {
+    assert.equal(createErrorTag('budget-plan-import-same-year'), 'budget-plans.create.importSameYear')
+  })
+  it('origem sem plano aprovado → importSourceNotApproved (não "já existe")', () => {
+    assert.equal(
+      createErrorTag('budget-plan-import-source-not-approved'),
+      'budget-plans.create.importSourceNotApproved',
+    )
+  })
+  it('lançamento órfão na origem → importOrphan', () => {
+    assert.equal(createErrorTag('budget-result-orphan-subcategory'), 'budget-plans.create.importOrphan')
   })
 })
