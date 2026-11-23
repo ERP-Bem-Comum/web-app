@@ -2,6 +2,7 @@
  * CollaboratorDetailPage — detalhe do colaborador (clique na linha da grid). Exibe o pré-cadastro e,
  * se o cadastro estiver completo, também a 2ª etapa. `Editar` habilita todos os campos na própria tela;
  * `Salvar` persiste (pré via update + completo via complete-registration). `Voltar` retorna.
+ * `Inativar` (motivo obrigatório) / `Reativar` alternam a ativação (spec 133).
  * Visual: identidade "brand" de formulário (`brand-form.css.ts`) — mesma da tela Novo Colaborador.
  */
 import { useState, type ReactNode } from 'react'
@@ -30,8 +31,16 @@ import {
   useCollaboratorDetailBinding,
   type CollaboratorSaveCommand,
   type CollaboratorExportHistoryCommand,
+  type CollaboratorStatusCommand,
   type CollaboratorDetail,
 } from '../collaborator-detail.binding.ts'
+import {
+  activationSubtitleKeys,
+  deactivationReasonOptions,
+  parseDeactivationReason,
+  statusActionFor,
+} from '../collaborator-detail.view-model.ts'
+import { CollaboratorDeactivateDialog } from '../components/collaborator-deactivate-dialog.component.tsx'
 import {
   lockedPersonalFrom,
   useCollaboratorDetailFormController,
@@ -51,7 +60,7 @@ export function CollaboratorDetailPage(): ReactNode {
     router.history.back()
   }
   const [editing, setEditing] = useState(false)
-  const { state, saveCommand, exportHistoryCommand, canWrite } = useCollaboratorDetailBinding(
+  const { state, saveCommand, exportHistoryCommand, statusCommand, canWrite } = useCollaboratorDetailBinding(
     id,
     () => {
       setEditing(false)
@@ -104,6 +113,7 @@ export function CollaboratorDetailPage(): ReactNode {
       canWrite={canWrite}
       saveCommand={saveCommand}
       exportHistoryCommand={exportHistoryCommand}
+      statusCommand={statusCommand}
       onEdit={() => {
         setEditing(true)
       }}
@@ -147,6 +157,7 @@ type DetailReadyProps = Readonly<{
   canWrite: boolean
   saveCommand: CollaboratorSaveCommand
   exportHistoryCommand: CollaboratorExportHistoryCommand
+  statusCommand: CollaboratorStatusCommand
   onEdit: () => void
   onCancel: () => void
   onBack: () => void
@@ -158,12 +169,27 @@ function DetailReady({
   canWrite,
   saveCommand,
   exportHistoryCommand,
+  statusCommand,
   onEdit,
   onCancel,
   onBack,
 }: DetailReadyProps): ReactNode {
   const c = useCollaboratorDetailFormController(collaborator)
   const [confirmingEdit, setConfirmingEdit] = useState(false)
+  const [statusDialogOpen, setStatusDialogOpen] = useState(false)
+  const [reasonValue, setReasonValue] = useState('')
+  const statusAction = statusActionFor(collaborator.activation)
+  const chosenReason = parseDeactivationReason(reasonValue)
+  const closeStatusDialog = (): void => {
+    setStatusDialogOpen(false)
+    setReasonValue('')
+    statusCommand.clearError()
+  }
+  // Cabeçalho: situação cadastral + (se inativo) "Inativo · motivo".
+  const subtitle = [
+    t(`partners.collaborators.registration.${collaborator.registration}`),
+    ...activationSubtitleKeys(collaborator).map((k) => t(k)),
+  ].join(' · ')
   // Em edição mostramos sempre as 2 seções (permite completar o cadastro); em leitura, a 2ª só se já completo.
   const showComplete = editing || collaborator.registration === 'complete'
   const preTitle = showComplete
@@ -177,7 +203,7 @@ function DetailReady({
           <div className={content}>
             <DetailHead
               title={collaborator.name}
-              subtitle={t(`partners.collaborators.registration.${collaborator.registration}`)}
+              subtitle={subtitle}
               onBack={onBack}
               actions={
                 <button
@@ -252,15 +278,68 @@ function DetailReady({
                   {t('common.back')}
                 </button>
                 {canWrite ? (
-                  <button type="button" className={btnPrimary} onClick={onEdit}>
-                    {t('partners.collaborators.actions.edit')}
-                  </button>
+                  <>
+                    <button
+                      type="button"
+                      className={btnGhost}
+                      onClick={() => {
+                        setStatusDialogOpen(true)
+                      }}
+                    >
+                      {statusAction === 'deactivate'
+                        ? t('partners.collaborators.actions.deactivate')
+                        : t('partners.collaborators.actions.reactivate')}
+                    </button>
+                    <button type="button" className={btnPrimary} onClick={onEdit}>
+                      {t('partners.collaborators.actions.edit')}
+                    </button>
+                  </>
                 ) : null}
               </>
             )}
           </div>
         </div>
       </div>
+
+      <CollaboratorDeactivateDialog
+        open={statusDialogOpen && statusAction === 'deactivate'}
+        title={t('partners.collaborators.deactivate.title')}
+        message={t('partners.collaborators.deactivate.message')}
+        reasonLabel={t('partners.collaborators.deactivate.reasonLabel')}
+        reasonPlaceholder={t('partners.collaborators.deactivate.reasonPlaceholder')}
+        reasonOptions={deactivationReasonOptions.map((r) => ({
+          value: r,
+          label: t(`partners.collaborators.deactivationReason.${r}`),
+        }))}
+        reason={reasonValue}
+        confirmLabel={t('partners.collaborators.deactivate.confirm')}
+        cancelLabel={t('partners.confirm.cancel')}
+        canConfirm={chosenReason !== null}
+        running={statusCommand.running}
+        errorMessage={statusCommand.errorTag !== null ? t(statusCommand.errorTag) : null}
+        onReasonChange={setReasonValue}
+        onConfirm={() => {
+          if (chosenReason !== null) statusCommand.deactivate(chosenReason, closeStatusDialog)
+        }}
+        onCancel={closeStatusDialog}
+      />
+
+      <PartnersConfirmDialog
+        open={statusDialogOpen && statusAction === 'reactivate'}
+        title={t('partners.collaborators.reactivate.title')}
+        message={
+          statusCommand.errorTag !== null
+            ? t(statusCommand.errorTag)
+            : t('partners.collaborators.reactivate.message')
+        }
+        confirmLabel={t('partners.collaborators.reactivate.confirm')}
+        cancelLabel={t('partners.confirm.cancel')}
+        running={statusCommand.running}
+        onConfirm={() => {
+          statusCommand.reactivate(closeStatusDialog)
+        }}
+        onCancel={closeStatusDialog}
+      />
 
       <PartnersConfirmDialog
         open={confirmingEdit}

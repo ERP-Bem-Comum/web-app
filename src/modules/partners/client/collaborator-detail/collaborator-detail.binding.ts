@@ -1,6 +1,7 @@
 /**
  * Binding do detalhe de colaborador — ADAPTER React. `useQuery` (detalhe) + `useMutation` (salvar:
- * pré via update + completo via complete-registration) + RBAC (collaborator:write).
+ * pré via update + completo via complete-registration) + `useMutation` (inativar com motivo / reativar —
+ * spec 133) + RBAC (collaborator:write).
  */
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
@@ -14,6 +15,7 @@ import type {
   CollaboratorUpdateInput,
   CollaboratorCompleteInput,
   CollaboratorExportFile,
+  DeactivationReason,
 } from '#modules/partners/client/data/model/collaborator.model.ts'
 import type { PartnersError } from '#modules/partners/client/data/repository/partners-error.ts'
 
@@ -45,10 +47,24 @@ export type CollaboratorExportHistoryCommand = Readonly<{
   execute: () => void
 }>
 
+/** Inativar (motivo obrigatório) ou reativar. `onDone` fecha o diálogo só quando deu certo. */
+export type CollaboratorStatusCommand = Readonly<{
+  running: boolean
+  errorTag: string | null
+  deactivate: (reason: DeactivationReason, onDone: () => void) => void
+  reactivate: (onDone: () => void) => void
+  /** Esquece o erro da última tentativa (ao fechar o diálogo). */
+  clearError: () => void
+}>
+
+type StatusVars =
+  Readonly<{ action: 'deactivate'; reason: DeactivationReason }> | Readonly<{ action: 'reactivate' }>
+
 export type CollaboratorDetailBinding = Readonly<{
   state: CollaboratorDetailState
   saveCommand: CollaboratorSaveCommand
   exportHistoryCommand: CollaboratorExportHistoryCommand
+  statusCommand: CollaboratorStatusCommand
   canWrite: boolean
 }>
 
@@ -87,6 +103,21 @@ export function useCollaboratorDetailBinding(
     },
   })
 
+  const statusMutation = useMutation({
+    mutationKey: ['collaborators', 'status', id] as const,
+    mutationFn: (vars: StatusVars): Promise<Result<CollaboratorDetail, PartnersError>> =>
+      vars.action === 'deactivate'
+        ? collaboratorRepository.deactivate({ id, reason: vars.reason })
+        : collaboratorRepository.reactivate(id),
+    onSuccess: (res) => {
+      // O BFF devolve o detalhe já atualizado: troca o cache do detalhe e invalida as listas.
+      if (isOk(res)) {
+        queryClient.setQueryData(collaboratorDetailViewModel.query(id).queryKey, res)
+        void queryClient.invalidateQueries({ queryKey: ['collaborators'] })
+      }
+    },
+  })
+
   const state: CollaboratorDetailState = ((): CollaboratorDetailState => {
     if (query.isPending) return { status: 'loading' }
     const res = query.data
@@ -112,6 +143,24 @@ export function useCollaboratorDetailBinding(
         ? 'partners.error.server'
         : null
 
+  const sdata = statusMutation.data
+  const statusErrorTag = statusMutation.isPending
+    ? null
+    : sdata !== undefined && !isOk(sdata)
+      ? partnersErrorTag(sdata.error)
+      : statusMutation.isError
+        ? 'partners.error.server'
+        : null
+
+  const runStatus = (vars: StatusVars, onDone: () => void): void => {
+    if (statusMutation.isPending) return
+    statusMutation.mutate(vars, {
+      onSuccess: (res) => {
+        if (isOk(res)) onDone()
+      },
+    })
+  }
+
   return {
     state,
     saveCommand: {
@@ -126,6 +175,19 @@ export function useCollaboratorDetailBinding(
       errorTag: exportErrorTag,
       execute: () => {
         if (!exportMutation.isPending) exportMutation.mutate()
+      },
+    },
+    statusCommand: {
+      running: statusMutation.isPending,
+      errorTag: statusErrorTag,
+      deactivate: (reason, onDone) => {
+        runStatus({ action: 'deactivate', reason }, onDone)
+      },
+      reactivate: (onDone) => {
+        runStatus({ action: 'reactivate' }, onDone)
+      },
+      clearError: () => {
+        if (!statusMutation.isPending) statusMutation.reset()
       },
     },
     canWrite: can(granted, 'collaborator:write'),

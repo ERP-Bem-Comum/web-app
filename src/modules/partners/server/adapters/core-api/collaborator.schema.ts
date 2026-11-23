@@ -53,6 +53,8 @@ export const CoreApiCollaboratorDetailSchema = CoreApiCollaboratorItemSchema.ext
   cpf: z.string().trim(),
   startOfContract: z.string().trim(),
   employmentRelationship: z.enum(['CLT', 'PJ']),
+  // Motivo da inativação (`null` quando ativo). String tolerante: o core-api também emite `LEGACY_MIGRATION`.
+  disableBy: z.string().trim().nullish(),
   rg: z.string().trim().nullish(),
   dateOfBirth: z.string().trim().nullish(),
   completeAddress: z.string().trim().nullish(),
