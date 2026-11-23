@@ -72,12 +72,19 @@ export type BudgetPlanListParams = z.infer<typeof BudgetPlanListParamsSchema>
 
 /**
  * Input de criação de plano (contrato real do `POST /budget-plans`, feature 058): Ano + `programRef` (UUID do
- * catálogo do budget-plans). Sem `programId`/`yearForImport` — o import fica fora desta fase.
+ * catálogo do budget-plans). `importFromYear` (spec 134): ano de origem — o core copia a última versão APROVADA
+ * daquele ano+programa. Espelha o schema da borda do server (§I: o client não importa `server/`).
  */
-export const CreateBudgetPlanInputSchema = z.object({
-  year: z.int(),
-  programRef: z.uuid(),
-})
+export const CreateBudgetPlanInputSchema = z
+  .object({
+    year: z.int(),
+    programRef: z.uuid(),
+    importFromYear: z.int().min(2000).max(2100).optional(),
+  })
+  .refine((v) => v.importFromYear !== v.year, {
+    path: ['importFromYear'],
+    error: 'budget-plan-import-same-year',
+  })
 export type CreateBudgetPlanInput = z.infer<typeof CreateBudgetPlanInputSchema>
 
 /** Opção de programa do catálogo (fonte do `programRef` real do dropdown). O dropdown exibe `abbreviation`. */

@@ -33,4 +33,9 @@ export type BudgetPlansError =
   // significam a MESMA coisa p/ a tela: a árvore em mãos está velha. Tag por CONTEXTO do endpoint (como os 409
   // acima), pra não dizer "plano não encontrado" quando o plano está aberto na frente da usuária.
   | 'cost-node-not-found'
+  // ── Criar a partir de outro ano (spec 134 — core-api#1092). Aqui o core devolve o SLUG em `error.code`
+  // (envelope do módulo budget-plans), então o mapa é por slug, não por status.
+  | 'budget-plan-import-same-year' // 422 — ano de origem igual ao ano do plano novo
+  | 'budget-plan-import-source-not-approved' // 409 — o programa não tem plano APROVADO no ano de origem
+  | 'budget-result-orphan-subcategory' // 409 — a origem tem lançamento fora da própria árvore; nada é gravado
   | 'unexpected' // parse/inesperado (resposta futura do core fora do contrato)
