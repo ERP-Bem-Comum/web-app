@@ -337,6 +337,9 @@ export function ReconciliationWorkspacePage({ accountRef }: ReconciliationWorksp
                   filter={ui.extratoFilter}
                   onFilter={vm.setExtratoFilter}
                   onOpenDetails={vm.matchDetails.openFor}
+                  expandedIds={vm.extrato.expandedIds}
+                  onToggleExpanded={vm.extrato.toggleExpanded}
+                  onOpenTitle={vm.matchDetails.openForTitle}
                 />
               </div>
             )}
@@ -484,6 +487,8 @@ export function ReconciliationWorkspacePage({ accountRef }: ReconciliationWorksp
           state={report.state}
           accountLabel={report.accountLabel}
           accountNumber={report.accountNumber}
+          accountDocument={report.accountDocument}
+          emission={report.emission}
         />
       </div>
     </>

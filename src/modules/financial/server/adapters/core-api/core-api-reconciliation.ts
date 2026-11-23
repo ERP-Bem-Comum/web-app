@@ -306,7 +306,8 @@ export const createCoreApiReconciliationClient = (
   },
   getAccountStatementPeriod: async (i, token) => {
     // #205: extrato por período (from/to date-only). filter opcional. Mapeia p/ o saldo do período.
-    const qs = new URLSearchParams({ from: i.from, to: i.to })
+    // Spec 132: a mesma leitura alimenta a tela e o PDF, com os títulos de cada transação.
+    const qs = new URLSearchParams({ from: i.from, to: i.to, include: 'reconciliation' })
     if (i.filter !== undefined) qs.set('filter', i.filter)
     const r = await resultFetch<unknown>(
       `${baseUrl}/cedente-accounts/${i.accountId}/statement?${qs.toString()}`,

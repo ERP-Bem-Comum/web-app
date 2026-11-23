@@ -9,7 +9,6 @@
  * depende de core-api#172 (null hoje → "—"); Status é "Pago" (só Pago concilia); os campos do tratamento
  * (centro de custo/observação) seguem client-side.
  */
-import type { ComponentType } from 'react'
 
 import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
@@ -18,34 +17,18 @@ import {
   ChevronDownIcon,
   LinkIcon,
   SearchIcon,
-  TargetIcon,
-  TrendingUpIcon,
   WalletIcon,
 } from '#shared/ui/icons/index.ts'
 
 import * as s from '../page/reconciliation-workspace.css.ts'
 import { TaxonomyCascadeFields } from './taxonomy-cascade-fields.component.tsx'
-import {
-  centsToBRL,
-  retentionAgencyTag,
-  type DifferenceTreatment,
-  type PaidPayable,
-} from '../reconciliation-workspace.view-model.ts'
+import { centsToBRL, retentionAgencyTag, type PaidPayable } from '../reconciliation-workspace.view-model.ts'
 import type { SearchCreateBinding } from '../search-create.binding.ts'
 
 const t = createTranslator(ptBR)
 const DASH = '—'
 const DOT = '·'
 const PLUS = '+'
-
-const TREATMENTS: readonly DifferenceTreatment[] = ['Interest', 'Penalty', 'Discount', 'Fee', 'Partial']
-const TREAT_ICON: Readonly<Record<DifferenceTreatment, ComponentType>> = {
-  Interest: TrendingUpIcon,
-  Penalty: TargetIcon,
-  Discount: ChevronDownIcon,
-  Fee: WalletIcon,
-  Partial: LinkIcon,
-}
 
 export type SearchCreatePaneProps = Readonly<{
   binding: SearchCreateBinding
@@ -393,82 +376,6 @@ export function SearchCreatePane({ binding, extratoValueCents, onManualEntry }: 
         </div>
       )}
 
-      {/* Tratamento da diferença — só após clicar Conciliar com diferença (§9.4.6) */}
-      {binding.showTreatment ? (
-        <div className={s.diffTreat}>
-          <div className={s.dtHead}>
-            <span className={s.dtHeadIc} aria-hidden>
-              <TargetIcon />
-            </span>
-            <span className={s.dtLbl}>{t('financial.recon.multi.diffTreat')}</span>
-            <span className={s.dtAmt}>{centsToBRL(binding.residualCents)}</span>
-          </div>
-          <p className={s.dtExplain}>{t('financial.recon.multi.diffExplain')}</p>
-          <div className={s.diffTypes}>
-            {TREATMENTS.map((tr) => {
-              const active = binding.treatment === tr
-              const Icon = TREAT_ICON[tr]
-              return (
-                <button
-                  key={tr}
-                  type="button"
-                  className={active ? s.diffTypeCard.on : s.diffTypeCard.off}
-                  aria-pressed={active}
-                  onClick={() => {
-                    binding.setTreatment(tr)
-                  }}
-                >
-                  <span className={active ? s.dtcIc.on : s.dtcIc.off} aria-hidden>
-                    <Icon />
-                  </span>
-                  <span className={active ? s.dtcName.on : s.dtcName.off}>
-                    {t(`financial.recon.treatment.${tr}`)}
-                  </span>
-                </button>
-              )
-            })}
-          </div>
-          {binding.treatment !== null ? (
-            <div className={s.diffExtras}>
-              <div className={`${s.ntRow} ${s.ntRowCols2}`}>
-                <label className={s.ntField}>
-                  <span className={s.ntLabel}>{t('financial.recon.multi.diffCostCenter')}</span>
-                  <select
-                    className={s.ntSelect}
-                    value={binding.costCenterRef}
-                    onChange={(e) => {
-                      binding.setCostCenterRef(e.target.value)
-                    }}
-                  >
-                    <option value="">{t('financial.recon.multi.diffCostCenterPlaceholder')}</option>
-                    {binding.costCenterOptions.map((o) => (
-                      <option key={o.value} value={o.value}>
-                        {o.label}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label className={s.ntField}>
-                  <span className={s.ntLabel}>
-                    {t('financial.recon.multi.diffNote')}{' '}
-                    <span className={s.ntOpt}>{t('financial.recon.manual.optional')}</span>
-                  </span>
-                  <input
-                    type="text"
-                    className={s.ntInput}
-                    placeholder={t('financial.recon.multi.diffNotePlaceholder')}
-                    value={binding.observation}
-                    onChange={(e) => {
-                      binding.setObservation(e.target.value)
-                    }}
-                  />
-                </label>
-              </div>
-            </div>
-          ) : null}
-        </div>
-      ) : null}
-
       {/* M2: painel da reclassificação — os MESMOS selects em cascata da Sugestão e da Nova transação. */}
       {binding.reclassify.editing ? (
         <div className={s.reclassPanel}>
@@ -519,9 +426,13 @@ export function SearchCreatePane({ binding, extratoValueCents, onManualEntry }: 
           <span aria-hidden>{PLUS}</span>
           {t('financial.recon.multi.manualEntry')}
         </button>
+        {selectedCount > 0 && hasDiff ? (
+          <span className={s.ntBlocked}>{t('financial.recon.multi.confirmBlocked')}</span>
+        ) : null}
         <button
           type="button"
           className={s.btnConfirm}
+          title={selectedCount > 0 && hasDiff ? t('financial.recon.multi.confirmBlocked') : undefined}
           disabled={
             !binding.canConfirm ||
             binding.submitting ||
