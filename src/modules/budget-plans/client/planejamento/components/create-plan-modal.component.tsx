@@ -4,6 +4,7 @@ import type {
   CreatePlanForm,
   CreatePlanError,
   CreatePlanProgramOption,
+  ImportYearsState,
 } from '#modules/budget-plans/client/planejamento/create-plan.view-model.ts'
 
 import {
@@ -20,6 +21,7 @@ import {
   toggleRow,
   toggleLabel,
   errorText,
+  hint,
   foot,
   cancelButton,
   addButton,
@@ -35,6 +37,12 @@ export type CreatePlanModalLabels = Readonly<{
   programPlaceholder: string
   importData: string
   importFromYear: string
+  importFromYearPlaceholder: string
+  /** Spec 134 — por que o seletor de ano de origem não tem opção (a view não decide o texto). */
+  importNeedsProgram: string
+  importLoading: string
+  importEmpty: string
+  importFailed: string
   add: string
   cancel: string
 }>
@@ -45,7 +53,8 @@ export type CreatePlanModalProps = Readonly<{
   errorTag: CreatePlanError | null
   submitting: boolean
   programOptions: readonly CreatePlanProgramOption[]
-  importYears: readonly number[]
+  /** Spec 134 — anos com plano APROVADO do programa (sem o ano do plano novo), ou o motivo de não haver. */
+  importYears: ImportYearsState
   labels: CreatePlanModalLabels
   /** Traduz a tag do erro (a view não conhece o catálogo diretamente). */
   translateError: (tag: CreatePlanError) => string
@@ -56,6 +65,58 @@ export type CreatePlanModalProps = Readonly<{
   onImportFromYear: (v: string) => void
   onSubmit: () => void
 }>
+
+/** Texto que explica o seletor sem opções (spec 134); `null` quando há anos para escolher. */
+const importHint = (state: ImportYearsState, labels: CreatePlanModalLabels): string | null => {
+  switch (state.kind) {
+    case 'needs-program':
+      return labels.importNeedsProgram
+    case 'loading':
+      return labels.importLoading
+    case 'empty':
+      return labels.importEmpty
+    case 'failed':
+      return labels.importFailed
+    case 'ready':
+      return null
+    default: {
+      const _exhaustive: never = state
+      return _exhaustive
+    }
+  }
+}
+
+/**
+ * "Criar a partir do ano de" (spec 134). Lista só os anos em que o programa tem plano APROVADO — é dele que o
+ * core copia. Sem anos, o seletor fica desabilitado E a razão aparece por escrito (não um seletor vazio).
+ */
+function ImportYearField(props: CreatePlanModalProps): ReactNode {
+  const years = props.importYears.kind === 'ready' ? props.importYears.years : []
+  const message = importHint(props.importYears, props.labels)
+  return (
+    <label className={field}>
+      <span className={label}>{props.labels.importFromYear}</span>
+      <select
+        className={select}
+        value={props.form.importFromYear}
+        disabled={props.importYears.kind !== 'ready'}
+        onChange={(e) => {
+          props.onImportFromYear(e.target.value)
+        }}
+      >
+        <option value="" disabled>
+          {props.labels.importFromYearPlaceholder}
+        </option>
+        {years.map((y) => (
+          <option key={y} value={String(y)}>
+            {y}
+          </option>
+        ))}
+      </select>
+      {message !== null ? <p className={hint}>{message}</p> : null}
+    </label>
+  )
+}
 
 /**
  * Modal "Adicionar Plano Orçamentário" (view BURRA §1.2). Ano (texto) + Programa (dropdown) + toggle
@@ -122,27 +183,7 @@ export function CreatePlanModal(props: CreatePlanModalProps): ReactNode {
             </label>
           </div>
 
-          {props.form.importData ? (
-            <label className={field}>
-              <span className={label}>{props.labels.importFromYear}</span>
-              <select
-                className={select}
-                value={props.form.importFromYear}
-                onChange={(e) => {
-                  props.onImportFromYear(e.target.value)
-                }}
-              >
-                <option value="" disabled>
-                  {props.labels.importFromYear}
-                </option>
-                {props.importYears.map((y) => (
-                  <option key={y} value={String(y)}>
-                    {y}
-                  </option>
-                ))}
-              </select>
-            </label>
-          ) : null}
+          {props.form.importData ? <ImportYearField {...props} /> : null}
 
           {props.errorTag !== null ? (
             <p className={errorText}>{props.translateError(props.errorTag)}</p>

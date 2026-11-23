@@ -4,6 +4,7 @@
  */
 import { listBudgetPlansFn } from '#modules/budget-plans/server/adapters/server-fns/list-budget-plans.query.fn.ts'
 import { createBudgetPlanFn } from '#modules/budget-plans/server/adapters/server-fns/create-budget-plan.service.fn.ts'
+import { listImportSourceYearsFn } from '#modules/budget-plans/server/adapters/server-fns/list-import-source-years.query.fn.ts'
 import { listBudgetPlanOptionsFn } from '#modules/budget-plans/server/adapters/server-fns/list-budget-plan-options.query.fn.ts'
 import { getBudgetPlanDetailFn } from '#modules/budget-plans/server/adapters/server-fns/get-budget-plan-detail.query.fn.ts'
 import { getBudgetGridFn } from '#modules/budget-plans/server/adapters/server-fns/get-budget-grid.query.fn.ts'
@@ -28,6 +29,7 @@ import { createBudgetPlansRepository } from './budget-plans.repository.ts'
 export const budgetPlansRepository = createBudgetPlansRepository({
   listBudgetPlansFn: (opts) => listBudgetPlansFn(opts),
   createBudgetPlanFn: (opts) => createBudgetPlanFn(opts),
+  listImportSourceYearsFn: (opts) => listImportSourceYearsFn(opts),
   listBudgetPlanOptionsFn: () => listBudgetPlanOptionsFn(),
   getBudgetPlanDetailFn: (opts) => getBudgetPlanDetailFn(opts),
   getBudgetGridFn: (opts) => getBudgetGridFn(opts),

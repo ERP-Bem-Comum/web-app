@@ -18,14 +18,31 @@ export type ListBudgetPlansInput = z.infer<typeof ListBudgetPlansInputSchema>
 
 /**
  * Input da BORDA (§IX) do `POST /budget-plans` (feature 058). Contrato real do core: ano inteiro + `programRef`
- * (UUID do catálogo do budget-plans). Sem `yearForImport` — o import fica fora desta fase.
+ * (UUID do catálogo do budget-plans). `importFromYear` (spec 134 — core-api#1092) é opcional: com ele, o core copia
+ * a ÚLTIMA VERSÃO APROVADA do plano daquele ano+programa. Mesmo ano é recusado aqui na borda (o core também recusa).
  */
-export const CreateBudgetPlanInputSchema = z.object({
-  year: z.int(),
+export const CreateBudgetPlanInputSchema = z
+  .object({
+    year: z.int(),
+    programRef: z.uuid(),
+    importFromYear: z.int().min(2000).max(2100).optional(),
+  })
+  .refine((v) => v.importFromYear !== v.year, {
+    path: ['importFromYear'],
+    error: 'budget-plan-import-same-year',
+  })
+
+export type CreateBudgetPlanInput = z.infer<typeof CreateBudgetPlanInputSchema>
+
+/**
+ * Input da BORDA (§IX) dos anos de origem do "Criar a partir do ano de" (spec 134): só o programa. Os anos saem
+ * dos planos APROVADOS desse programa (`GET /budget-plans?status=APROVADO&programRef=`).
+ */
+export const ListImportSourceYearsInputSchema = z.object({
   programRef: z.uuid(),
 })
 
-export type CreateBudgetPlanInput = z.infer<typeof CreateBudgetPlanInputSchema>
+export type ListImportSourceYearsInput = z.infer<typeof ListImportSourceYearsInputSchema>
 
 /**
  * Input da BORDA (§IX) do `GET /budget-plans/:id` (feature 059 — leitura do detalhe). Só o id do plano (UUID

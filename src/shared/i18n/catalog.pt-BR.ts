@@ -2762,10 +2762,21 @@ export const ptBR: Catalog = {
   'budget-plans.create.programPlaceholder': 'Selecione o programa',
   'budget-plans.create.importData': 'Importar dados',
   'budget-plans.create.importFromYear': 'Criar a partir do ano de',
+  'budget-plans.create.importFromYearPlaceholder': 'Selecione o ano',
+  'budget-plans.create.importNeedsProgram': 'Selecione o programa para ver os anos com plano aprovado.',
+  'budget-plans.create.importLoading': 'Carregando os anos com plano aprovado…',
+  'budget-plans.create.importEmpty': 'Este programa não tem plano aprovado em outro ano para copiar.',
+  'budget-plans.create.importFailed': 'Não foi possível carregar os anos. Feche e abra de novo.',
   'budget-plans.create.add': 'Adicionar',
   'budget-plans.create.cancel': 'Cancelar',
   'budget-plans.create.requiredYear': 'Informe o ano do plano.',
   'budget-plans.create.requiredProgram': 'Selecione o programa.',
+  'budget-plans.create.requiredImportYear': 'Selecione o ano de origem, ou desmarque "Importar dados".',
+  'budget-plans.create.importSameYear': 'O ano de origem precisa ser diferente do ano do plano.',
+  'budget-plans.create.importSourceNotApproved':
+    'Este programa não tem plano aprovado no ano escolhido. Escolha outro ano.',
+  'budget-plans.create.importOrphan':
+    'O plano de origem tem lançamentos fora da própria estrutura de custos e não pôde ser copiado. Nada foi gravado. Fale com o suporte.',
   'budget-plans.create.conflict': 'Já existe um plano para esse ano e programa.',
   'budget-plans.create.unexpected': 'Não foi possível criar o plano. Tente novamente.',
   'budget-plans.create.forbidden':
