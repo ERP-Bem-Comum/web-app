@@ -106,6 +106,9 @@ const centroErrorKey = (tag: CentrosCustoErrorTag): string => {
     case 'budget-plan-scenery-needs-draft':
     case 'budget-plan-invalid-transition':
     case 'budget-plan-not-deletable': // DELETE do plano (feature 076) — não ocorre na escrita da estrutura
+    case 'budget-plan-import-same-year': // spec 134 — só no POST /budget-plans (criar a partir de outro ano)
+    case 'budget-plan-import-source-not-approved':
+    case 'budget-result-orphan-subcategory':
     case 'unexpected':
       return 'budget-plans.centrosCusto.error.unexpected'
     default: {
