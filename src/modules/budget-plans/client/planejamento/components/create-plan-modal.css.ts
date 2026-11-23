@@ -107,7 +107,27 @@ export const input = style({
   },
 })
 
-export const select = style([input])
+// Spec 134: o seletor de ano de origem fica desabilitado sem programa / sem anos — e precisa PARECER desabilitado.
+export const select = style([
+  input,
+  {
+    selectors: {
+      '&:disabled': {
+        background: vars.color.surface.subtle,
+        color: vars.color.text.muted,
+        cursor: 'not-allowed',
+      },
+    },
+  },
+])
+
+/** Explicação do estado do seletor de ano de origem (sem programa / carregando / nenhum ano / falha). */
+export const hint = style({
+  margin: 0,
+  fontFamily: vars.font.family.body,
+  fontSize: vars.font.size.xs,
+  color: vars.color.text.secondary,
+})
 
 export const toggleRow = style({
   display: 'flex',

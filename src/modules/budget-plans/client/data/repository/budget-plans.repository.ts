@@ -47,6 +47,9 @@ export type ListBudgetPlansArgs = Readonly<{
 
 type ListFn = (opts: { data: ListBudgetPlansArgs }) => Promise<BudgetPlansFnResult<BudgetPlanListPageResult>>
 type CreateFn = (opts: { data: CreateBudgetPlanInput }) => Promise<BudgetPlansFnResult<CreatedBudgetPlan>>
+type ImportSourceYearsFn = (opts: {
+  data: { programRef: string }
+}) => Promise<BudgetPlansFnResult<readonly number[]>>
 type OptionsFn = () => Promise<BudgetPlansFnResult<{ programs: readonly BudgetPlanProgramOption[] }>>
 type GetDetailFn = (opts: { data: { id: string } }) => Promise<BudgetPlansFnResult<PlanDetail>>
 type GetBudgetGridFn = (opts: {
@@ -101,6 +104,8 @@ type GetConsolidadoFn = (opts: {
 export type BudgetPlansRepository = Readonly<{
   listBudgetPlans: (args: ListBudgetPlansArgs) => Promise<Result<BudgetPlanListPageResult, BudgetPlansError>>
   create: (input: CreateBudgetPlanInput) => Promise<Result<CreatedBudgetPlan, BudgetPlansError>>
+  /** Spec 134 — anos com plano APROVADO do programa (origem do "Criar a partir do ano de"), mais recente 1º. */
+  listImportSourceYears: (programRef: string) => Promise<Result<readonly number[], BudgetPlansError>>
   getProgramOptions: () => Promise<Result<readonly BudgetPlanProgramOption[], BudgetPlansError>>
   getPlanDetail: (id: string) => Promise<Result<PlanDetail, BudgetPlansError>>
   approvePlan: (id: string) => Promise<Result<LifecyclePlan, BudgetPlansError>>
@@ -137,6 +142,7 @@ export const createBudgetPlansRepository = (
   deps: Readonly<{
     listBudgetPlansFn: ListFn
     createBudgetPlanFn: CreateFn
+    listImportSourceYearsFn: ImportSourceYearsFn
     listBudgetPlanOptionsFn: OptionsFn
     getBudgetPlanDetailFn: GetDetailFn
     getBudgetGridFn: GetBudgetGridFn
@@ -163,6 +169,10 @@ export const createBudgetPlansRepository = (
   },
   create: async (input) => {
     const res = await deps.createBudgetPlanFn({ data: input })
+    return res.ok ? ok(res.data) : err(res.error)
+  },
+  listImportSourceYears: async (programRef) => {
+    const res = await deps.listImportSourceYearsFn({ data: { programRef } })
     return res.ok ? ok(res.data) : err(res.error)
   },
   getProgramOptions: async () => {

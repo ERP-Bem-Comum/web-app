@@ -117,11 +117,13 @@ export {
   validateCreatePlan,
   createErrorTag,
   createPlanInitialForm,
-  IMPORT_YEARS,
+  toCreateInput,
+  importYearsState,
 } from '#modules/budget-plans/client/planejamento/create-plan.view-model.ts'
 export type {
   CreatePlanForm,
   CreatePlanError,
+  ImportYearsState,
 } from '#modules/budget-plans/client/planejamento/create-plan.view-model.ts'
 
 // ── Lista de planos orçamentários (server fn) — consumida cross-módulo p/ o dropdown "Plano Orçamentário"

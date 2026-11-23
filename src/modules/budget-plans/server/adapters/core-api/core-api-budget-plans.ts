@@ -8,6 +8,7 @@ import type * as z from 'zod'
 
 import { ok, err, isErr, type Result } from '#shared/primitives/result.ts'
 import { resultFetch, resultFetchText } from '#external/core-api/result-fetch.ts'
+import { parseErrorEnvelope } from '#shared/http/error-envelope.ts'
 import type { HttpError } from '#shared/http/http-error.types.ts'
 import type { BudgetPlansError } from '#modules/budget-plans/server/domain/errors/budget-plans.errors.ts'
 import type { ListBudgetPlansParams } from '#modules/budget-plans/server/domain/planejamento-list.io.ts'
@@ -35,6 +36,7 @@ import type {
   CreateBudgetPlanCommand,
   CreatedBudgetPlan,
 } from '#modules/budget-plans/server/application/create-budget-plan.use-case.ts'
+import type { ImportSourceYearsClient } from '#modules/budget-plans/server/application/list-import-source-years.use-case.ts'
 import type { GetBudgetPlanDetailClient } from '#modules/budget-plans/server/application/get-budget-plan-detail.use-case.ts'
 import type { WriteCostStructureClient } from '#modules/budget-plans/server/application/write-cost-structure.use-case.ts'
 import type { BudgetWriteClient } from '#modules/budget-plans/server/application/budget-write.use-case.ts'
@@ -85,12 +87,25 @@ const mapHttpError = (e: HttpError): BudgetPlansError => {
   return 'unexpected'
 }
 
+// Slugs do `POST /budget-plans` que a tela distingue (spec 134 — core-api#1092). O módulo budget-plans do core
+// devolve o slug em `error.code` (`sendWriteError`), então estes três saem pelo SLUG: o 409 de "sem plano aprovado
+// na origem" e o de "lançamento órfão" têm o MESMO status do 409 de unicidade e diriam a coisa errada por status.
+const CREATE_ERROR_BY_SLUG: Readonly<Record<string, BudgetPlansError>> = {
+  'budget-plan-already-exists': 'budget-plan-already-exists',
+  'budget-plan-import-same-year': 'budget-plan-import-same-year',
+  'budget-plan-import-source-not-approved': 'budget-plan-import-source-not-approved',
+  'budget-result-orphan-subcategory': 'budget-result-orphan-subcategory',
+}
+
 // Mapa específico da ESCRITA (§V): o `POST` acrescenta 409 (unicidade ano+programa) e 400/422 (payload).
-// O core-api colapsa o slug num `code` público (OWASP), então mapeamos por STATUS, não por slug.
+// Primeiro o SLUG conhecido (acima); sem ele (core antigo / corpo fora do envelope), cai no mapa por STATUS.
 const mapCreateHttpError = (e: HttpError): BudgetPlansError => {
   if (e.kind !== 'http') return 'unexpected'
   if (e.status === 401) return 'unauthorized'
   if (e.status === 403) return 'forbidden'
+  const slug = parseErrorEnvelope(e.body)?.error.code
+  const bySlug = slug !== undefined ? CREATE_ERROR_BY_SLUG[slug] : undefined
+  if (bySlug !== undefined) return bySlug
   if (e.status === 409) return 'budget-plan-already-exists'
   if (e.status === 400 || e.status === 422) return 'invalid-input'
   return 'unexpected'
@@ -280,6 +295,7 @@ export const createBudgetPlansCoreClient = (
   baseUrl: string,
 ): BudgetPlansCoreClient &
   CreateBudgetPlanClient &
+  ImportSourceYearsClient &
   GetBudgetPlanDetailClient &
   ApproveBudgetPlanClient &
   DeleteBudgetPlanClient &
@@ -441,7 +457,11 @@ export const createBudgetPlansCoreClient = (
     const r = await resultFetch<unknown>(baseUrl, {
       method: 'POST',
       token,
-      body: { year: command.year, programRef: command.programRef },
+      body: {
+        year: command.year,
+        programRef: command.programRef,
+        ...(command.importFromYear !== undefined ? { importFromYear: command.importFromYear } : {}),
+      },
     })
     if (isErr(r)) return err(mapCreateHttpError(r.error))
     const parsed = coreCreateResponseSchema.safeParse(r.value)
@@ -454,6 +474,29 @@ export const createBudgetPlansCoreClient = (
       version: parsed.data.version,
       totalInCents: parsed.data.totalInCents,
     })
+  },
+  // Spec 134: anos com plano APROVADO do programa (origem do "Criar a partir do ano de"). Pagina até o `total`
+  // (limite do core = 100 por página) — poucos planos por programa, mas não truncamos em silêncio.
+  listApprovedPlanYears: async (
+    programRef: string,
+    token: string,
+  ): Promise<Result<readonly number[], BudgetPlansError>> => {
+    const limit = 100
+    const years: number[] = []
+    for (let page = 1; ; page += 1) {
+      const q = new URLSearchParams({
+        page: String(page),
+        limit: String(limit),
+        status: 'APROVADO',
+        programRef,
+      })
+      const r = await resultFetch<unknown>(`${baseUrl}?${q.toString()}`, { token })
+      if (isErr(r)) return err(mapHttpError(r.error))
+      const parsed = coreListResponseSchema.safeParse(r.value)
+      if (!parsed.success) return err('unexpected')
+      years.push(...parsed.data.items.map((it) => it.year))
+      if (parsed.data.items.length < limit || page * limit >= parsed.data.total) return ok(years)
+    }
   },
   approvePlan: async (id: string, token: string): Promise<Result<LifecyclePlan, BudgetPlansError>> => {
     const r = await resultFetch<unknown>(`${baseUrl}/${id}/approve`, { method: 'POST', token })

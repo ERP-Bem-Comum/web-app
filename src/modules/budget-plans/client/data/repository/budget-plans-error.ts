@@ -19,9 +19,12 @@ export type BudgetPlansError =
   | 'budget-plan-not-deletable'
   | 'budget-plan-not-editable' // escrita de estrutura (feature 061) — plano não aceita mais escrita (ex.: aprovado)
   | 'cost-node-not-found' // 404 no PATCH de nó (feature 075) — nó (ou plano) sumiu: a árvore em mãos está velha
+  // Criar a partir de outro ano (spec 134 — core-api#1092)
+  | 'budget-plan-import-same-year' // 422 — ano de origem igual ao do plano novo
+  | 'budget-plan-import-source-not-approved' // 409 — sem plano APROVADO do programa no ano de origem
+  | 'budget-result-orphan-subcategory' // 409 — origem com lançamento fora da própria árvore; nada é gravado
   | 'unexpected' // parse/inesperado
 
 /** Forma do retorno RPC das server fns do Plano Orçamentário (`{ ok, data } | { ok, error }`). */
 export type BudgetPlansFnResult<T> =
-  | Readonly<{ ok: true; data: T }>
-  | Readonly<{ ok: false; error: BudgetPlansError }>
+  Readonly<{ ok: true; data: T }> | Readonly<{ ok: false; error: BudgetPlansError }>
